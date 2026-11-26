@@ -38,7 +38,7 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 }
 
 // defaultTokenPolicy caps Sensor token lifetimes to one hour. Requests without
-// a permission set selector use the legacy console permission allowlist.
+// permission sets use the legacy console permission allowlist.
 func defaultTokenPolicy() *tokenPolicy {
 	// defaultAllowedPermissions lists the resource permissions that the default
 	// policy allows sensors to request. These must stay in sync with the needs
@@ -123,17 +123,38 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return clusterID, nil
 }
 
-func validatePermissionSetSelector(req *v1.GenerateTokenForPermissionsAndScopeRequest) error {
+// maxPermissionSetsPerRequest bounds how many permission sets a single token
+// request may select.
+const maxPermissionSetsPerRequest = 32
+
+// validatePermissionSets checks that permission sets are not combined with
+// legacy permissions, that their number stays bounded, and that every
+// selector is well-formed.
+func validatePermissionSets(req *v1.GenerateTokenForPermissionsAndScopeRequest) error {
 	if len(req.GetPermissions()) != 0 {
-		return errox.InvalidArgs.New("permission set selector and permissions are mutually exclusive")
+		return errox.InvalidArgs.New("permission grant forms are mutually exclusive")
 	}
-	switch selector := req.GetPermissionSet().(type) {
-	case *v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId:
-		if _, err := uuid.FromString(selector.PermissionSetId); err != nil {
+	if len(req.GetPermissionSets()) > maxPermissionSetsPerRequest {
+		return errox.InvalidArgs.New("too many permission sets")
+	}
+	for _, selected := range req.GetPermissionSets() {
+		if err := validatePermissionSetSelector(selected); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validatePermissionSetSelector checks that exactly one nonempty id or name
+// selector is present.
+func validatePermissionSetSelector(selected *v1.SelectedPermissionSet) error {
+	switch selector := selected.GetSelector().(type) {
+	case *v1.SelectedPermissionSet_Id:
+		if _, err := uuid.FromString(selector.Id); err != nil {
 			return errox.InvalidArgs.New("permission set ID must be a UUID")
 		}
-	case *v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName:
-		if selector.PermissionSetName == "" || strings.TrimSpace(selector.PermissionSetName) != selector.PermissionSetName {
+	case *v1.SelectedPermissionSet_Name:
+		if selector.Name == "" || strings.TrimSpace(selector.Name) != selector.Name {
 			return errox.InvalidArgs.New("permission set name must be nonempty without surrounding whitespace")
 		}
 	default:
@@ -152,8 +173,8 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
-	if req.GetPermissionSet() != nil {
-		if err := validatePermissionSetSelector(req); err != nil {
+	if len(req.GetPermissionSets()) > 0 {
+		if err := validatePermissionSets(req); err != nil {
 			return nil, err
 		}
 	} else {

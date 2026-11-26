@@ -230,7 +230,7 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 		incrementTokenRequest(tokenResultError)
 		return "", errors.Wrap(err, "building token request")
 	}
-	cacheKey := p.tokenCacheKey(namespaceScope, req.GetPermissionSet() != nil)
+	cacheKey := p.tokenCacheKey(namespaceScope, len(req.GetPermissionSets()) > 0)
 
 	// Fast path: check cache first.
 	if token, ok := p.tokenCache.Get(cacheKey); ok {
@@ -307,9 +307,11 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 		Lifetime: durationpb.New(tokenTTL),
 	}
 	if centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens) {
-		req.PermissionSet = &centralv1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{
-			PermissionSetId: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-		}
+		req.PermissionSets = []*centralv1.SelectedPermissionSet{{
+			Selector: &centralv1.SelectedPermissionSet_Id{
+				Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+			},
+		}}
 	} else {
 		req.Permissions = tokenPermissions
 	}

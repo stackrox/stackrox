@@ -97,18 +97,17 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
 	roleCtx := ctx
-	if req.GetPermissionSet() != nil {
+	if len(req.GetPermissionSets()) > 0 {
 		roleCtx = sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 	}
-	tokenRole, err := s.roleManager.createRoleForRoxClaims(roleCtx, req)
+	tokenRoles, err := s.roleManager.createRolesForRoxClaims(roleCtx, req)
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
-		return nil, errors.Wrap(err, "building ephemeral role")
+		return nil, errors.Wrap(err, "building ephemeral roles")
 	}
-	roleName := tokenRole.GetRoleName()
-	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
+	claimName := fmt.Sprintf(claimNameFormat, tokenRoles[0].GetRoleName(), expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		InternalRoles: []*tokens.InternalRole{tokenRole},
+		InternalRoles: tokenRoles,
 		Name:          claimName,
 		Requester:     req.GetRequester(),
 	}

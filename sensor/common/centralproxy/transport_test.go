@@ -87,10 +87,10 @@ func TestTokenProviderPermissionSetCapability(t *testing.T) {
 					require.NotNil(t, req)
 					if capable {
 						assert.Empty(t, req.GetPermissions())
-						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSetId())
-						assert.NotEmpty(t, req.GetPermissionSetId())
+						require.Len(t, req.GetPermissionSets(), 1)
+						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSets()[0].GetId())
 					} else {
-						assert.Nil(t, req.GetPermissionSet())
+						assert.Empty(t, req.GetPermissionSets())
 						assert.Equal(t, map[string]centralv1.Access{
 							"Deployment": centralv1.Access_READ_ACCESS, "Image": centralv1.Access_READ_ACCESS,
 						}, req.GetPermissions())
@@ -130,7 +130,8 @@ func TestTokenProviderPermissionSetFailureDoesNotFallBack(t *testing.T) {
 	assert.Nil(t, response)
 	assert.EqualValues(t, 1, calls.Load())
 	assert.Empty(t, client.lastRequest.GetPermissions())
-	assert.NotEmpty(t, client.lastRequest.GetPermissionSetId())
+	require.Len(t, client.lastRequest.GetPermissionSets(), 1)
+	assert.NotEmpty(t, client.lastRequest.GetPermissionSets()[0].GetId())
 }
 
 func TestTokenProviderCapabilityChangeDoesNotReuseLegacyToken(t *testing.T) {
@@ -153,7 +154,8 @@ func TestTokenProviderCapabilityChangeDoesNotReuseLegacyToken(t *testing.T) {
 	assert.Equal(t, "permission-set-token", token)
 	assert.EqualValues(t, 2, calls.Load())
 	assert.Empty(t, client.lastRequest.GetPermissions())
-	assert.NotEmpty(t, client.lastRequest.GetPermissionSetId())
+	require.Len(t, client.lastRequest.GetPermissionSets(), 1)
+	assert.NotEmpty(t, client.lastRequest.GetPermissionSets()[0].GetId())
 }
 
 func TestScopedTokenTransport_RoundTrip(t *testing.T) {

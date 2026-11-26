@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,13 +27,15 @@ const testPermissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
 
 func permissionSetRequest(byID bool) *v1.GenerateTokenForPermissionsAndScopeRequest {
 	req := &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSet: &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{PermissionSetName: "Reader"},
+		PermissionSets: []*v1.SelectedPermissionSet{{
+			Selector: &v1.SelectedPermissionSet_Name{Name: "Reader"},
+		}},
 		Lifetime:      durationpb.New(time.Hour),
 		ClusterScopes: []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"prod"}}},
 		Requester:     "test requester",
 	}
 	if byID {
-		req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{PermissionSetId: testPermissionSetID}
+		req.PermissionSets[0].Selector = &v1.SelectedPermissionSet_Id{Id: testPermissionSetID}
 	}
 	return req
 }
@@ -54,19 +57,35 @@ func TestPermissionSetPolicy(t *testing.T) {
 	}{
 		"name": {},
 		"id": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = permissionSetRequest(true).GetPermissionSet()
+			req.PermissionSets = permissionSetRequest(true).GetPermissionSets()
 		}},
+		"second set": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			req.PermissionSets = append(req.PermissionSets, &v1.SelectedPermissionSet{
+				Selector: &v1.SelectedPermissionSet_Name{Name: "Writer"},
+			})
+		}},
+		"nil set": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			req.PermissionSets = append(req.PermissionSets, nil)
+		}, err: errox.InvalidArgs},
 		"empty name": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{}
+			req.PermissionSets[0].Selector = &v1.SelectedPermissionSet_Name{}
 		}, err: errox.InvalidArgs},
 		"empty id": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{}
+			req.PermissionSets[0].Selector = &v1.SelectedPermissionSet_Id{}
 		}, err: errox.InvalidArgs},
 		"invalid id": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{PermissionSetId: "invalid"}
+			req.PermissionSets[0].Selector = &v1.SelectedPermissionSet_Id{Id: "invalid"}
 		}, err: errox.InvalidArgs},
 		"surrounding whitespace": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{PermissionSetName: " Reader "}
+			req.PermissionSets[0].Selector = &v1.SelectedPermissionSet_Name{Name: " Reader "}
+		}, err: errox.InvalidArgs},
+		"too many permission sets": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			req.PermissionSets = make([]*v1.SelectedPermissionSet, 0, maxPermissionSetsPerRequest+1)
+			for i := range maxPermissionSetsPerRequest + 1 {
+				req.PermissionSets = append(req.PermissionSets, &v1.SelectedPermissionSet{
+					Selector: &v1.SelectedPermissionSet_Name{Name: fmt.Sprintf("set-%d", i)},
+				})
+			}
 		}, err: errox.InvalidArgs},
 		"mixed selector and legacy permissions": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
 			req.Permissions = map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS}
@@ -105,7 +124,7 @@ func TestPermissionSetPolicy(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, time.Hour, result.GetLifetime().AsDuration())
-			assert.Equal(t, original.GetPermissionSet(), result.GetPermissionSet())
+			assert.Equal(t, original.GetPermissionSets(), result.GetPermissionSets())
 			protoassert.Equal(t, original, req, "lifetime capping must not mutate the request")
 		})
 	}
@@ -126,8 +145,8 @@ func TestPermissionSetPolicyRequiresSensorIdentity(t *testing.T) {
 func TestPermissionSetSelectorPresenceOnWire(t *testing.T) {
 	for name, req := range map[string]*v1.GenerateTokenForPermissionsAndScopeRequest{
 		"absent selector": {},
-		"empty name":      {PermissionSet: &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{}},
-		"empty id":        {PermissionSet: &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{}},
+		"empty name":      {PermissionSets: []*v1.SelectedPermissionSet{{Selector: &v1.SelectedPermissionSet_Name{}}}},
+		"empty id":        {PermissionSets: []*v1.SelectedPermissionSet{{Selector: &v1.SelectedPermissionSet_Id{}}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			req.Lifetime = durationpb.New(time.Hour)
@@ -135,10 +154,10 @@ func TestPermissionSetSelectorPresenceOnWire(t *testing.T) {
 			require.NoError(t, err)
 			decoded := new(v1.GenerateTokenForPermissionsAndScopeRequest)
 			require.NoError(t, decoded.UnmarshalVT(encoded))
-			assert.Equal(t, req.GetPermissionSet(), decoded.GetPermissionSet())
+			assert.Equal(t, req.GetPermissionSets(), decoded.GetPermissionSets())
 			ctx := sensorContext(t, gomock.NewController(t), "sensor-cluster")
 			_, err = defaultTokenPolicy().enforce(ctx, decoded)
-			if req.PermissionSet == nil {
+			if len(req.GetPermissionSets()) == 0 {
 				require.NoError(t, err)
 			} else {
 				require.ErrorIs(t, err, errox.InvalidArgs)
@@ -171,9 +190,9 @@ func TestPermissionSetRoleRejectsUnsafeSets(t *testing.T) {
 			ps := constrainedPermissionSet()
 			change(ps)
 			store.EXPECT().GetPermissionSet(gomock.Any(), testPermissionSetID).Return(ps, true, nil)
-			role, err := (&roleManager{roleStore: store}).createRoleForRoxClaims(t.Context(), permissionSetRequest(true))
+			roles, err := (&roleManager{roleStore: store}).createRolesForRoxClaims(t.Context(), permissionSetRequest(true))
 			require.ErrorIs(t, err, errox.InvalidArgs)
-			assert.Nil(t, role)
+			assert.Nil(t, roles)
 		})
 	}
 }
@@ -204,16 +223,16 @@ func TestPermissionSetLookupFailsClosed(t *testing.T) {
 			} else {
 				store.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(tc.matches, tc.lookupErr)
 			}
-			role, err := (&roleManager{roleStore: store}).createRoleForRoxClaims(t.Context(), permissionSetRequest(tc.byID))
+			roles, err := (&roleManager{roleStore: store}).createRolesForRoxClaims(t.Context(), permissionSetRequest(tc.byID))
 			if tc.lookupErr != nil {
 				require.ErrorIs(t, err, tc.lookupErr)
 			} else {
 				require.ErrorIs(t, err, tc.wantErr)
 			}
-			assert.Nil(t, role)
+			assert.Nil(t, roles)
 		})
 	}
-	_, err := (&roleManager{}).createRoleForRoxClaims(t.Context(), permissionSetRequest(true))
+	_, err := (&roleManager{}).createRolesForRoxClaims(t.Context(), permissionSetRequest(true))
 	require.ErrorIs(t, err, errox.ServerError)
 }
 
@@ -298,6 +317,95 @@ func TestPermissionSetTokenRoundTrip(t *testing.T) {
 				assert.Equal(t, []string{"Deployment", "Node"}, token.InternalRoles[0].Permissions[storage.Access_READ_ACCESS])
 			}
 			assert.Empty(t, token.RoleNames)
+		})
+	}
+}
+
+func TestPermissionSetTokenMultipleSets(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(
+		"https://stackrox.io/jwt", key, "test-key", tokens.WithDefaultTTL(time.Hour))
+	require.NoError(t, err)
+	issuer := getTokenIssuer(factory)
+	now := time.Now().Truncate(time.Second)
+
+	secondPermissionSetID := "11111111-2222-4333-8444-555555555555"
+	reader := constrainedPermissionSet()
+	imageReader := &storage.PermissionSet{
+		Id:               secondPermissionSetID,
+		Name:             "Image Reader",
+		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+		ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
+	}
+
+	for name, tc := range map[string]struct {
+		request func() *v1.GenerateTokenForPermissionsAndScopeRequest
+		wantErr error
+	}{
+		"distinct sets": {
+			request: func() *v1.GenerateTokenForPermissionsAndScopeRequest {
+				req := permissionSetRequest(false)
+				req.PermissionSets = append(req.PermissionSets, &v1.SelectedPermissionSet{
+					Selector: &v1.SelectedPermissionSet_Id{Id: secondPermissionSetID},
+				})
+				return req
+			},
+		},
+		"duplicate name": {
+			request: func() *v1.GenerateTokenForPermissionsAndScopeRequest {
+				req := permissionSetRequest(false)
+				req.PermissionSets = append(req.PermissionSets, &v1.SelectedPermissionSet{
+					Selector: &v1.SelectedPermissionSet_Name{Name: "Reader"},
+				})
+				return req
+			},
+			wantErr: errox.InvalidArgs,
+		},
+		"id and name alias": {
+			request: func() *v1.GenerateTokenForPermissionsAndScopeRequest {
+				req := permissionSetRequest(false)
+				req.PermissionSets = append(req.PermissionSets, &v1.SelectedPermissionSet{
+					Selector: &v1.SelectedPermissionSet_Id{Id: testPermissionSetID},
+				})
+				return req
+			},
+			wantErr: errox.InvalidArgs,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			store := roleMocks.NewMockDataStore(ctrl)
+			store.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+					assert.True(t, filter(reader))
+					assert.False(t, filter(imageReader))
+					return []*storage.PermissionSet{reader}, nil
+				}).AnyTimes()
+			store.EXPECT().GetPermissionSet(gomock.Any(), secondPermissionSetID).Return(imageReader, true, nil).AnyTimes()
+			store.EXPECT().GetPermissionSet(gomock.Any(), testPermissionSetID).Return(reader, true, nil).AnyTimes()
+			svc := &serviceImpl{
+				issuer:      issuer,
+				roleManager: &roleManager{roleStore: store},
+				policy:      defaultTokenPolicy(),
+				now:         func() time.Time { return now },
+			}
+			response, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, "sensor-cluster"), tc.request())
+			if tc.wantErr != nil {
+				require.ErrorIs(t, err, tc.wantErr)
+				assert.Nil(t, response)
+				return
+			}
+			require.NoError(t, err)
+			token, err := validator.Validate(t.Context(), response.GetToken())
+			require.NoError(t, err)
+			require.Len(t, token.InternalRoles, 2)
+			assert.Equal(t, reader.GetResourceToAccess(), token.InternalRoles[0].GetPermissions())
+			assert.Equal(t, imageReader.GetResourceToAccess(), token.InternalRoles[1].GetPermissions())
+			expectedClusters := tokens.ClusterScopes{"sensor-cluster": {"prod"}}
+			assert.Equal(t, expectedClusters, token.InternalRoles[0].Clusters)
+			assert.Equal(t, expectedClusters, token.InternalRoles[1].Clusters)
 		})
 	}
 }

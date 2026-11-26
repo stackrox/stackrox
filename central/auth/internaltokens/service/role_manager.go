@@ -28,39 +28,67 @@ type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-func (rm *roleManager) createRoleForRoxClaims(
+// createRolesForRoxClaims builds one internal role per selected permission set.
+// Legacy permission requests and authentication-only requests yield a single
+// role.
+func (rm *roleManager) createRolesForRoxClaims(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-) (*tokens.InternalRole, error) {
-	role := &tokens.InternalRole{
-		RoleName: internalRoleName,
+) ([]*tokens.InternalRole, error) {
+	selectedSets := req.GetPermissionSets()
+	if len(selectedSets) == 0 {
+		return []*tokens.InternalRole{legacyRoleForRoxClaims(req.GetPermissions(), req.GetClusterScopes())}, nil
 	}
-	if req.GetPermissionSet() != nil {
-		permissionSet, err := rm.getPermissionSet(ctx, req)
+	roles := make([]*tokens.InternalRole, 0, len(selectedSets))
+	seen := make(map[string]struct{}, len(selectedSets))
+	for _, selected := range selectedSets {
+		permissionSet, err := rm.getPermissionSet(ctx, selected)
 		if err != nil {
 			return nil, err
 		}
+		if _, exists := seen[permissionSet.GetId()]; exists {
+			return nil, errox.InvalidArgs.Newf("permission set %q is selected more than once", permissionSet.GetName())
+		}
+		seen[permissionSet.GetId()] = struct{}{}
 		if err := validatePermissionSetConstrains(permissionSet); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
-		role.Permissions = make(map[storage.Access][]string)
+		role := newInternalRole(req.GetClusterScopes())
+		role.Permissions = make(map[storage.Access][]string, len(permissionSet.GetResourceToAccess()))
 		for resource, access := range permissionSet.GetResourceToAccess() {
 			role.Permissions[access] = append(role.Permissions[access], resource)
 		}
-	} else if requestedPermissions := req.GetPermissions(); len(requestedPermissions) > 0 {
-		role.Permissions = make(map[storage.Access][]string)
+		sortRoleResources(role)
+		roles = append(roles, role)
+	}
+	return roles, nil
+}
+
+// legacyRoleForRoxClaims builds the single role for the legacy permission map
+// form, or an authentication-only role when no permissions are requested.
+func legacyRoleForRoxClaims(requestedPermissions map[string]v1.Access, clusterScopes []*v1.ClusterScope) *tokens.InternalRole {
+	role := newInternalRole(clusterScopes)
+	if len(requestedPermissions) > 0 {
+		role.Permissions = make(map[storage.Access][]string, len(requestedPermissions))
 		for resource, access := range requestedPermissions {
 			level := convertAccess(access)
 			role.Permissions[level] = append(role.Permissions[level], resource)
 		}
+		sortRoleResources(role)
 	}
-	for _, resources := range role.Permissions {
-		slices.Sort(resources)
+	return role
+}
+
+// newInternalRole creates an internal role carrying the requested cluster
+// scopes and no resource permissions yet.
+func newInternalRole(clusterScopes []*v1.ClusterScope) *tokens.InternalRole {
+	role := &tokens.InternalRole{
+		RoleName: internalRoleName,
 	}
-	if len(req.GetClusterScopes()) > 0 {
+	if len(clusterScopes) > 0 {
 		role.Clusters = make(tokens.ClusterScopes)
 	}
-	for _, requestedScope := range req.GetClusterScopes() {
+	for _, requestedScope := range clusterScopes {
 		clusterID := requestedScope.GetClusterId()
 		if requestedScope.GetFullClusterAccess() {
 			role.Clusters[clusterID] = []string{"*"}
@@ -68,17 +96,20 @@ func (rm *roleManager) createRoleForRoxClaims(
 		}
 		role.Clusters[clusterID] = append(role.Clusters[clusterID], requestedScope.GetNamespaces()...)
 	}
-	return role, nil
+	return role
 }
 
-func (rm *roleManager) getPermissionSet(ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest) (*storage.PermissionSet, error) {
-	if err := validatePermissionSetSelector(req); err != nil {
-		return nil, err
+func sortRoleResources(role *tokens.InternalRole) {
+	for _, resources := range role.Permissions {
+		slices.Sort(resources)
 	}
+}
+
+func (rm *roleManager) getPermissionSet(ctx context.Context, selected *v1.SelectedPermissionSet) (*storage.PermissionSet, error) {
 	if rm.roleStore == nil {
 		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
 	}
-	if id := req.GetPermissionSetId(); id != "" {
+	if id := selected.GetId(); id != "" {
 		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, id)
 		if err != nil {
 			return nil, err
@@ -88,7 +119,7 @@ func (rm *roleManager) getPermissionSet(ctx context.Context, req *v1.GenerateTok
 		}
 		return permissionSet, nil
 	}
-	name := req.GetPermissionSetName()
+	name := selected.GetName()
 	matches, err := rm.roleStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
 		return ps != nil && ps.GetName() == name
 	})

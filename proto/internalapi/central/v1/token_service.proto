@@ -39,12 +39,18 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
-  // Selects one Central-managed read-only, cluster/namespace-constrained
-  // permission set instead of permissions. A selected value must be nonempty.
-  // permissions and a permission set selector are mutually exclusive.
-  oneof permission_set {
-    string permission_set_id = 5;
-    string permission_set_name = 6;
+  // Selects one or more Central-managed read-only, cluster/namespace-constrained
+  // permission sets instead of permissions. Each selector must be nonempty.
+  // permissions and permission sets are mutually exclusive.
+  repeated SelectedPermissionSet permission_sets = 5;
+}
+
+// SelectedPermissionSet selects one permission set by id or name.
+message SelectedPermissionSet {
+  // Exactly one nonempty selector is required.
+  oneof selector {
+    string id = 1;
+    string name = 2;
   }
 }
 
