@@ -128,7 +128,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			},
 		)
 
-		tracker.Gather(ctx)
+		tracker.Gather(ctx, "")
 		tracker.cleanupWG.Wait()
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
@@ -150,7 +150,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
 
 		// Gatherers will run after Reconfigure shifted the last gathering:
-		tracker.Gather(ctx)
+		tracker.Gather(ctx, "")
 		tracker.cleanupWG.Wait()
 		assert.ElementsMatch(t, slices.Compact(trackedMetricNames), metricNames[1:])
 
@@ -289,13 +289,13 @@ func TestTrackerBase_ClearsScopedMetricsOnAuthorizationError(t *testing.T) {
 			require.NoError(t, err)
 			t.Cleanup(func() { metrics.DeleteCustomRegistry(identity.UID()) })
 
-			tracker.Gather(ctx)
+			tracker.Gather(ctx, "")
 			initial := readMetrics(registry)
 			require.NotEmpty(t, initial)
 			otherCtx := basic.ContextWithNoAccessIdentity(t, nil)
 			otherIdentity, err := authn.IdentityFromContext(otherCtx)
 			require.NoError(t, err)
-			tracker.Gather(otherCtx)
+			tracker.Gather(otherCtx, "")
 			tracker.cleanupWG.Wait()
 			otherRegistry, err := metrics.GetCustomRegistry(otherIdentity.UID())
 			require.NoError(t, err)
@@ -305,7 +305,7 @@ func TestTrackerBase_ClearsScopedMetricsOnAuthorizationError(t *testing.T) {
 
 			gatherErr = tc.gatherErr
 			tracker.Refresh()
-			tracker.Gather(ctx)
+			tracker.Gather(ctx, "")
 			if tc.cleared {
 				assert.Empty(t, readMetrics(registry))
 			} else {
@@ -348,10 +348,10 @@ func TestTrackerBase_Gather(t *testing.T) {
 	})
 
 	ctx := makeAdminContext(t)
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	assert.NotEmpty(t, result)
 	result = make(map[string][]*aggregatedRecord)
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	assert.Empty(t, result)
 	tracker.cleanupWG.Wait()
 }
@@ -386,7 +386,7 @@ func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
 	ctx := makeAdminContext(t)
 
 	// First gather.
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	tracker.cleanupWG.Wait()
 	firstRunTotals := append([]int{}, allTotals...)
 	assert.NotEmpty(t, firstRunTotals, "first gather should produce results")
@@ -401,7 +401,7 @@ func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
 	g.running.Store(false)
 
 	// Second gather.
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	tracker.cleanupWG.Wait()
 
 	// Verify second run produced the same totals (not accumulated).
@@ -439,7 +439,7 @@ func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
 	tracker.Reconfigure(cfg1)
 
 	ctx := makeAdminContext(t)
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	tracker.cleanupWG.Wait()
 
 	assert.NotEmpty(t, gatheredMetrics, "should gather metrics with initial config")
@@ -467,7 +467,7 @@ func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
 	g.running.Store(false)
 
 	// Gather with new configuration.
-	tracker.Gather(ctx)
+	tracker.Gather(ctx, "")
 	tracker.cleanupWG.Wait()
 
 	assert.NotEmpty(t, gatheredMetrics, "should gather metrics after reconfiguration")
@@ -702,9 +702,9 @@ func Test_scope(t *testing.T) {
 		noAccessCtx, noAccessIdentity := makeTestCtxIdentity(t, provider,
 			basic.ContextWithNoneIdentity)
 
-		tracker.Gather(adminCtx)
-		tracker.Gather(cluster1Ctx)
-		tracker.Gather(noAccessCtx)
+		tracker.Gather(adminCtx, "")
+		tracker.Gather(cluster1Ctx, "")
+		tracker.Gather(noAccessCtx, "")
 		tracker.cleanupWG.Wait()
 
 		adminGatherer, _ := tracker.gatherers.Load(adminIdentity.UID())
@@ -777,9 +777,9 @@ rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
 		noAccessCtx, _ := makeTestCtxIdentity(t, provider,
 			basic.ContextWithNoneIdentity)
 
-		tracker.Gather(adminCtx)
-		tracker.Gather(cluster1Ctx)
-		tracker.Gather(noAccessCtx)
+		tracker.Gather(adminCtx, "")
+		tracker.Gather(cluster1Ctx, "")
+		tracker.Gather(noAccessCtx, "")
 		tracker.cleanupWG.Wait()
 
 		globalRegistry, err := metrics.GetGlobalRegistry()

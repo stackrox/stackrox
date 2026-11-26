@@ -18,5 +18,5 @@ export function getPublicConfigStyle({
         '--pf-v6-c-banner--BackgroundColor': backgroundColor,
         '--pf-v6-c-banner--Color': color,
         '--pf-v6-c-banner--FontSize': sizeVarMap[size],
-    } as CSSProperties;
+    };
 }

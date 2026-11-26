@@ -1,15 +1,10 @@
 export type ClusterType =
-    | 'GENERIC_CLUSTER'
-    | 'KUBERNETES_CLUSTER'
-    | 'OPENSHIFT_CLUSTER'
-    | 'OPENSHIFT4_CLUSTER';
+    'GENERIC_CLUSTER' | 'KUBERNETES_CLUSTER' | 'OPENSHIFT_CLUSTER' | 'OPENSHIFT4_CLUSTER';
 
 export type ClusterLabels = Record<string, string>;
 
 export type ClusterProviderMetadata =
-    | ClusterGoogleProviderMetadata
-    | ClusterAWSProviderMetadata
-    | ClusterAzureProviderMetadata;
+    ClusterGoogleProviderMetadata | ClusterAWSProviderMetadata | ClusterAzureProviderMetadata;
 
 export type ClusterGoogleProviderMetadata = {
     google: GoogleProviderMetadata;

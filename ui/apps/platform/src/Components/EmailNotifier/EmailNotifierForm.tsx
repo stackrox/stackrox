@@ -292,7 +292,7 @@ function EmailNotifierForm({
                     >
                         <SelectSingle
                             id="notifier.email.startTLSAuthMethod"
-                            value={values.notifier.email.startTLSAuthMethod as string}
+                            value={values.notifier.email.startTLSAuthMethod}
                             handleSelect={setFieldValue}
                             isDisabled={!values.notifier.email.disableTLS}
                             direction="up"

@@ -12,7 +12,6 @@ import {
 import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { FormikProvider, useFormik } from 'formik';
 
-import type { PolicyCategory } from 'types/policy.proto';
 import { postPolicyCategory } from 'services/PolicyCategoriesService';
 
 type CreatePolicyCategoryModalProps = {
@@ -35,7 +34,7 @@ function CreatePolicyCategoryModal({
     refreshPolicyCategories,
 }: CreatePolicyCategoryModalProps): ReactElement {
     const formik = useFormik({
-        initialValues: emptyPolicyCategory as PolicyCategory,
+        initialValues: emptyPolicyCategory,
         onSubmit: (values, { setSubmitting, resetForm }) => {
             setSubmitting(false);
             postPolicyCategory(values)

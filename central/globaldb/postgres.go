@@ -169,6 +169,8 @@ func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgre
 		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
 		if err != nil {
 			log.Warnf("Could not create pg_stat_statements extension.  Statement planning and execution stats may not be tracked: %v", err)
+		} else if err := updateExtensionIfOutdated(ctx, postgresDB, "pg_stat_statements"); err != nil {
+			log.Warnf("Could not update pg_stat_statements extension: %v", err)
 		}
 		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 

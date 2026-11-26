@@ -302,6 +302,25 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportEmptyReportNoErr
 	s.Require().NotNil(buf)
 }
 
+func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportEmptyReportWithRunningScan() {
+	timestamp := timestamppb.Now()
+	clusterData := getFakeClusterData()
+	clusterData[clusterID1].HasRunningScan = true
+	fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
+	s.zipWriter.EXPECT().Create(fileName).Times(1).Return(nil, nil)
+	s.csvWriter.EXPECT().AddValue(&emptyValueMatcher{
+		t:     s.T(),
+		value: scanRunningValue,
+		data:  getFakeEmptyReportData(),
+	}).Times(1)
+	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(nil)
+	s.zipWriter.EXPECT().Close().Times(1).Return(nil)
+
+	buf, err := s.formatter.FormatCSVReport(getFakeEmptyReportData(), clusterData)
+	s.Require().NoError(err)
+	s.Require().NotNil(buf)
+}
+
 func (s *ComplianceReportingFormatterSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.zipWriter = mocks.NewMockZipWriter(s.ctrl)

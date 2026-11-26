@@ -1,7 +1,6 @@
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add or delete strings.
-// prettier-ignore
-export type FeatureFlagEnvVar =
+export /* prettier-ignore */ type FeatureFlagEnvVar =
     | 'ROX_COMPLIANCE_SURFACE_STALE_DATA'
     | 'ROX_IMAGE_LAYER_FILTER'
     | 'ROX_LIGHTSPEED_RISK_SUMMARY'

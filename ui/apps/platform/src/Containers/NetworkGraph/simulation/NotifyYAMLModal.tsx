@@ -50,7 +50,7 @@ function NotifyYAMLModal({
         setIsModalOpen((prev) => !prev);
     }
 
-    let content: ReactElement = <div />;
+    let content;
 
     if (isLoading) {
         content = (
