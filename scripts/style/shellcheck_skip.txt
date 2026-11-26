@@ -61,11 +61,9 @@ scripts/sync-release-branch.sh
 tests/byodb/run.sh
 tests/config-controller-ca/generate-certs.sh
 tests/e2e/bats/compatibility_artifacts.bats
-tests/e2e/bats/feature_flag_env.bats
 tests/e2e/bats/images_readiness.bats
 tests/e2e/bats/junit_report_pod_restarts.bats
 tests/e2e/bats/scanner_readiness.bats
-tests/e2e/lib.sh
 tests/e2e/run-scanner-v4-install.bats
 tests/e2e/vm-scanning-lib.sh
 tests/performance/scale/utilities/create-infra.sh
