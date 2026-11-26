@@ -401,6 +401,7 @@ func (v *Validator) validateNodeFilters(filters *apiV2.NodeVulnerabilityReportFi
 
 // ValidateAndGenerateReportRequest validates the report configuration for which report is requested and generates a report request
 func (v *Validator) ValidateAndGenerateReportRequest(
+	ctx context.Context,
 	configID string,
 	notificationMethod storage.ReportStatus_NotificationMethod,
 	requestType storage.ReportStatus_RunMethod,
@@ -455,7 +456,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 
 	return &reportGen.ReportRequest{
 		Collection:     collection,
-		ReportSnapshot: generateReportSnapshot(config, collection, protoNotifiers, notificationMethod, requestType, requesterID),
+		ReportSnapshot: generateReportSnapshot(ctx, config, collection, protoNotifiers, notificationMethod, requestType, requesterID),
 	}, nil
 }
 
@@ -568,6 +569,7 @@ func collectionSnapshot(collection *storage.ResourceCollection) *storage.Collect
 }
 
 func generateReportSnapshot(
+	ctx context.Context,
 	config *storage.ReportConfiguration,
 	collection *storage.ResourceCollection,
 	protoNotifiers []*storage.Notifier,
@@ -619,7 +621,7 @@ func generateReportSnapshot(
 		if reportFilters != nil {
 			reportFilters = reportFilters.CloneVT()
 			if requestType == storage.ReportStatus_ON_DEMAND {
-				reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+				reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(ctx, requesterID)
 			}
 			snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: reportFilters,
@@ -630,7 +632,7 @@ func generateReportSnapshot(
 		if nodeFilters != nil {
 			nodeFilters = nodeFilters.CloneVT()
 			if requestType == storage.ReportStatus_ON_DEMAND {
-				nodeFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+				nodeFilters.AccessScopeRules = common.ExtractAccessScopeRules(ctx, requesterID)
 			}
 			snapshot.Filter = &storage.ReportSnapshot_NodeVulnReportFilters{
 				NodeVulnReportFilters: nodeFilters,
@@ -687,6 +689,7 @@ func getShortName(user *storage.SlimUser) string {
 
 // ValidateAndGenerateViewBasedReportRequest validates a view-based report request and constructs the scheduler payload.
 func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
+	ctx context.Context,
 	req *apiV2.ReportRequestViewBased,
 	requesterID authn.Identity,
 ) (*reportGen.ReportRequest, error) {
@@ -712,7 +715,7 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		// Convert API filters to storage filters.
 		storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
 			Query:            vbFilters.GetQuery(),
-			AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+			AccessScopeRules: common.ExtractAccessScopeRules(ctx, requesterID),
 		}
 
 		// Build report snapshot.
@@ -752,7 +755,7 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		// Convert API filters to storage filters.
 		storageFilters := &storage.NodeVulnerabilityReportFilters{
 			Query:            nodeFilters.GetQuery(),
-			AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+			AccessScopeRules: common.ExtractAccessScopeRules(ctx, requesterID),
 		}
 
 		switch nodeFilters.GetCvesSince().(type) {

@@ -112,7 +112,7 @@ func (s *serviceImpl) PostNodeReportConfiguration(ctx context.Context, request *
 		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
 	}
 
-	protoReportConfig, err := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	protoReportConfig, err := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(ctx, creatorID))
 	if err != nil {
 		return nil, errors.Wrap(err, "converting report configuration")
 	}
@@ -341,6 +341,7 @@ func (s *serviceImpl) RunNodeReport(ctx context.Context, req *apiV2.RunReportReq
 	}
 
 	reportRequest, err := s.validator.ValidateAndGenerateReportRequest(
+		ctx,
 		req.GetReportConfigId(),
 		storage.ReportStatus_NotificationMethod(req.GetReportNotificationMethod()),
 		storage.ReportStatus_ON_DEMAND,
@@ -558,7 +559,7 @@ func (s *serviceImpl) PostViewBasedNodeReport(ctx context.Context, req *apiV2.Re
 		return nil, err
 	}
 
-	reportRequest, err := s.validator.ValidateAndGenerateViewBasedReportRequest(req, requesterID)
+	reportRequest, err := s.validator.ValidateAndGenerateViewBasedReportRequest(ctx, req, requesterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error validating view-based report request")
 	}
