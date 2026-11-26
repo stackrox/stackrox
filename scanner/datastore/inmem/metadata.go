@@ -28,9 +28,11 @@ func (m *MetadataStore) GetLastVulnerabilityUpdate(_ context.Context) (time.Time
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var oldest time.Time
+	first := true
 	for _, t := range m.timestamp {
-		if oldest.IsZero() || t.Before(oldest) {
+		if first || t.Before(oldest) {
 			oldest = t
+			first = false
 		}
 	}
 	return oldest.UTC(), nil

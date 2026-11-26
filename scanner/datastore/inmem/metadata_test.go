@@ -46,4 +46,12 @@ func TestMetadataStore(t *testing.T) {
 	oldest, err = m.GetLastVulnerabilityUpdate(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, t2, oldest)
+
+	// A pre-registered bundle with zero timestamp must keep oldest at zero
+	// until every bundle finishes importing (mirrors Postgres ORDER BY LIMIT 1).
+	_, err = m.GetOrSetLastVulnerabilityUpdate(ctx, "pending-bundle", time.Time{})
+	require.NoError(t, err)
+	oldest, err = m.GetLastVulnerabilityUpdate(ctx)
+	require.NoError(t, err)
+	assert.True(t, oldest.IsZero(), "zero timestamp from pre-registered bundle must not be skipped")
 }
