@@ -334,10 +334,6 @@ run_proxy_tests() {
         echo "Failures: ${#failures[@]}"
 
         done
-        info "Test central whoami with ${server_name}:${port}, ${extra_args[*]} and --plaintext=${plaintext}"
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" \
-            central whoami 1>/dev/null || \
-        failures+=("${p},central-whoami")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"
     done

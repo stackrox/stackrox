@@ -132,7 +132,6 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "2m" # pkg/env/network_baseline_observation_period.go.
         env_with_default ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"      # pkg/env/telemetry.go.
 
-        # Configured by test suites when Central/Sensor are deployed via the operator.
         env_with_default ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL # pkg/env/sensor.go.
 
         # Set in export_test_environment().
