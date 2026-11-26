@@ -77,7 +77,7 @@ func TestNewTokenExchanger(t *testing.T) {
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
 				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
-						assert.Equal(t, configID, source.ID())
+						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
 						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
 					})
 			},
