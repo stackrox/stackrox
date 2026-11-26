@@ -134,6 +134,9 @@ roxie_config_from_environment_compat() {
         # Configured by test suites, picked up by roxctl/central/generate/generate.go:updateConfig().
         env_with_default ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL # pkg/env/sensor.go.
 
+        # Feature flag enabled by the ACM-enabled GKE QA E2E suite (e2e-qa-tests-gke-acm).
+        env_with_default ROX_ACM_ACCESS_CONTROL_DELEGATION # pkg/features/list.go.
+
         # Set in export_test_environment().
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
