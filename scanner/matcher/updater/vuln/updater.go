@@ -2,6 +2,7 @@ package vuln
 
 import (
 	"archive/zip"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +16,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -80,6 +83,10 @@ type Opts struct {
 	RetryMax   int
 
 	VulnBundleAllowlist []string
+
+	// ImportConcurrency sets the maximum number of bundles imported in parallel
+	// per update cycle. Defaults to 1 (serial).
+	ImportConcurrency int
 }
 
 // Updater represents a vulnerability updater.
@@ -113,6 +120,7 @@ type Updater struct {
 	retryMax   int
 
 	vulnBundleAllowlist set.FrozenSet[string]
+	importConcurrency   int
 
 	distManager *distManager
 }
@@ -144,7 +152,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
 
-		distManager: newDistManager(opts.Store),
+		importConcurrency: opts.ImportConcurrency,
+		distManager:       newDistManager(opts.Store),
 	}
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
 		return u.Import(ctx, reader)
@@ -186,6 +195,9 @@ func fillOpts(opts *Opts) error {
 	}
 	if opts.RetryMax == 0 {
 		opts.RetryMax = defaultRetryMax
+	}
+	if opts.ImportConcurrency < 1 {
+		opts.ImportConcurrency = 1
 	}
 	return nil
 }
@@ -447,18 +459,55 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	// TODO(ROX-36437): succeeded counts lock-skipped and already-current
 	// bundles as successes; distinguish genuinely imported bundles from
 	// skipped ones.
-	var bundleErrs []error
-	succeeded := 0
-	for _, bundleF := range bundles {
+	var (
+		resMu      sync.Mutex
+		bundleErrs []error
+		succeeded  int
+	)
+	processBundle := func(bundleF *zip.File) {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
+			resMu.Lock()
 			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
-			continue
+			resMu.Unlock()
+			return
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
+		resMu.Lock()
 		succeeded++
+		resMu.Unlock()
+	}
+
+	if u.importConcurrency <= 1 || len(bundles) <= 1 {
+		for _, bundleF := range bundles {
+			processBundle(bundleF)
+		}
+	} else {
+		// Schedule largest compressed bundles first (LPT) so heavy feeds overlap
+		// cleanly and minimize wall-clock makespan.
+		work := slices.Clone(bundles)
+		slices.SortFunc(work, func(a, b *zip.File) int {
+			return cmp.Compare(b.CompressedSize64, a.CompressedSize64)
+		})
+		jobs := make(chan *zip.File, len(work))
+		for _, f := range work {
+			jobs <- f
+		}
+		close(jobs)
+		workers := min(u.importConcurrency, len(work))
+		var wg sync.WaitGroup
+		wg.Add(workers)
+		for range workers {
+			go func() {
+				defer wg.Done()
+				for bundleF := range jobs {
+					processBundle(bundleF)
+				}
+			}()
+		}
+		wg.Wait()
 	}
 
 	// Skip GC and distribution update only when every bundle that was

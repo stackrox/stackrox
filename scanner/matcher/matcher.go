@@ -263,6 +263,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 	client := &http.Client{
 		Transport: transport,
 	}
+	importConcurrency := 1
+	if cfg.Store == config.MatcherStoreInMem {
+		importConcurrency = 2
+	}
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:               store,
 		Locker:              locker,
@@ -270,6 +274,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		Client:              client,
 		URLs:                cfg.VulnerabilitiesURLs,
 		VulnBundleAllowlist: cfg.VulnBundleAllowlist,
+		ImportConcurrency:   importConcurrency,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
