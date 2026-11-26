@@ -6,7 +6,7 @@
 # exchange groups and TLS versions after setting a strict OCP TLS profile.
 #
 # Prerequisites:
-#   - OCP 5.0+ cluster with KUBECONFIG set
+#   - OCP 5.0+ cluster with custom TLS profile support and KUBECONFIG set
 #   - roxie, oc, jq, podman on PATH
 #   - tls-scanner checkout at $TLS_SCANNER_DIR
 #
@@ -68,7 +68,7 @@ push_tls_scanner() {
     podman push --tls-verify=false "$TLS_SCANNER_LOCAL_IMAGE" "docker://${registry}/${ACS_NS}/tls-scanner:latest"
 }
 
-enable_tls_feature_gates_and_set_profile() {
+set_tls_profile() {
     local master_config_before worker_config_before
     local master_config_after worker_config_after
     local i
@@ -76,29 +76,6 @@ enable_tls_feature_gates_and_set_profile() {
     master_config_before=$(oc get mcp master -o jsonpath='{.status.configuration.name}')
     worker_config_before=$(oc get mcp worker -o jsonpath='{.status.configuration.name}')
     info "MCP configs before changes: master=$master_config_before worker=$worker_config_before"
-
-    info "Enabling TLSGroupPreferences and TLSAdherence feature gates..."
-    oc patch featuregate cluster --type=merge -p '{
-        "spec": {
-            "featureSet": "CustomNoUpgrade",
-            "customNoUpgrade": {
-                "enabled": ["TLSGroupPreferences", "TLSAdherence"]
-            }
-        }
-    }'
-
-    info "Waiting for feature gate CRD fields..."
-    for i in $(seq 1 12); do
-        if oc explain apiserver.spec.tlsSecurityProfile.custom.groups &>/dev/null; then
-            info "Feature gates active."
-            break
-        fi
-        if [[ "$i" -eq 12 ]]; then
-            fail "CRD fields did not appear within 120s"
-            exit 1
-        fi
-        sleep 10
-    done
 
     info "Setting TLS profile..."
     oc patch apiserver cluster --type=merge -p '{
@@ -395,7 +372,7 @@ case "${1:-all}" in
         ;;
 esac
 
-enable_tls_feature_gates_and_set_profile
+set_tls_profile
 deploy_acs
 trap on_exit EXIT
 check_pod_logs_for_tls_errors
