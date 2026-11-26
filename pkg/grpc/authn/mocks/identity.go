@@ -169,6 +169,20 @@ func (mr *MockIdentityMockRecorder) User() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockIdentity)(nil).User))
 }
 
+// UserDescriptor mocks base method.
+func (m *MockIdentity) UserDescriptor() *permissions.UserDescriptor {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserDescriptor")
+	ret0, _ := ret[0].(*permissions.UserDescriptor)
+	return ret0
+}
+
+// UserDescriptor indicates an expected call of UserDescriptor.
+func (mr *MockIdentityMockRecorder) UserDescriptor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserDescriptor", reflect.TypeOf((*MockIdentity)(nil).UserDescriptor))
+}
+
 // ValidityPeriod mocks base method.
 func (m *MockIdentity) ValidityPeriod() (time.Time, time.Time) {
 	m.ctrl.T.Helper()

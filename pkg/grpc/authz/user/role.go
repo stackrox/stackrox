@@ -26,6 +26,27 @@ type roleChecker struct {
 
 // EnrichContext returns the input context unchanged.
 func (p *roleChecker) EnrichContext(ctx context.Context, _ string) context.Context {
+	if features.ACMAccessControlDelegation.Enabled() {
+		id, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return ctx
+		}
+		authProvider := id.ExternalAuthProvider()
+		roleMapper := authProvider.RoleMapper()
+		resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, id.UserDescriptor())
+		if err != nil {
+			return ctx
+		}
+		// The following block helps with restricting the actual user roles to the minimal set
+		// needed for the service request.
+		filteredRoles := make([]permissions.ResolvedRole, 0, 1)
+		for _, role := range resolvedRoles {
+			if role.GetRoleName() == p.roleName {
+				filteredRoles = append(filteredRoles, role)
+			}
+		}
+		return permissions.ContextWithResolvedRoles(ctx, filteredRoles)
+	}
 	return ctx
 }
 
