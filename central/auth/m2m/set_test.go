@@ -111,7 +111,7 @@ func TestUpsertTokenExchanger(t *testing.T) {
 			roleDS := roleMocks.NewMockDataStore(ctrl)
 
 			exchangerFactory := &testExchangerFactory{
-				t: it,
+				t:         it,
 				roleStore: roleDS,
 			}
 			set := TokenExchangerSetForTesting(it, roleDS, issuerFactory, exchangerFactory.CreateExchanger)
