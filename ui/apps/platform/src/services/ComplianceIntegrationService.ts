@@ -9,10 +9,7 @@ type COStatus = 'HEALTHY' | 'UNHEALTHY';
 type ClusterProviderType = 'UNSPECIFIED' | 'AKS' | 'ARO' | 'EKS' | 'GKE' | 'OCP' | 'OSD' | 'ROSA';
 
 type ClusterPlatformType =
-    | 'GENERIC_CLUSTER'
-    | 'KUBERNETES_CLUSTER'
-    | 'OPENSHIFT_CLUSTER'
-    | 'OPENSHIFT4_CLUSTER';
+    'GENERIC_CLUSTER' | 'KUBERNETES_CLUSTER' | 'OPENSHIFT_CLUSTER' | 'OPENSHIFT4_CLUSTER';
 
 export type ComplianceIntegration = {
     id: string;

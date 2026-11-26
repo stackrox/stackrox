@@ -6,5 +6,4 @@ export const coverageCheckDetailsPath = `${coverageProfileChecksPath}/:checkName
 export const coverageClusterDetailsPath = `${coverageProfileClustersPath}/:clusterId`;
 
 export type CoverageProfilePath =
-    | typeof coverageProfileChecksPath
-    | typeof coverageProfileClustersPath;
+    typeof coverageProfileChecksPath | typeof coverageProfileClustersPath;

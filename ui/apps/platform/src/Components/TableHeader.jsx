@@ -4,7 +4,7 @@ import { Tooltip } from '@patternfly/react-core';
 const maxSize = 1000;
 
 const TableHeader = (props) => {
-    let headerText = '';
+    let headerText;
     if (props.selectionCount !== 0) {
         headerText = `${props.selectionCount} ${props.type}${
             props.selectionCount === 1 ? '' : 's'

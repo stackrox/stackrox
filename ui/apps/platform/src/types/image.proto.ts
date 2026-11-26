@@ -21,11 +21,4 @@ export type WatchedImage = {
 };
 
 export type SourceType =
-    | 'OS'
-    | 'PYTHON'
-    | 'JAVA'
-    | 'RUBY'
-    | 'NODEJS'
-    | 'GO'
-    | 'DOTNETCORERUNTIME'
-    | 'INFRASTRUCTURE';
+    'OS' | 'PYTHON' | 'JAVA' | 'RUBY' | 'NODEJS' | 'GO' | 'DOTNETCORERUNTIME' | 'INFRASTRUCTURE';

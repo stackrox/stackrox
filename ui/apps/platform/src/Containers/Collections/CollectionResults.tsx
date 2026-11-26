@@ -152,7 +152,7 @@ function CollectionResults({
         refreshResults();
     }, [refreshResults]);
 
-    let content: ReactNode = '';
+    let content;
 
     if (configError) {
         content = (

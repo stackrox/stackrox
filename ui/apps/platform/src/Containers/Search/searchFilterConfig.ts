@@ -350,12 +350,10 @@ export function getUnconfiguredChipAttributes(
     );
     return Object.keys(searchFilter)
         .filter((key) => !configuredSearchTermsLower.has(key.toLowerCase()))
-        .map(
-            (key): CompoundSearchFilterAttribute => ({
-                displayName: key,
-                filterChipLabel: key,
-                searchTerm: key as SearchFieldLabel,
-                inputType: 'text',
-            })
-        );
+        .map((key): CompoundSearchFilterAttribute => ({
+            displayName: key,
+            filterChipLabel: key,
+            searchTerm: key as SearchFieldLabel,
+            inputType: 'text',
+        }));
 }
