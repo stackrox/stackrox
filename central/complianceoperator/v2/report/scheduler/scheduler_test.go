@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stretchr/testify/assert"
@@ -295,8 +297,8 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	defer m.Stop()
 
 	// The first job of cfg1 runs; a second submission of cfg1 must wait behind it.
-	m.submitJob("cfg1", "cfg-one", time.Time{})
-	m.submitJob("cfg1", "cfg-one", time.Time{})
+	m.submitJob(&reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one"})
+	m.submitJob(&reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one"})
 
 	select {
 	case id := <-started:
@@ -312,7 +314,7 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	}
 
 	// A job of another configuration is not blocked by the running one.
-	m.submitJob("cfg2", "cfg-two", time.Time{})
+	m.submitJob(&reportJob{scanConfigID: "cfg2", scanConfigName: "cfg-two"})
 	select {
 	case id := <-started:
 		assert.Equal(t, "cfg2", id)
@@ -1093,4 +1095,173 @@ func oneShotFireAt(m *managerImpl, scanConfigID string) *time.Time {
 		}
 	}
 	return nil
+}
+
+// contextWithUser returns ctx extended with a mocked requester identity.
+func contextWithUser(t *testing.T, ctx context.Context, user *storage.SlimUser) context.Context {
+	ctrl := gomock.NewController(t)
+	mockID := mockIdentity.NewMockIdentity(ctrl)
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
+	return authn.ContextWithIdentity(ctx, mockID, t)
+}
+
+// TestSubmitReportRequest covers the on-demand submission: the snapshot is persisted in the
+// WAITING state with the requester's attribution, requests are deduplicated per
+// configuration, email requires notifiers while downloads do not, and the report generates
+// through the submitted snapshot.
+func TestSubmitReportRequest(t *testing.T) {
+	user := &storage.SlimUser{Id: "user-1", Name: "User One"}
+
+	t.Run("persists a WAITING snapshot and queues the job even before the scheduler runs", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+
+		var persisted *storage.ComplianceOperatorReportSnapshotV2
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				persisted = snapshot
+				return nil
+			}).Times(1)
+
+		err := m.SubmitReportRequest(contextWithUser(t, context.Background(), user), cfg, storage.ComplianceOperatorReportStatus_EMAIL)
+		require.NoError(t, err)
+
+		require.NotNil(t, persisted)
+		assert.NotEmpty(t, persisted.GetReportId())
+		assert.Equal(t, "cfg1", persisted.GetScanConfigurationId())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_WAITING, persisted.GetReportStatus().GetRunState())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_ON_DEMAND, persisted.GetReportStatus().GetReportRequestType())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_EMAIL, persisted.GetReportStatus().GetReportNotificationMethod())
+		assert.Equal(t, "user-1", persisted.GetUser().GetId())
+		// The queue buffers the job until the execution loop runs.
+		assert.Equal(t, 1, m.jobQueue.Len())
+	})
+
+	t.Run("rejects a second request while one is pending", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+		ctx := contextWithUser(t, context.Background(), user)
+		require.NoError(t, m.SubmitReportRequest(ctx, cfg, storage.ComplianceOperatorReportStatus_EMAIL))
+		err := m.SubmitReportRequest(ctx, cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "already in process")
+	})
+
+	t.Run("email without notifiers is rejected", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		cfg := scanConfig("cfg1", "cfg-noemail", dailySchedule(0, 0))
+		// No snapshot expectation: nothing may be persisted.
+
+		err := m.SubmitReportRequest(contextWithUser(t, context.Background(), user), cfg, storage.ComplianceOperatorReportStatus_EMAIL)
+		require.ErrorIs(t, err, report.ErrNoNotifiersConfigured)
+	})
+
+	t.Run("download without notifiers is accepted", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scanConfig("cfg1", "cfg-noemail", dailySchedule(0, 0))
+
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+		err := m.SubmitReportRequest(contextWithUser(t, context.Background(), user), cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD)
+		require.NoError(t, err)
+	})
+
+	t.Run("a request without an identity is rejected", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+
+		err := m.SubmitReportRequest(context.Background(), cfg, storage.ComplianceOperatorReportStatus_EMAIL)
+		require.Error(t, err)
+	})
+
+	t.Run("disabled feature is a no-op", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "false")
+
+		err := m.SubmitReportRequest(contextWithUser(t, context.Background(), user), scheduledScanConfig("cfg1", "cfg-one"), storage.ComplianceOperatorReportStatus_EMAIL)
+		require.NoError(t, err)
+	})
+
+	t.Run("the report generates through the submitted snapshot", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		// A download report for a configuration without notifiers: only the decoupled path
+		// accepts this.
+		cfg := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
+		cfg.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{{ClusterId: "cluster-1"}}
+
+		var submitted *storage.ComplianceOperatorReportSnapshotV2
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil).AnyTimes()
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				if submitted == nil {
+					submitted = snapshot
+				}
+				return nil
+			}).AnyTimes()
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil).AnyTimes()
+		mocks.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, _ string) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+				return submitted, true, nil
+			}).AnyTimes()
+		// Expectation audit: the cluster's scan finished within the cycle.
+		freshScan := &storage.ComplianceOperatorScanV2{
+			ScanName:        "ocp4-master",
+			ClusterId:       "cluster-1",
+			Status:          &storage.ScanStatus{Phase: "DONE", Result: "COMPLIANT"},
+			LastStartedTime: protocompat.TimestampNow(),
+		}
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{freshScan}, nil).AnyTimes()
+
+		generated := make(chan *report.Request, 1)
+		release := make(chan struct{})
+		mocks.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).
+			DoAndReturn(func(req *report.Request) error {
+				generated <- req
+				<-release
+				return nil
+			}).Times(1)
+
+		m.start()
+		userCtx := contextWithUser(t, context.Background(), user)
+
+		require.NoError(t, m.SubmitReportRequest(userCtx, cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD))
+
+		var req *report.Request
+		select {
+		case req = <-generated:
+		case <-time.After(5 * time.Second):
+			t.Fatal("the on-demand report did not generate")
+		}
+		assert.Equal(t, "cfg1", req.ScanConfigID)
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_DOWNLOAD, req.NotificationMethod)
+		assert.Equal(t, submitted.GetReportId(), req.SnapshotID)
+
+		// While the report is generating, a second request for the configuration is rejected.
+		err := m.SubmitReportRequest(userCtx, cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "already in process")
+
+		// Let the report job finish, then stop the scheduler: the second submission then only
+		// needs the released dedup slot, not a running scheduler.
+		close(release)
+		m.Stop()
+
+		// The submission slot is released once the report is done: a new request is accepted.
+		require.Eventually(t, func() bool {
+			return m.SubmitReportRequest(userCtx, cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD) == nil
+		}, 5*time.Second, 10*time.Millisecond, "the submission slot was not released after the report finished")
+	})
 }

@@ -318,13 +318,20 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		return nil, err
 	}
 
-	err = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
-	if err != nil {
+	// The decoupled report scheduler owns on-demand reports when its rollout flag is on;
+	// otherwise the report manager handles them.
+	var submitErr error
+	if features.ComplianceDecoupledReports.Enabled() {
+		submitErr = s.reportScheduler.SubmitReportRequest(ctx, scanConfig, notificationMethod)
+	} else {
+		submitErr = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
+	}
+	if submitErr != nil {
 		return &v2.ComplianceRunReportResponse{
 			RunState:    v2.ComplianceRunReportResponse_ERROR,
 			SubmittedAt: types.TimestampNow(),
-			ErrorMsg:    err.Error(),
-		}, errors.Wrapf(err, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
+			ErrorMsg:    submitErr.Error(),
+		}, errors.Wrapf(submitErr, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
 	}
 
 	return &v2.ComplianceRunReportResponse{

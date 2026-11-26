@@ -58,7 +58,7 @@ var log = logging.LoggerForModule()
 type Manager interface {
 	// Start acquires the report scheduler advisory lock and starts the scheduler: it
 	// reconciles one cron entry per stored scan configuration with an evaluable schedule and
-	// then runs submitted report jobs. Start is idempotent and a no-op while the
+	// runs submitted report jobs. Start is idempotent and a no-op while the
 	// ROX_COMPLIANCE_DECOUPLED_REPORTS feature is disabled.
 	Start(db postgres.DB)
 	// Stop stops the scheduler, releases its cron entries, and releases the advisory lock.
@@ -81,6 +81,12 @@ type Manager interface {
 	// reported even when the recurring entry's first fire is a full schedule interval away.
 	// One-time scans are included: the first cycle is their only report.
 	ScheduleFirstScanReport(scanConfig *storage.ComplianceOperatorScanConfigurationV2)
+	// SubmitReportRequest submits an on-demand report execution request for the scan
+	// configuration. The report snapshot is persisted in the WAITING state immediately, so the
+	// UI shows it right away, and the report job runs through the same execution loop as
+	// scheduled reports. A second request for a configuration with a pending on-demand report
+	// is rejected, mirroring the report manager.
+	SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error
 }
 
 type managerImpl struct {
@@ -122,6 +128,12 @@ type managerImpl struct {
 	readyForReports concurrency.Signal
 	concurrencySem  *semaphore.Weighted
 
+	// onDemandLock guards onDemandPending.
+	onDemandLock sync.Mutex
+	// onDemandPending holds the scan configurations with a submitted on-demand report that
+	// has not finished yet; a second request for the same configuration is rejected.
+	onDemandPending set.StringSet
+
 	// advisoryLockRelease releases the report scheduler advisory lock, if held.
 	advisoryLockRelease func()
 }
@@ -160,6 +172,7 @@ func New(scanConfigDataStore scanConfigDS.DataStore,
 		jobQueue:        newJobQueue(),
 		readyForReports: concurrency.NewSignal(),
 		concurrencySem:  semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		onDemandPending: set.NewStringSet(),
 	}
 	return m
 }
@@ -280,18 +293,28 @@ func (m *managerImpl) runSingleJob(job *reportJob) {
 	// Free the configuration only once this job is done, so a job that arrives while one is
 	// running waits in the queue rather than colliding with it.
 	defer m.jobQueue.markDone(job.scanConfigID)
+	// Free the on-demand submission slot once the report is done, so a new request for the
+	// configuration is accepted.
+	defer m.onDemandDone(job)
 
 	m.runReportJob(m.schedulerCtx, job)
 }
 
-// submitJob enqueues a report job for the scan configuration and wakes the execution loop.
-// Cron entries submit here; on-demand triggers will too.
-func (m *managerImpl) submitJob(scanConfigID, scanConfigName string, cycleStart time.Time) {
-	m.jobQueue.enqueue(&reportJob{
-		scanConfigID:   scanConfigID,
-		scanConfigName: scanConfigName,
-		cycleStart:     cycleStart,
+// onDemandDone releases the configuration's on-demand submission slot after its report job
+// finished, successfully or not.
+func (m *managerImpl) onDemandDone(job *reportJob) {
+	if job.snapshotID == "" {
+		return
+	}
+	concurrency.WithLock(&m.onDemandLock, func() {
+		m.onDemandPending.Remove(job.scanConfigID)
 	})
+}
+
+// submitJob enqueues a report job and wakes the execution loop. Cron entries and on-demand
+// submissions go through here.
+func (m *managerImpl) submitJob(job *reportJob) {
+	m.jobQueue.enqueue(job)
 	m.readyForReports.Signal()
 }
 
@@ -392,7 +415,11 @@ func (m *managerImpl) scheduleOneShotReport(scanConfig *storage.ComplianceOperat
 		}
 		entryID := m.cron.Schedule(&oneShotSchedule{fireAt: fireAt}, cron.FuncJob(func() {
 			// The cycle is anchored at the trigger: scans that started since are the cycle's.
-			m.submitJob(scanConfig.GetId(), scanConfig.GetScanConfigName(), scheduledAt)
+			m.submitJob(&reportJob{
+				scanConfigID:   scanConfig.GetId(),
+				scanConfigName: scanConfig.GetScanConfigName(),
+				cycleStart:     scheduledAt,
+			})
 		}))
 		m.oneShotEntryIDs[scanConfig.GetId()] = entryID
 	})
@@ -413,7 +440,7 @@ func (m *managerImpl) upsertScanConfigNoLock(scanConfig *storage.ComplianceOpera
 	entryID := m.cron.Schedule(s, cron.FuncJob(func() {
 		// A zero cycle start makes the audit classify against the cycle that most recently
 		// ticked, which is the cycle this entry fired for.
-		m.submitJob(s.scanConfigID, s.scanConfigName, time.Time{})
+		m.submitJob(&reportJob{scanConfigID: s.scanConfigID, scanConfigName: s.scanConfigName})
 	}))
 	m.entryIDs[s.scanConfigID] = entryID
 }

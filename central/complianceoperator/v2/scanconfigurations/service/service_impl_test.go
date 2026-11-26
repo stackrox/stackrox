@@ -690,6 +690,18 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 	})
 	s.Require().NoError(err)
 	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")
+
+	// The decoupled report scheduler owns on-demand reports when its rollout flag is on.
+	s.T().Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportScheduler.EXPECT().SubmitReportRequest(ctx, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
+
+	resp, err = s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{
+		ScanConfigId:             validScanConfigID,
+		ReportNotificationMethod: v2.NotificationMethod_EMAIL,
+	})
+	s.Require().NoError(err)
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {

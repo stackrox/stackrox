@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
@@ -99,6 +100,20 @@ func (m *MockManager) Stop() {
 func (mr *MockManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockManager)(nil).Stop))
+}
+
+// SubmitReportRequest mocks base method.
+func (m *MockManager) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, scanConfig, method)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitReportRequest indicates an expected call of SubmitReportRequest.
+func (mr *MockManagerMockRecorder) SubmitReportRequest(ctx, scanConfig, method any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockManager)(nil).SubmitReportRequest), ctx, scanConfig, method)
 }
 
 // UpsertScanConfig mocks base method.

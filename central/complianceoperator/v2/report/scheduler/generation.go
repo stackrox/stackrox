@@ -27,25 +27,50 @@ func (m *managerImpl) runReportJob(ctx context.Context, job *reportJob) {
 		log.Debugf("Compliance report scheduler: scan configuration %q not found, no report generated", job.scanConfigID)
 		return
 	}
-	// Notifier parity with the report manager's automatic path: configurations without
-	// notifiers get no scheduled reports, and no snapshot is persisted for them.
-	if len(scanConfig.GetNotifiers()) == 0 {
-		log.Debugf("Compliance report scheduler: scan configuration %q has no notifiers, no report generated", job.scanConfigName)
-		return
+
+	var snapshot *storage.ComplianceOperatorReportSnapshotV2
+	if job.snapshotID != "" {
+		// An on-demand report: pick up the snapshot persisted at submission, which carries
+		// its request type, notification method, and requesting user.
+		snapshot, found, err = m.snapshotDataStore.GetSnapshot(ctx, job.snapshotID)
+		if err != nil {
+			log.Errorf("Compliance report scheduler: unable to retrieve the report snapshot %q: %v", job.snapshotID, err)
+			return
+		}
+		if !found {
+			// The snapshot was deleted after submission (e.g. with its configuration's
+			// reports); there is nothing to generate.
+			log.Debugf("Compliance report scheduler: report snapshot %q not found, no report generated", job.snapshotID)
+			return
+		}
+		// On-demand requests were validated against the notifiers at submission; a
+		// configuration that lost its notifiers since is handled by the generator's delivery.
+	} else {
+		// A scheduled or one-shot report: notifiers are required, mirroring the report
+		// manager's automatic path -- configurations without notifiers get no scheduled
+		// reports, and no snapshot is persisted for them.
+		if len(scanConfig.GetNotifiers()) == 0 {
+			log.Debugf("Compliance report scheduler: scan configuration %q has no notifiers, no report generated", job.scanConfigName)
+			return
+		}
+		snapshot = m.buildScheduledSnapshot(ctx, scanConfig)
 	}
-	m.generateReport(ctx, scanConfig, job.cycleStart)
+	m.generateReport(ctx, scanConfig, job.cycleStart, snapshot)
 }
 
-// generateReport generates and delivers a report for the scan configuration from the current
-// datastore state, persisting a SCHEDULED snapshot that the UI renders like any other report.
+// generateReport generates and delivers the report for the scan configuration from the current
+// datastore state, driving the given snapshot through the generation sequence (WAITING or
+// fresh -> PREPARING -> GENERATED/PARTIAL/FAILURE -> DELIVERED) using the shared report
+// machinery. The snapshot carries the report's request type, notification method, and user
+// attribution.
 //
 // The sequence composes the same shared building blocks as the report manager's on-demand
 // no-watcher path (helpers.* and the report generator): snapshot bookkeeping, failed-cluster
 // and cluster-data assembly, then generation and delivery. The report manager itself is left
 // untouched: while the rollout feature is disabled, its path remains the behavior to fall
 // back to.
-func (m *managerImpl) generateReport(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, cycleStart time.Time) {
-	snapshot := m.buildScheduledSnapshot(ctx, scanConfig)
+func (m *managerImpl) generateReport(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, cycleStart time.Time, snapshot *storage.ComplianceOperatorReportSnapshotV2) {
+	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
 	if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
 		log.Errorf("Compliance report scheduler: unable to persist the report snapshot of scan configuration %q: %v", scanConfig.GetScanConfigName(), err)
 		return
@@ -73,7 +98,7 @@ func (m *managerImpl) generateReport(ctx context.Context, scanConfig *storage.Co
 		Notifiers:          scanConfig.GetNotifiers(),
 		Ctx:                ctx,
 		SnapshotID:         snapshot.GetReportId(),
-		NotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+		NotificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
 		ClusterData:        clusterData,
 		NumFailedClusters:  len(failedClusters),
 	}); err != nil {

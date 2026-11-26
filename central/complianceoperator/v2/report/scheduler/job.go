@@ -13,10 +13,14 @@ type reportJob struct {
 	scanConfigID   string
 	scanConfigName string
 	// cycleStart anchors the scan cycle the report belongs to: the expectation audit classifies
-	// scans as fresh only if they started at or after it. Re-run reports set it to the re-run
-	// time; a zero value means "the cycle that most recently ticked", derived from the
-	// configuration's schedule at audit time.
+	// scans as fresh only if they started at or after it. Re-run and first-scan reports set it
+	// to the trigger time; a zero value means "the cycle that most recently ticked", derived
+	// from the configuration's schedule at audit time.
 	cycleStart time.Time
+	// snapshotID is set for on-demand reports: the snapshot persisted at submission, which the
+	// job picks up at execution. It is empty for scheduled and one-shot reports, which build
+	// their snapshot at execution time.
+	snapshotID string
 }
 
 // jobQueue is a FIFO queue of report jobs that ensures at most one job per scan configuration
@@ -62,4 +66,10 @@ func (q *jobQueue) markDone(scanConfigID string) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.runningConfigs.Remove(scanConfigID)
+}
+
+// Len returns the number of queued jobs. The underlying queue is internally
+// synchronized, so no additional locking is needed.
+func (q *jobQueue) Len() int {
+	return q.queue.Len()
 }
