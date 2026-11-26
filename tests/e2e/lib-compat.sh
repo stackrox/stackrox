@@ -112,7 +112,8 @@ roxie_config_from_environment_compat() {
         set_custom_env "$config_file" "central" "$name" "$value"
         ci_export "$name" "$value"
     done < <(
-        # Used when Central/Sensor are deployed via the operator.
+        # Legacy environmental configuration knobs supported in this compat layer.
+        # For new tests it is better to maintain a test-specific roxie deploy configuration.
         env_with_default ROX_DEVELOPMENT_BUILD "true"   # pkg/devbuild/setting.go.
         env_with_default ROX_HOTRELOAD "false"          # pkg/env/hot_reload.go.
         env_with_default ROX_NETWORK_ACCESS_LOG "false" # pkg/env/networklog.go.
