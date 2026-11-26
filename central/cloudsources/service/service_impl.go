@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/cloudsources"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -69,6 +70,10 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	if features.ACMAccessControlDelegation.Enabled() {
+		newCtx := authorizer.EnrichContext(ctx, fullMethodName)
+		return newCtx, authorizer.Authorized(newCtx, fullMethodName)
+	}
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
