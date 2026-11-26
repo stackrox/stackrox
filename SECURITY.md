@@ -1,4 +1,5 @@
 # Reporting a Security Vulnerability or Incident
+<!-- ci-select test: docs-only change -->
 
 Please do not report security vulnerabilities or security incidents via public
 channels such as GitHub Issues or Pull Requests. To ensure coordinated
