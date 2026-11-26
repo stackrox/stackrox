@@ -7,6 +7,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/datastore/inmem"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
@@ -137,6 +140,7 @@ type Matcher interface {
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
 	metadataStore postgres.MatcherMetadataStore
+	store         postgres.MatcherStore
 	pool          *pgxpool.Pool
 
 	vulnUpdater     *vuln.Updater
@@ -150,36 +154,64 @@ type matcherImpl struct {
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider indexer.ReportProvider) (Matcher, error) {
 	var success bool
 
-	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
-	if err != nil {
-		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
-	}
-	defer func() {
-		if !success {
-			pool.Close()
+	var (
+		pool          *pgxpool.Pool
+		store         postgres.MatcherStore
+		locker        libvuln.LockSource
+		metadataStore postgres.MatcherMetadataStore
+		err           error
+	)
+
+	switch cfg.Store {
+	case config.MatcherStoreInMem:
+		blobDir := filepath.Join(os.TempDir(), "scanner-v4-inmem")
+		inmemStore, initErr := inmem.NewMatcherStore(inmem.Options{
+			BlobDir:      blobDir,
+			CleanBlobDir: true,
+		})
+		if initErr != nil {
+			return nil, fmt.Errorf("initializing in-memory matcher store: %w", initErr)
 		}
-	}()
-
-	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
-	if err != nil {
-		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
-	}
-
-	locker, err := ctxlock.New(ctx, pool)
-	if err != nil {
-		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
-	}
-	defer func() {
-		if !success {
-			_ = locker.Close(ctx)
+		defer func() {
+			if !success {
+				inmemStore.Close()
+			}
+		}()
+		store = inmemStore
+		locker = inmem.NewLocker()
+		metadataStore = inmem.NewMetadataStore()
+		slog.InfoContext(ctx, "using in-memory column-native matcher store", "blob_dir", blobDir)
+	default:
+		pool, err = postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
+		if err != nil {
+			return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 		}
-	}()
+		defer func() {
+			if !success {
+				pool.Close()
+			}
+		}()
 
-	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
-	if err != nil {
-		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
+		store, err = postgres.InitPostgresMatcherStore(ctx, pool, true)
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
+		}
+
+		locker, err = ctxlock.New(ctx, pool)
+		if err != nil {
+			return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
+		}
+		defer func() {
+			if !success {
+				_ = locker.Close(ctx)
+			}
+		}()
+
+		metadataStore, err = postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
+		}
 	}
-
 	// There should not be any network activity by the libvuln package.
 	// A nil *http.Client is not allowed, so use one which denies all outbound traffic.
 	ccClient := &http.Client{
@@ -273,6 +305,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 	return &matcherImpl{
 		libVuln:       libVuln,
 		metadataStore: metadataStore,
+		store:         store,
 		pool:          pool,
 
 		vulnUpdater:     vulnUpdater,
@@ -309,7 +342,12 @@ func (m *matcherImpl) Close(ctx context.Context) error {
 		m.repo2CPEUpdater.Close()
 	}
 	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
-	m.pool.Close()
+	if c, ok := m.store.(interface{ Close() }); ok {
+		c.Close()
+	}
+	if m.pool != nil {
+		m.pool.Close()
+	}
 	return err
 }
 
@@ -326,8 +364,10 @@ func (m *matcherImpl) Initialized(ctx context.Context) error {
 // the vulnerability store initial load might still be in progress. Otherwise, an
 // error with an explanation is returned.
 func (m *matcherImpl) Ready(ctx context.Context) error {
-	if err := m.pool.Ping(ctx); err != nil {
-		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	if m.pool != nil {
+		if err := m.pool.Ping(ctx); err != nil {
+			return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+		}
 	}
 	if m.readyWithVulns && !m.vulnUpdater.Initialized(ctx) {
 		return errors.New("initial load for the vulnerability store is in progress")

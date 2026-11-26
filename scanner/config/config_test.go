@@ -107,6 +107,22 @@ matcher:
 				return &cfg
 			}(),
 		},
+		{
+			name: "when matcher store env var is set to inmem",
+			yaml: `---
+matcher:
+  enable: true
+`,
+			env: map[string]string{
+				"SCANNER_V4_MATCHER_STORE": "inmem",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Matcher.Store = MatcherStoreInMem
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -317,6 +333,25 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"https://example.com/v1/vuln.zip"}, c.VulnerabilitiesURLs)
+	})
+	t.Run("when store is inmem then empty database config is allowed", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			Store:              MatcherStoreInMem,
+			VulnerabilitiesURL: "https://example.com/vuln.zip",
+			Readiness:          ReadinessVulnerability,
+		}
+		assert.NoError(t, c.validate())
+	})
+	t.Run("when store is invalid then error", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			Store:              "sqlite",
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "https://example.com/vuln.zip",
+			Readiness:          ReadinessVulnerability,
+		}
+		assert.ErrorContains(t, c.validate(), "invalid store type")
 	})
 }
 

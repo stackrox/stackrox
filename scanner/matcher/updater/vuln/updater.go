@@ -26,7 +26,6 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -65,7 +64,7 @@ var (
 // The rest are optional.
 type Opts struct {
 	Store         postgres.MatcherStore
-	Locker        *ctxlock.Locker
+	Locker        updates.LockSource
 	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client

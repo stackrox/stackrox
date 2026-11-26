@@ -33,6 +33,18 @@ const (
 	ReadinessVulnerability MatcherReadiness = "vulnerability"
 )
 
+// MatcherStoreType selects the vulnerability matcher datastore backend.
+type MatcherStoreType string
+
+const (
+	// MatcherStorePostgres keeps the matcher vulnerability store in Postgres
+	// (the default, persisted backend).
+	MatcherStorePostgres MatcherStoreType = "postgres"
+	// MatcherStoreInMem keeps the matcher vulnerability store in an in-memory,
+	// column-native snapshot rebuilt from the bundle on every boot.
+	MatcherStoreInMem MatcherStoreType = "inmem"
+)
+
 var (
 	// defaultConfiguration provides the default values for the scanner configuration.
 	defaultConfiguration = Config{
@@ -51,6 +63,7 @@ var (
 		Matcher: MatcherConfig{
 			Enable:    true,
 			Readiness: ReadinessDatabase,
+			Store:     MatcherStorePostgres,
 			Database: Database{
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
@@ -173,6 +186,10 @@ type MatcherConfig struct {
 	Database Database `mapstructure:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
 	Enable bool `mapstructure:"enable"`
+	// Store selects the matcher vulnerability datastore backend: "postgres"
+	// (default, persisted) or "inmem" (in-memory column-native snapshot,
+	// rebuilt from the bundle on every boot).
+	Store MatcherStoreType `mapstructure:"store"`
 	// IndexerAddr forces the matcher to retrieve index reports from a remote indexer
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
@@ -231,8 +248,19 @@ func (c *MatcherConfig) validate() error {
 		return nil
 	}
 
-	if err := c.Database.validate(); err != nil {
-		return fmt.Errorf("database: %w", err)
+	if c.Store == "" {
+		c.Store = MatcherStorePostgres
+	}
+	switch c.Store {
+	case MatcherStorePostgres, MatcherStoreInMem:
+	default:
+		return fmt.Errorf("store: invalid store type %q (want %q or %q)", c.Store, MatcherStorePostgres, MatcherStoreInMem)
+	}
+
+	if c.Store == MatcherStorePostgres {
+		if err := c.Database.validate(); err != nil {
+			return fmt.Errorf("database: %w", err)
+		}
 	}
 
 	c.RemoteIndexerEnabled = c.IndexerAddr != ""
