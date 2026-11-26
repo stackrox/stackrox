@@ -52,7 +52,7 @@ type datastorePostgresTestSuite struct {
 
 func (s *datastorePostgresTestSuite) SetupTest() {
 	m2m.SetKubernetesIssuerForTest(s.T(), testIssuer)
-	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.ctx = sac.WithGlobalAccessScopeChecker(s.T().Context(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access),

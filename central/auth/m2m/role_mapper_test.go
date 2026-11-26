@@ -190,8 +190,8 @@ func TestRoleMapperFromUserDescriptor(t *testing.T) {
 	}
 
 	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			roleDSMock := mocks.NewMockDataStore(gomock.NewController(t))
+		t.Run(name, func(it *testing.T) {
+			roleDSMock := mocks.NewMockDataStore(gomock.NewController(it))
 			for roleName, resolvedRole := range tc.roles {
 				roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, tc.roleLookupErr).AnyTimes()
 			}
@@ -202,13 +202,13 @@ func TestRoleMapperFromUserDescriptor(t *testing.T) {
 				Attributes: tc.claims,
 			}
 
-			resolvedRoles, err := mapper.FromUserDescriptor(context.Background(), user)
+			resolvedRoles, err := mapper.FromUserDescriptor(it.Context(), user)
 			if tc.expectedError != nil {
-				assert.ErrorIs(t, err, tc.expectedError)
+				assert.ErrorIs(it, err, tc.expectedError)
 				return
 			}
-			assert.NoError(t, err)
-			assert.ElementsMatch(t, resolvedRoles, tc.expectedRoles)
+			assert.NoError(it, err)
+			assert.ElementsMatch(it, resolvedRoles, tc.expectedRoles)
 		})
 	}
 }
@@ -237,7 +237,7 @@ func TestResolveRolesForClaimsList(t *testing.T) {
 	}
 	configMappings := parseMappings(config.GetMappings())
 
-	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, configMappings)
+	resolvedRoles, err := resolveRolesForClaims(t.Context(), claims, roleDSMock, configMappings)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Analyst"]})
 }

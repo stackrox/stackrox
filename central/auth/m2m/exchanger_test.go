@@ -116,14 +116,21 @@ func TestNewTokenExchanger(t *testing.T) {
 	}))
 	t.Cleanup(oidcDiscoveryServer.Close)
 
-	newM2MConfig := func(issuer, tokenExpirationDuration string) *storage.AuthMachineToMachineConfig {
+	newM2MConfig := func(
+		issuer string,
+		tokenExpirationDuration string,
+		configType storage.AuthMachineToMachineConfig_Type,
+	) *storage.AuthMachineToMachineConfig {
 		return &storage.AuthMachineToMachineConfig{
 			Id:                      configID,
-			Type:                    storage.AuthMachineToMachineConfig_GENERIC,
+			Type:                    configType,
 			Issuer:                  issuer,
 			TokenExpirationDuration: tokenExpirationDuration,
 		}
 	}
+
+	const oneHour = "1h"
+	const notADuration = "60"
 
 	cases := map[string]struct {
 		config               *storage.AuthMachineToMachineConfig
@@ -131,8 +138,22 @@ func TestNewTokenExchanger(t *testing.T) {
 		expectedError        error
 		expectedErrorText    string
 	}{
-		"Valid config successfully creates an exchanger": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, "1h"),
+		"Valid config (generic) successfully creates an exchanger": {
+			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC),
+			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
+				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
+						assert.Equal(t, configID, source.ID())
+						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
+					})
+			},
+		},
+		"Valid config (k8s service account) successfully creates an exchanger": {
+			config: newM2MConfig(
+				oidcDiscoveryServer.URL,
+				oneHour,
+				storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+			),
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
 				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
@@ -142,16 +163,24 @@ func TestNewTokenExchanger(t *testing.T) {
 			},
 		},
 		"Invalid token expiration duration is rejected": {
-			config:            newM2MConfig(oidcDiscoveryServer.URL, "60"),
+			config: newM2MConfig(
+				oidcDiscoveryServer.URL,
+				notADuration,
+				storage.AuthMachineToMachineConfig_GENERIC,
+			),
 			expectedError:     errox.InvalidArgs,
 			expectedErrorText: "parsing token expiration duration",
 		},
 		"Issuer without valid OIDC discovery endpoint is rejected": {
-			config:            newM2MConfig(oidcDiscoveryServer.URL+"/nonexistent", "1h"),
+			config: newM2MConfig(
+				oidcDiscoveryServer.URL+"/nonexistent",
+				oneHour,
+				storage.AuthMachineToMachineConfig_GENERIC,
+			),
 			expectedErrorText: "creating OIDC provider for issuer",
 		},
 		"Issuer factory failure is propagated": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, "1h"),
+			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC),
 			prepareIssuerFactory: func(_ *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
 				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
 					Return(nil, assert.AnError)
@@ -161,7 +190,7 @@ func TestNewTokenExchanger(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
+		t.Run(name, func(it *testing.T) {
 			ctrl := gomock.NewController(t)
 			issuerFactory := tokensMocks.NewMockIssuerFactory(ctrl)
 			if c.prepareIssuerFactory != nil {
@@ -169,20 +198,20 @@ func TestNewTokenExchanger(t *testing.T) {
 			}
 			roleDS := roleMocks.NewMockDataStore(ctrl)
 
-			exchanger, err := newTokenExchanger(context.Background(), c.config, roleDS, issuerFactory)
+			exchanger, err := newTokenExchanger(it.Context(), c.config, roleDS, issuerFactory)
 
 			expectError := c.expectedError != nil || c.expectedErrorText != ""
 			if c.expectedError != nil {
-				assert.ErrorIs(t, err, c.expectedError)
+				assert.ErrorIs(it, err, c.expectedError)
 			}
 			if c.expectedErrorText != "" {
-				assert.ErrorContains(t, err, c.expectedErrorText)
+				assert.ErrorContains(it, err, c.expectedErrorText)
 			}
 			if !expectError {
-				assert.NoError(t, err)
-				assert.NotNil(t, exchanger)
-				protoassert.Equal(t, c.config, exchanger.Config())
-				assert.NotNil(t, exchanger.Provider())
+				assert.NoError(it, err)
+				assert.NotNil(it, exchanger)
+				protoassert.Equal(it, c.config, exchanger.Config())
+				assert.NotNil(it, exchanger.Provider())
 			}
 		})
 	}
@@ -286,19 +315,19 @@ func TestExchangeToken(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
+		t.Run(name, func(it *testing.T) {
+			ctrl := gomock.NewController(it)
 			verifier := NewMocktokenVerifier(ctrl)
 			if c.prepareVerifier != nil {
-				c.prepareVerifier(t, verifier)
+				c.prepareVerifier(it, verifier)
 			}
 			roleDS := roleMocks.NewMockDataStore(ctrl)
 			if c.prepareRoleDS != nil {
-				c.prepareRoleDS(t, roleDS)
+				c.prepareRoleDS(it, roleDS)
 			}
 			issuer := tokensMocks.NewMockIssuer(ctrl)
 			if c.prepareIssuer != nil {
-				c.prepareIssuer(t, issuer)
+				c.prepareIssuer(it, issuer)
 			}
 
 			config := newExchangerConfig()
@@ -311,17 +340,17 @@ func TestExchangeToken(t *testing.T) {
 				roxClaimExtractor: newClaimExtractorForConfigType(config.GetType()),
 			}
 
-			token, err := exchanger.ExchangeToken(context.Background(), "test-raw-id-token")
+			token, err := exchanger.ExchangeToken(it.Context(), "test-raw-id-token")
 
 			if c.expectedError != nil {
-				assert.ErrorIs(t, err, c.expectedError)
+				assert.ErrorIs(it, err, c.expectedError)
 			}
 			if c.expectedErrorText != "" {
-				assert.ErrorContains(t, err, c.expectedErrorText)
+				assert.ErrorContains(it, err, c.expectedErrorText)
 			}
 			if c.expectedError == nil && c.expectedErrorText == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, c.expectedToken, token)
+				assert.NoError(it, err)
+				assert.Equal(it, c.expectedToken, token)
 			}
 		})
 	}
