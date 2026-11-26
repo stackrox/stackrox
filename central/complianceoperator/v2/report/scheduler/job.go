@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -10,6 +12,11 @@ import (
 type reportJob struct {
 	scanConfigID   string
 	scanConfigName string
+	// cycleStart anchors the scan cycle the report belongs to: the expectation audit classifies
+	// scans as fresh only if they started at or after it. Re-run reports set it to the re-run
+	// time; a zero value means "the cycle that most recently ticked", derived from the
+	// configuration's schedule at audit time.
+	cycleStart time.Time
 }
 
 // jobQueue is a FIFO queue of report jobs that ensures at most one job per scan configuration

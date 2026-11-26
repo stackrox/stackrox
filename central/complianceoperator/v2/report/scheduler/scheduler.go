@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	integrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -78,12 +79,13 @@ type Manager interface {
 }
 
 type managerImpl struct {
-	scanConfigDataStore scanConfigDS.DataStore
-	scanDataStore       scanDS.DataStore
-	snapshotDataStore   snapshotDS.DataStore
-	suiteDataStore      suiteDS.DataStore
-	bindingsDataStore   bindingsDS.DataStore
-	reportGenerator     reportGen.ComplianceReportGenerator
+	scanConfigDataStore  scanConfigDS.DataStore
+	scanDataStore        scanDS.DataStore
+	snapshotDataStore    snapshotDS.DataStore
+	suiteDataStore       suiteDS.DataStore
+	bindingsDataStore    bindingsDS.DataStore
+	integrationDataStore integrationDS.DataStore
+	reportGenerator      reportGen.ComplianceReportGenerator
 
 	stopper   concurrency.Stopper
 	isStarted atomic.Bool
@@ -125,18 +127,20 @@ func New(scanConfigDataStore scanConfigDS.DataStore,
 	snapshotDataStore snapshotDS.DataStore,
 	suiteDataStore suiteDS.DataStore,
 	bindingsDataStore bindingsDS.DataStore,
+	integrationDataStore integrationDS.DataStore,
 	reportGenerator reportGen.ComplianceReportGenerator) Manager {
 	stopper := concurrency.NewStopper()
 	stopCtx := concurrency.AsContext(stopper.LowLevel().GetStopRequestSignal())
 	m := &managerImpl{
-		scanConfigDataStore: scanConfigDataStore,
-		scanDataStore:       scanDataStore,
-		snapshotDataStore:   snapshotDataStore,
-		suiteDataStore:      suiteDataStore,
-		bindingsDataStore:   bindingsDataStore,
-		reportGenerator:     reportGenerator,
-		stopper:             stopper,
-		stopCtx:             stopCtx,
+		scanConfigDataStore:  scanConfigDataStore,
+		scanDataStore:        scanDataStore,
+		snapshotDataStore:    snapshotDataStore,
+		suiteDataStore:       suiteDataStore,
+		bindingsDataStore:    bindingsDataStore,
+		integrationDataStore: integrationDataStore,
+		reportGenerator:      reportGenerator,
+		stopper:              stopper,
+		stopCtx:              stopCtx,
 		schedulerCtx: sac.WithGlobalAccessScopeChecker(
 			stopCtx,
 			sac.AllowFixedScopes(
@@ -276,10 +280,11 @@ func (m *managerImpl) runSingleJob(job *reportJob) {
 
 // submitJob enqueues a report job for the scan configuration and wakes the execution loop.
 // Cron entries submit here; on-demand triggers will too.
-func (m *managerImpl) submitJob(scanConfigID, scanConfigName string) {
+func (m *managerImpl) submitJob(scanConfigID, scanConfigName string, cycleStart time.Time) {
 	m.jobQueue.enqueue(&reportJob{
 		scanConfigID:   scanConfigID,
 		scanConfigName: scanConfigName,
+		cycleStart:     cycleStart,
 	})
 	m.readyForReports.Signal()
 }
@@ -342,14 +347,16 @@ func (m *managerImpl) ScheduleRescanReport(scanConfigID string) {
 		log.Debugf("Compliance report scheduler: scan configuration %q not found, no re-run report scheduled", scanConfigID)
 		return
 	}
-	fireAt := time.Now().Add(env.ComplianceReportScheduleDelay.DurationSetting())
+	scheduledAt := time.Now()
+	fireAt := scheduledAt.Add(env.ComplianceReportScheduleDelay.DurationSetting())
 	concurrency.WithLock(&m.cronJobsLock, func() {
 		if oldID, ok := m.rescanEntryIDs[scanConfigID]; ok {
 			m.cron.Remove(oldID)
 			delete(m.rescanEntryIDs, scanConfigID)
 		}
 		entryID := m.cron.Schedule(&oneShotSchedule{fireAt: fireAt}, cron.FuncJob(func() {
-			m.submitJob(scanConfig.GetId(), scanConfig.GetScanConfigName())
+			// The cycle is anchored at the re-run: scans that started since are the cycle's.
+			m.submitJob(scanConfig.GetId(), scanConfig.GetScanConfigName(), scheduledAt)
 		}))
 		m.rescanEntryIDs[scanConfigID] = entryID
 	})
@@ -368,7 +375,9 @@ func (m *managerImpl) upsertScanConfigNoLock(scanConfig *storage.ComplianceOpera
 	}
 	m.removeScanConfigNoLock(s.scanConfigID)
 	entryID := m.cron.Schedule(s, cron.FuncJob(func() {
-		m.submitJob(s.scanConfigID, s.scanConfigName)
+		// A zero cycle start makes the audit classify against the cycle that most recently
+		// ticked, which is the cycle this entry fired for.
+		m.submitJob(s.scanConfigID, s.scanConfigName, time.Time{})
 	}))
 	m.entryIDs[s.scanConfigID] = entryID
 }

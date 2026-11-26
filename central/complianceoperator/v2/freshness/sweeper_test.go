@@ -129,7 +129,7 @@ func TestPreviousScheduledStart(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, ok := previousScheduledStart(c.sched, c.ref)
+			got, ok := PreviousScheduledStart(c.sched, c.ref)
 			if c.want.IsZero() {
 				assert.False(t, ok)
 				return

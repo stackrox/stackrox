@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -32,7 +33,7 @@ func (m *managerImpl) runReportJob(ctx context.Context, job *reportJob) {
 		log.Debugf("Compliance report scheduler: scan configuration %q has no notifiers, no report generated", job.scanConfigName)
 		return
 	}
-	m.generateReport(ctx, scanConfig)
+	m.generateReport(ctx, scanConfig, job.cycleStart)
 }
 
 // generateReport generates and delivers a report for the scan configuration from the current
@@ -43,19 +44,14 @@ func (m *managerImpl) runReportJob(ctx context.Context, job *reportJob) {
 // and cluster-data assembly, then generation and delivery. The report manager itself is left
 // untouched: while the rollout feature is disabled, its path remains the behavior to fall
 // back to.
-func (m *managerImpl) generateReport(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+func (m *managerImpl) generateReport(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, cycleStart time.Time) {
 	snapshot := m.buildScheduledSnapshot(ctx, scanConfig)
 	if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
 		log.Errorf("Compliance report scheduler: unable to persist the report snapshot of scan configuration %q: %v", scanConfig.GetScanConfigName(), err)
 		return
 	}
 
-	// The report ships without failure accounting in this iteration: computing it is the
-	// expectation audit's job (the next iteration of the rollout), which classifies every scan
-	// of the configuration fresh from the datastore. The on-demand path's GetFailedClusters
-	// carry-forward is deliberately not reused here: it echoes the previous report's failures,
-	// and once every report comes from this path, that accounting would be frozen forever.
-	var failedClusters map[string]*report.FailedCluster
+	failedClusters := m.auditExpectations(ctx, scanConfig, cycleStart)
 	clusterData, err := helpers.GetClusterData(ctx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
 	if err != nil {
 		log.Errorf("Compliance report scheduler: unable to get cluster information of scan configuration %q: %v", scanConfig.GetScanConfigName(), err)

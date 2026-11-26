@@ -3,10 +3,14 @@ package scheduler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"testing/synctest"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	generatorMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
@@ -18,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,12 +65,13 @@ func scanConfig(id, name string, sched *storage.Schedule) *storage.ComplianceOpe
 
 // schedulerMocks bundles the scheduler's gomock dependencies.
 type schedulerMocks struct {
-	scanConfigDS *scanConfigMocks.MockDataStore
-	scanDS       *scanDSMocks.MockDataStore
-	snapshotDS   *snapshotMocks.MockDataStore
-	suiteDS      *suiteMocks.MockDataStore
-	bindingsDS   *bindingsMocks.MockDataStore
-	reportGen    *generatorMocks.MockComplianceReportGenerator
+	scanConfigDS  *scanConfigMocks.MockDataStore
+	scanDS        *scanDSMocks.MockDataStore
+	snapshotDS    *snapshotMocks.MockDataStore
+	suiteDS       *suiteMocks.MockDataStore
+	bindingsDS    *bindingsMocks.MockDataStore
+	integrationDS *integrationMocks.MockDataStore
+	reportGen     *generatorMocks.MockComplianceReportGenerator
 }
 
 // newTestScheduler returns a scheduler wired to fresh gomock datastores with the decoupled
@@ -76,14 +82,15 @@ func newTestScheduler(t *testing.T) (*managerImpl, *schedulerMocks) {
 	t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	mocks := &schedulerMocks{
-		scanConfigDS: scanConfigMocks.NewMockDataStore(ctrl),
-		scanDS:       scanDSMocks.NewMockDataStore(ctrl),
-		snapshotDS:   snapshotMocks.NewMockDataStore(ctrl),
-		suiteDS:      suiteMocks.NewMockDataStore(ctrl),
-		bindingsDS:   bindingsMocks.NewMockDataStore(ctrl),
-		reportGen:    generatorMocks.NewMockComplianceReportGenerator(ctrl),
+		scanConfigDS:  scanConfigMocks.NewMockDataStore(ctrl),
+		scanDS:        scanDSMocks.NewMockDataStore(ctrl),
+		snapshotDS:    snapshotMocks.NewMockDataStore(ctrl),
+		suiteDS:       suiteMocks.NewMockDataStore(ctrl),
+		bindingsDS:    bindingsMocks.NewMockDataStore(ctrl),
+		integrationDS: integrationMocks.NewMockDataStore(ctrl),
+		reportGen:     generatorMocks.NewMockComplianceReportGenerator(ctrl),
 	}
-	return New(mocks.scanConfigDS, mocks.scanDS, mocks.snapshotDS, mocks.suiteDS, mocks.bindingsDS, mocks.reportGen).(*managerImpl), mocks
+	return New(mocks.scanConfigDS, mocks.scanDS, mocks.snapshotDS, mocks.suiteDS, mocks.bindingsDS, mocks.integrationDS, mocks.reportGen).(*managerImpl), mocks
 }
 
 // reportScheduleFor returns the report schedule of the manager's cron entry for the given scan
@@ -288,8 +295,8 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	defer m.Stop()
 
 	// The first job of cfg1 runs; a second submission of cfg1 must wait behind it.
-	m.submitJob("cfg1", "cfg-one")
-	m.submitJob("cfg1", "cfg-one")
+	m.submitJob("cfg1", "cfg-one", time.Time{})
+	m.submitJob("cfg1", "cfg-one", time.Time{})
 
 	select {
 	case id := <-started:
@@ -305,7 +312,7 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	}
 
 	// A job of another configuration is not blocked by the running one.
-	m.submitJob("cfg2", "cfg-two")
+	m.submitJob("cfg2", "cfg-two", time.Time{})
 	select {
 	case id := <-started:
 		assert.Equal(t, "cfg2", id)
@@ -738,6 +745,14 @@ func TestRunReportJob(t *testing.T) {
 		// Report data conversion: no cluster statuses, no suites.
 		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
 		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		// Expectation audit: the cluster's scan finished within the cycle.
+		freshScan := &storage.ComplianceOperatorScanV2{
+			ScanName:        "ocp4-master",
+			ClusterId:       "cluster-1",
+			Status:          &storage.ScanStatus{Phase: "DONE", Result: "COMPLIANT"},
+			LastStartedTime: protocompat.TimestampNow(),
+		}
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{freshScan}, nil)
 
 		var persisted *storage.ComplianceOperatorReportSnapshotV2
 		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
@@ -813,5 +828,175 @@ func TestRunReportJob(t *testing.T) {
 		require.Len(t, states, 2)
 		assert.Equal(t, storage.ComplianceOperatorReportStatus_PREPARING, states[0])
 		assert.Equal(t, storage.ComplianceOperatorReportStatus_FAILURE, states[1])
+	})
+}
+
+// auditScan returns a scan of the given cluster whose last run started at cycleStart+startedAt
+// (negative values predate the cycle).
+func auditScan(name, clusterID, phase, result string, startedAt time.Duration, cycleStart time.Time) *storage.ComplianceOperatorScanV2 {
+	return &storage.ComplianceOperatorScanV2{
+		ScanName:        name,
+		ClusterId:       clusterID,
+		Status:          &storage.ScanStatus{Phase: phase, Result: result},
+		LastStartedTime: timestamppb.New(cycleStart.Add(startedAt)),
+	}
+}
+
+// auditConfig returns a two-cluster scan configuration for the audit tests.
+func auditConfig(sched *storage.Schedule) *storage.ComplianceOperatorScanConfigurationV2 {
+	cfg := scanConfig("cfg1", "cfg-one", sched)
+	cfg.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+		{ClusterId: "cluster-1"},
+		{ClusterId: "cluster-2"},
+	}
+	return cfg
+}
+
+// healthyCO mocks a healthy compliance operator for the cluster.
+func healthyCO(mocks *schedulerMocks, clusterID string) {
+	mocks.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), clusterID).
+		Return([]*storage.ComplianceIntegration{{OperatorInstalled: true, Version: "v1.6.0"}}, nil)
+}
+
+// TestAuditExpectations covers the failure accounting of the decoupled report scheduler: every
+// scan of the configuration is classified against the cycle anchor, and clusters with
+// unfinished, overdue, or missing scans become failed clusters that drive the PARTIAL/FAILURE
+// labeling.
+func TestAuditExpectations(t *testing.T) {
+	ctx := context.Background()
+	cycleStart := time.Date(2026, time.November, 25, 1, 0, 0, 0, time.UTC)
+
+	t.Run("fresh finished scans produce no failures", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "DONE", "COMPLIANT", 5*time.Minute, cycleStart),
+			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", 6*time.Minute, cycleStart),
+		}, nil)
+		// No integration expectation: a cluster without failures is not health-checked.
+
+		assert.Empty(t, m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart))
+	})
+
+	t.Run("a scan still running at report time is an unfinished failure", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "RUNNING", "", 5*time.Minute, cycleStart),
+			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", 6*time.Minute, cycleStart),
+		}, nil)
+		healthyCO(mocks, "cluster-1")
+
+		failed := m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart)
+		require.Len(t, failed, 1)
+		fc := failed["cluster-1"]
+		require.NotNil(t, fc)
+		assert.Equal(t, []string{fmt.Sprintf(report.SCAN_STILL_RUNNING_FMT, "master")}, fc.Reasons)
+		require.Len(t, fc.FailedScans, 1)
+		assert.Equal(t, "master", fc.FailedScans[0].GetScanName())
+	})
+
+	t.Run("a scan that did not start within the cycle is overdue", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "DONE", "COMPLIANT", -24*time.Hour, cycleStart),
+			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", 6*time.Minute, cycleStart),
+		}, nil)
+		healthyCO(mocks, "cluster-1")
+
+		failed := m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart)
+		require.Len(t, failed, 1)
+		fc := failed["cluster-1"]
+		require.NotNil(t, fc)
+		assert.Equal(t, []string{fmt.Sprintf(report.SCAN_NOT_STARTED_FMT, "master")}, fc.Reasons)
+	})
+
+	t.Run("a cluster without any scans is overdue as a whole", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		// cluster-1 has a fresh scan; cluster-2 has none.
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "DONE", "COMPLIANT", 5*time.Minute, cycleStart),
+		}, nil)
+		healthyCO(mocks, "cluster-2")
+
+		failed := m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart)
+		require.Len(t, failed, 1)
+		fc := failed["cluster-2"]
+		require.NotNil(t, fc)
+		assert.Equal(t, []string{report.NO_SCANS_STARTED}, fc.Reasons)
+		assert.Empty(t, fc.FailedScans)
+	})
+
+	t.Run("an unhealthy compliance operator explains the whole cluster", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "DONE", "COMPLIANT", -24*time.Hour, cycleStart),
+			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", 6*time.Minute, cycleStart),
+		}, nil)
+		mocks.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), "cluster-1").
+			Return([]*storage.ComplianceIntegration{{OperatorInstalled: false}}, nil)
+
+		failed := m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart)
+		require.Len(t, failed, 1)
+		fc := failed["cluster-1"]
+		require.NotNil(t, fc)
+		// The operator reason takes precedence over the scan-level reason.
+		assert.Equal(t, []string{report.COMPLIANCE_NOT_INSTALLED}, fc.Reasons)
+		require.Len(t, fc.FailedScans, 1)
+	})
+
+	t.Run("a cluster whose scans are all not-applicable is reported as such", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("worker", "cluster-1", "DONE", "NOT-APPLICABLE", -24*time.Hour, cycleStart),
+			auditScan("master", "cluster-2", "DONE", "COMPLIANT", 6*time.Minute, cycleStart),
+		}, nil)
+		// No integration expectation: not-applicable clusters carry a cluster-level note.
+
+		failed := m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart)
+		require.Len(t, failed, 1)
+		fc := failed["cluster-1"]
+		require.NotNil(t, fc)
+		assert.Equal(t, []string{report.SCAN_NOT_APPLICABLE}, fc.Reasons)
+		assert.Empty(t, fc.FailedScans)
+	})
+
+	t.Run("a zero cycle start is derived from the schedule", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		// The schedule last ticked about six hours ago.
+		tick := time.Now().UTC().Add(-6 * time.Hour)
+		sched := dailySchedule(int32(tick.Hour()), int32(tick.Minute()))
+		// cluster-1's scan started one hour ago (after the tick: fresh); cluster-2's twelve
+		// hours ago (before the tick: overdue).
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
+			auditScan("master", "cluster-1", "DONE", "COMPLIANT", -1*time.Hour, time.Now().UTC()),
+			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", -12*time.Hour, time.Now().UTC()),
+		}, nil)
+		healthyCO(mocks, "cluster-2")
+
+		failed := m.auditExpectations(ctx, auditConfig(sched), time.Time{})
+		require.Len(t, failed, 1)
+		fc := failed["cluster-2"]
+		require.NotNil(t, fc)
+		assert.Equal(t, []string{fmt.Sprintf(report.SCAN_NOT_STARTED_FMT, "worker")}, fc.Reasons)
+	})
+
+	t.Run("a zero cycle start without an evaluable schedule skips the audit", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		// No SearchScans expectation: the audit must not read anything.
+
+		assert.Nil(t, m.auditExpectations(ctx, auditConfig(nil), time.Time{}))
+	})
+
+	t.Run("a configuration without clusters skips the audit", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		// No SearchScans expectation: the audit must not read anything.
+
+		assert.Nil(t, m.auditExpectations(ctx, scanConfig("cfg1", "cfg-one", dailySchedule(0, 0)), cycleStart))
+	})
+
+	t.Run("a scan listing error skips the audit", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return(nil, errors.New("boom"))
+
+		assert.Nil(t, m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart))
 	})
 }

@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	integrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -27,5 +28,6 @@ func initialize() {
 		snapshotDS.Singleton(),
 		suiteDS.Singleton(),
 		bindingsDS.Singleton(),
+		integrationDS.Singleton(),
 		reportGen.Singleton())
 }

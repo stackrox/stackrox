@@ -10,6 +10,11 @@ const (
 	SCAN_REMOVED_FMT                     = "Scan %s was removed"
 	SCAN_TIMEOUT_FMT                     = "Timeout waiting for scan %s to finish"
 	SCAN_TIMEOUT_SENSOR_DISCONNECTED_FMT = "Timeout waiting for scan %s to finish (Sensor disconnect during the scan)"
+
+	// Reasons produced by the decoupled report scheduler's expectation audit.
+	SCAN_NOT_STARTED_FMT   = "Scan %s has not started within the current scan cycle"
+	SCAN_STILL_RUNNING_FMT = "Scan %s did not finish before the report was generated"
+	NO_SCANS_STARTED       = "No scans have started within the current scan cycle"
 )
 
 var (
