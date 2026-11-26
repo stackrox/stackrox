@@ -91,3 +91,10 @@ func (r *recordingAuthorizer) CallMethods() []string {
 func NewRecordingAuthorizer(_ testing.TB) RecordingAuthorizer {
 	return &recordingAuthorizer{}
 }
+
+// NewRejectingRecordingAuthorizer returns a RecordingAuthorizer that returns
+// the given error from every Authorized call. The testing.TB parameter is
+// ignored.
+func NewRejectingRecordingAuthorizer(_ testing.TB, rejectingError error) RecordingAuthorizer {
+	return &recordingAuthorizer{err: rejectingError}
+}
