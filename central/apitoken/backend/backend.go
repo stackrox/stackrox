@@ -11,6 +11,8 @@ import (
 )
 
 // Backend is the backend for the API tokens component.
+//
+//go:generate mockgen-wrapper
 type Backend interface {
 	GetTokenOrNil(ctx context.Context, tokenID string) (*storage.TokenMetadata, error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
