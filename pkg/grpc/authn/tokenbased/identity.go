@@ -67,3 +67,13 @@ func (i *roleBasedIdentity) ExternalAuthProvider() authproviders.Provider {
 func (i *roleBasedIdentity) Attributes() map[string][]string {
 	return i.attributes
 }
+
+func (i *roleBasedIdentity) UserDescriptor() *permissions.UserDescriptor {
+	if i == nil {
+		return nil
+	}
+	return &permissions.UserDescriptor{
+		UserID:     i.uid,
+		Attributes: i.attributes,
+	}
+}

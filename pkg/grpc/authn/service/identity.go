@@ -57,6 +57,10 @@ func (i identity) Attributes() map[string][]string {
 	return nil
 }
 
+func (i identity) UserDescriptor() *permissions.UserDescriptor {
+	return nil
+}
+
 // WrapMTLSIdentity wraps an mTLS identity.
 func WrapMTLSIdentity(id mtls.Identity) authn.Identity {
 	return identity{

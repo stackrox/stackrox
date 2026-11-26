@@ -83,6 +83,13 @@ func (i identity) Attributes() map[string][]string {
 	}
 }
 
+func (i identity) UserDescriptor() *permissions.UserDescriptor {
+	return &permissions.UserDescriptor{
+		UserID:     i.username,
+		Attributes: map[string][]string{},
+	}
+}
+
 // Identity is an extension of the identity interface for user authenticating via Basic authentication.
 type Identity interface {
 	authn.Identity
