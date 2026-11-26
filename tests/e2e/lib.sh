@@ -570,9 +570,9 @@ deploy_central_via_operator() {
     # The sweep interval is 1m because Central clamps anything lower to its 1m floor.
     if [[ "${SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT'
-        customize_envVars+=$'\n        value: "2m"'
+        customize_envVars+=$'\n        value: "30s"'
         customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT'
-        customize_envVars+=$'\n        value: "1m"'
+        customize_envVars+=$'\n        value: "30s"'
         customize_envVars+=$'\n      - name: ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL'
         customize_envVars+=$'\n        value: "1m"'
     fi

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	complianceoperatorv1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,13 +21,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// freshnessProfile is shared by every freshness test. A scan config's profile must be unique
-// cluster-wide, so these tests must stay non-parallel to avoid racing each other for it.
-const freshnessProfile = "ocp4-cis"
 
 func skipUnlessComplianceFreshnessEnabled(t *testing.T) {
 	t.Helper()
@@ -230,8 +228,42 @@ func getFreshnessTimingsOrSkip(ctx context.Context, t *testing.T, k8sClient kube
 	}
 }
 
+// createFreshnessProfile creates a from-scratch TailoredProfile with a single CEL CustomRule and
+// waits until Central knows it, returning the name to reference in a scan config. One rule keeps
+// a scan down to seconds, which is what lets these tests run with short watcher timeouts; each
+// test gets its own profile, so no two scan configs race for one profile name.
+func createFreshnessProfile(ctx context.Context, t *testing.T, dynClient ctrlClient.Client,
+	profileClient v2.ComplianceProfileServiceClient, clusterID, name string,
+) string {
+	createCustomRule(ctx, t, dynClient, name)
+	tp := &complianceoperatorv1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: coNamespaceV2},
+		Spec: complianceoperatorv1.TailoredProfileSpec{
+			Title:       fmt.Sprintf("E2E freshness profile %s", name),
+			Description: "From-scratch TailoredProfile with one CEL custom rule for freshness e2e",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: name, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e test"},
+			},
+		},
+	}
+	require.NoErrorf(t, dynClient.Create(ctx, tp), "failed to create TailoredProfile %s", name)
+	t.Cleanup(func() {
+		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, name, coNamespaceV2)
+	})
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var current complianceoperatorv1.TailoredProfile
+		require.NoErrorf(c, dynClient.Get(ctx, types.NamespacedName{Name: name, Namespace: coNamespaceV2}, &current),
+			"failed to get TailoredProfile %s", name)
+		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
+			"TailoredProfile %s not READY (state: %q, error: %q)", name, current.Status.State, current.Status.ErrorMessage)
+	}, 10*time.Second, 1*time.Second)
+	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, name)
+	return name
+}
+
 // TestComplianceV2FreshnessCurrent proves a normal scan run's check results are reported CURRENT,
-// never STALE. Must run non-parallel (see freshnessProfile).
+// never STALE. Must run non-parallel: other tests in this suite scale Sensor to 0, which would
+// starve this test's scan of sensor updates.
 func TestComplianceV2FreshnessCurrent(t *testing.T) {
 	skipUnlessComplianceFreshnessEnabled(t)
 	ctx := context.Background()
@@ -242,12 +274,13 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 	clusterID := getClusterID(t)
 
 	testID := fmt.Sprintf("freshness-current-%s", uuid.NewV4().String())
+	profileName := createFreshnessProfile(ctx, t, dynClient, v2.NewComplianceProfileServiceClient(conn), clusterID, testID)
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testID,
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{freshnessProfile},
+			Profiles:    []string{profileName},
 			Description: "freshness current e2e test",
 			// A tick in the recent past won't recur for ~24h, so no scheduled run or sweeper tick
 			// can interfere with this test.
@@ -263,12 +296,12 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 
-	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
+	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, profileName, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
 	wantCurrentCount := len(currentResults.GetCheckResults())
 
 	staleResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:STALE"),
 	})
@@ -278,7 +311,7 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 	// The STALE assertion above would also pass if the freshness filter matched nothing at all,
 	// so prove the filter works by requiring the CURRENT side to return every row.
 	currentResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:CURRENT"),
 	})
@@ -301,12 +334,13 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	timings := getFreshnessTimingsOrSkip(ctx, t, k8sClient)
 
 	testID := fmt.Sprintf("freshness-sweeper-%s", uuid.NewV4().String())
+	profileName := createFreshnessProfile(ctx, t, dynClient, v2.NewComplianceProfileServiceClient(conn), clusterID, testID)
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testID,
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{freshnessProfile},
+			Profiles:    []string{profileName},
 			Description: "freshness sweeper e2e test",
 			// A tick in the recent past won't recur for ~24h, so nothing can flip results STALE
 			// before the deliberate tick is set below.
@@ -321,7 +355,7 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	})
 
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
-	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
+	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, profileName, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
 	wantStaleCount := int32(len(currentResults.GetCheckResults()))
 
@@ -353,10 +387,10 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 
 	// Lower bound: the grace window must be respected. Nothing may mark results STALE before
 	// tick + grace (see getFreshnessTimingsOrSkip) has fully elapsed, so everything must still be
-	// CURRENT one minute before that point.
-	time.Sleep(time.Until(tick.Add(timings.grace - time.Minute)))
+	// CURRENT shortly before that point.
+	time.Sleep(time.Until(tick.Add(timings.grace - min(30*time.Second, timings.grace/2))))
 	preGraceResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID),
 	})
@@ -372,11 +406,11 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	// window, one sweep interval and slack.
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resultsResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-			ProfileName: freshnessProfile,
+			ProfileName: profileName,
 			ClusterId:   clusterID,
 			Query:       scanConfigQuery(testID),
 		})
-		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", freshnessProfile, clusterID)
+		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", profileName, clusterID)
 		require.NotEmpty(c, resultsResp.GetCheckResults(), "no check results found")
 		for _, r := range resultsResp.GetCheckResults() {
 			require.Equalf(c, v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE, r.GetDataFreshness(),
@@ -384,13 +418,13 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		}
 
 		// Banner is profile-global (see getComplianceProfileStats), so assert lower bounds only.
-		stats := getComplianceProfileStats(c, ctx, statsClient, freshnessProfile)
+		stats := getComplianceProfileStats(c, ctx, statsClient, profileName)
 		require.GreaterOrEqual(c, stats.GetStaleClusterCount(), int32(1))
 		require.GreaterOrEqual(c, stats.GetStaleCheckResultCount(), wantStaleCount)
 	}, time.Until(tick)+timings.grace+timings.sweepInterval+time.Minute, 15*time.Second)
 
 	staleResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:STALE"),
 	})
@@ -398,7 +432,7 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	assert.Lenf(t, staleResp.GetCheckResults(), int(wantStaleCount), "expected all %d checks of this scan config to be STALE", wantStaleCount)
 
 	currentResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:CURRENT"),
 	})
@@ -424,12 +458,13 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 
 	scanStart := time.Now()
 	testID := fmt.Sprintf("freshness-timeout-%s", uuid.NewV4().String())
+	profileName := createFreshnessProfile(ctx, t, dynClient, v2.NewComplianceProfileServiceClient(conn), clusterID, testID)
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testID,
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{freshnessProfile},
+			Profiles:    []string{profileName},
 			Description: "freshness scan-watcher-timeout e2e test",
 			// A tick in the recent past won't recur for ~24h, so it can't fire during this test.
 			ScanSchedule: scheduleAt(scanStart.Add(-5 * time.Minute)),
@@ -443,7 +478,7 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	})
 
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
-	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
+	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, profileName, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
 	wantStaleCount := int32(len(currentResults.GetCheckResults()))
 	priorCheckIDs := make([]string, 0, len(currentResults.GetCheckResults()))
@@ -467,11 +502,11 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	// so poll until it is nil: that proves Central ingested the reset, watcher included.
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resultsResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-			ProfileName: freshnessProfile,
+			ProfileName: profileName,
 			ClusterId:   clusterID,
 			Query:       scanConfigQuery(testID),
 		})
-		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", freshnessProfile, clusterID)
+		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", profileName, clusterID)
 		require.Nilf(c, resultsResp.GetLastScanTime(),
 			"Central still reports last scan time %v; it has not observed the rescan's scan reset yet", resultsResp.GetLastScanTime())
 	}, 2*time.Minute, 5*time.Second)
@@ -483,11 +518,11 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	// timeout plus slack for the watcher's cleanup.
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resultsResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-			ProfileName: freshnessProfile,
+			ProfileName: profileName,
 			ClusterId:   clusterID,
 			Query:       scanConfigQuery(testID),
 		})
-		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", freshnessProfile, clusterID)
+		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", profileName, clusterID)
 		require.NotEmpty(c, resultsResp.GetCheckResults(), "no check results found")
 		for _, r := range resultsResp.GetCheckResults() {
 			require.Equalf(c, v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE, r.GetDataFreshness(),
@@ -495,14 +530,14 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 		}
 
 		// Banner is profile-global (see getComplianceProfileStats), so assert lower bounds only.
-		stats := getComplianceProfileStats(c, ctx, statsClient, freshnessProfile)
+		stats := getComplianceProfileStats(c, ctx, statsClient, profileName)
 		require.GreaterOrEqual(c, stats.GetStaleClusterCount(), int32(1))
 		require.GreaterOrEqual(c, stats.GetStaleCheckResultCount(), wantStaleCount)
 	}, timings.scanWatcherTimeout+2*time.Minute, 15*time.Second)
 
 	// The STALE set must match the original set exactly, not merely be nonempty like the stats above.
 	staleResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
-		ProfileName: freshnessProfile,
+		ProfileName: profileName,
 		ClusterId:   clusterID,
 		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:STALE"),
 	})
