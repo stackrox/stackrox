@@ -236,6 +236,7 @@ tests:
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
         .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
         .services["central-ocp"] | assertThat(. == null)
@@ -243,36 +244,6 @@ tests:
     - name: "secure metrics endpoint is disabled"
       expect: |
         .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
-
-- name: "Authentication CA access is independent of monitoring"
-  set:
-    monitoring.openshift.enabled: false
-  tests:
-    - name: "OpenShift retains the provider CA-reader binding"
-      set:
-        env.openshift: 4
-      expect: |
-        .rolebindings["rhacs-central-auth-reader-stackrox"] | [
-          assertThat(.metadata.namespace == "kube-system"),
-          assertThat(.roleRef == {
-            "apiGroup": "rbac.authorization.k8s.io",
-            "kind": "Role",
-            "name": "extension-apiserver-authentication-reader"
-          }),
-          assertThat(.subjects == [{
-            "kind": "ServiceAccount",
-            "name": "central",
-            "namespace": "stackrox"
-          }])
-          ]
-        .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
-        .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
-
-    - name: "Non-OpenShift omits the provider CA-reader binding"
-      set:
-        env.openshift: false
-      expect: |
-        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
 
 - name: "Disable override when on non-OpenShift environment"
   set:

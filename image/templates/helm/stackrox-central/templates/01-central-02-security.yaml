@@ -38,27 +38,4 @@ subjects:
 - kind: ServiceAccount
   name: central
   namespace: {{.Release.Namespace}}
----
-{{- /*
-The OpenShift Platform Client Certificates auth provider needs the client CA
-independently of operational monitoring.
-TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to kube-system namespace.
-*/}}
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: "rhacs-central-auth-reader-{{ .Release.Namespace }}"
-  namespace: kube-system
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: extension-apiserver-authentication-reader
-subjects:
-  - kind: ServiceAccount
-    name: central
-    namespace: "{{ .Release.Namespace }}"
 {{- end }}
