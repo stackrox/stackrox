@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	emptyValue           = "Data not found for the cluster"
+	emptyValue       = "Data not found for the cluster"
+	scanRunningValue = "Scan in progress for the cluster. Results will be available after the scan completes."
+
 	successfulClusterFmt = "cluster_%s.csv"
 	failedClusterFmt     = "failed_cluster_%s.csv"
 )
@@ -94,14 +96,18 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 			return nil, errors.Errorf("found no results for cluster %q", clusterID)
 		}
 		fileName := getFileName(successfulClusterFmt, cluster.ClusterName, timestamp)
-		if err := f.createCSVInZip(zipWriter, fileName, results[clusterID]); err != nil {
+		noDataMsg := emptyValue
+		if cluster.HasRunningScan {
+			noDataMsg = scanRunningValue
+		}
+		if err := f.createCSVInZip(zipWriter, fileName, results[clusterID], noDataMsg); err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
 		}
 	}
 	return &buf, nil
 }
 
-func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clusterResults []*report.ResultRow) error {
+func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clusterResults []*report.ResultRow, noDataMsg string) error {
 	w, err := zipWriter.Create(filename)
 	if err != nil {
 		return err
@@ -112,7 +118,7 @@ func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clu
 			csvWriter.AddValue(generateRecord(checkRes))
 		}
 	} else {
-		csvWriter.AddValue([]string{emptyValue})
+		csvWriter.AddValue([]string{noDataMsg})
 	}
 	return csvWriter.WriteCSV(w)
 }

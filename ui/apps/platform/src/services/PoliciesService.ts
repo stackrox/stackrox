@@ -198,7 +198,7 @@ export function exportPolicies(policyIds: string[]): Promise<void> {
                     error instanceof Error
                         ? `Problem exporting policy data: ${error.message}`
                         : 'Problem exporting policy data';
-                throw new Error(message);
+                throw new Error(message, { cause: error });
             }
         } else {
             throw new Error('No policy data returned for the specified ID');

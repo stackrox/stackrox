@@ -9,8 +9,7 @@ const autoCompleteURL = `${baseUrl}/autocomplete`;
 
 // Add strings in alphabetical order with the exception of SEARCH_UNSET.
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
-// prettier-ignore
-export type SearchCategory =
+export /* prettier-ignore */ type SearchCategory =
     | 'SEARCH_UNSET'
     | 'ALERTS'
     | 'CLUSTER_HEALTH'

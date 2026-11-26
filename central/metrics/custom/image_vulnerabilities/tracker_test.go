@@ -132,7 +132,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 
 	assert.NoError(t, err)
 	tracker.Reconfigure(cfg)
-	tracker.Gather(makeAdminContext(t))
+	tracker.Gather(makeAdminContext(t), "")
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(makeAdminContext(t),

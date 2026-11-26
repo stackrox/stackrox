@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import type { CSSProperties } from 'react';
 import {
     Alert,
     Bullseye,
@@ -154,12 +153,10 @@ function WatchedImagesModal({
                         <WatchedImagesTable
                             aria-labelledby="current-watched-images-list"
                             className="pf-v6-u-max-height"
-                            style={
-                                {
-                                    overflowY: 'auto',
-                                    '--pf-v6-u-max-height--MaxHeight': '280px',
-                                } as CSSProperties
-                            }
+                            style={{
+                                overflowY: 'auto',
+                                '--pf-v6-u-max-height--MaxHeight': '280px',
+                            }}
                             watchedImages={watchedImages}
                             unwatchImage={unwatchImageMutation.mutate}
                             isUnwatchInProgress={unwatchImageMutation.isLoading}

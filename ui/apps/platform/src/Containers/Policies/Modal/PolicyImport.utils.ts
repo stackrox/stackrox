@@ -128,7 +128,7 @@ type PolicyErrorMessage = {
  */
 export function getErrorMessages(policyErrors: PolicyImportError[]): PolicyErrorMessage[] {
     const errorMessages = policyErrors.map((err) => {
-        let msg = '';
+        let msg;
         switch (err.type) {
             case 'duplicate_id': {
                 msg = `An existing policy with the name “${err.duplicateName}” has the same ID—${err.incomingId}—as the policy “${err.incomingName}” you are trying to import.`;

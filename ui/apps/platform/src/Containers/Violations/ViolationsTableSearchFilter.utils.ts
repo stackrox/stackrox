@@ -36,13 +36,7 @@ import {
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
 type ViolationSearchEntityName =
-    | 'Cluster'
-    | 'Deployment'
-    | 'Namespace'
-    | 'Node'
-    | 'Policy'
-    | 'Policy violation'
-    | 'Resource';
+    'Cluster' | 'Deployment' | 'Namespace' | 'Node' | 'Policy' | 'Policy violation' | 'Resource';
 
 const allSearchFilterEntities: CompoundSearchFilterConfig = [
     {

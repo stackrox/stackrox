@@ -56,7 +56,7 @@ Helm values are similar to public APIs or CLI parameters. When parameters change
 ### Notes / Tips
 
 - Look at the [README](README.md) to see how to work with the Helm charts
-- `.htpl` files are rendered by `roxctl`, you always need to render Helm charts via `roxctl` helm output
+- `.htpl` files are meta-templates, rendered whenever a Helm chart is instantiated (e.g. by the operator or in chart tests)
 
 ### Add a field to CentralServices or SecuredCluster chart:
 

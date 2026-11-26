@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generate"
-	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
 	"github.com/stackrox/rox/roxctl/sensor/getbundle"
 	"github.com/stackrox/rox/roxctl/sensor/migratetooperator"
 )
@@ -19,7 +18,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(
 		generate.Command(cliEnvironment),
 		getbundle.Command(cliEnvironment),
-		generatecerts.Command(cliEnvironment),
 		migratetooperator.Command(cliEnvironment),
 	)
 	flags.AddTimeout(c)

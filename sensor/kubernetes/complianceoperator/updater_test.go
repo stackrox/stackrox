@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
@@ -169,6 +171,68 @@ func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissionsNotFound(
 
 	actualError := s.getInfo(1, 1*time.Millisecond)
 	s.Assert().Contains(actualError.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
+}
+
+// TestGetNamespaceConcurrentAccess is a regression test for a data race between
+// the updater's collection cycles, which write the discovered compliance
+// operator namespace, and concurrent GetNamespace readers (e.g. the Manager's
+// run loop). The race is only detected when the test binary runs with -race.
+func (s *UpdaterTestSuite) TestGetNamespaceConcurrentAccess() {
+	// Registered before updater.Stop() below, so that with defers running in
+	// LIFO order the leak check executes after the updater has been asked to
+	// stop: the updater's run goroutine and the reader goroutines below must
+	// all have exited by then.
+	defer goleak.AssertNoGoroutineLeaks(s.T())
+
+	s.prependSSAReactorToFakeClient(true)
+
+	// Deploy the compliance operator in a non-default namespace, so that the
+	// first collection cycle updates the namespace instead of rewriting the
+	// initial value.
+	s.createCO(buildComplianceOperator(customNS))
+
+	readySignal := concurrency.NewSignal()
+	updater := NewInfoUpdater(s.client, 1*time.Millisecond, &readySignal)
+
+	updater.Notify(common.SensorComponentEventSyncFinished)
+	s.Require().NoError(updater.Start())
+	defer updater.Stop()
+
+	stopReaders := concurrency.NewSignal()
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Go(func() {
+			for !stopReaders.IsDone() {
+				_ = updater.GetNamespace()
+			}
+		})
+	}
+
+	// Every collected response implies that the updater's run goroutine wrote
+	// the namespace field while the readers above were running.
+	const expectedResponses = 25
+	timer := time.NewTimer(responseTimeout)
+	var responses int
+	// Reader function
+	func() {
+		for {
+			select {
+			case <-updater.ResponsesC():
+				responses++
+				if responses == expectedResponses {
+					return
+				}
+			case <-timer.C:
+				s.Fail("Timed out while waiting for compliance operator info")
+				return
+			}
+		}
+	}()
+
+	stopReaders.Signal()
+	wg.Wait()
+
+	s.Assert().Equal(customNS, updater.GetNamespace())
 }
 
 // mockRequiredResources creates a list of mock required resources for testing.

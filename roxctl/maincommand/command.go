@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/doc"
-	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
 	"github.com/stackrox/rox/roxctl/netpol"
@@ -104,7 +103,6 @@ func Command() *cobra.Command {
 		sbom.Command(cliEnvironment),
 		scanner.Command(cliEnvironment),
 		sensor.Command(cliEnvironment),
-		helm.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		netpol.Command(cliEnvironment),
