@@ -150,6 +150,16 @@ func scaleSensorDownForTest(ctx context.Context, t *testing.T, k8sClient kuberne
 		waitUntilCentralSensorConnectionIs(t, connCtx, storage.ClusterHealthStatus_HEALTHY)
 	})
 	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
+	// A scale-down only SIGTERMs the pod, which keeps relaying to Central for its full 30s
+	// termination grace period while ReadyReplicas is already 0. Force-kill it so the cut is
+	// immediate; an abrupt death is also the realistic failure mode these tests simulate.
+	grace := int64(0)
+	sensorPods, err := k8sClient.CoreV1().Pods(stackroxNamespace).List(ctx, metav1.ListOptions{LabelSelector: "app=sensor"})
+	require.NoErrorf(t, err, "failed to list sensor pods in namespace %s", stackroxNamespace)
+	for _, pod := range sensorPods.Items {
+		require.NoErrorf(t, k8sClient.CoreV1().Pods(stackroxNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{GracePeriodSeconds: &grace}),
+			"failed to force-delete sensor pod %s", pod.Name)
+	}
 	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 0)
 }
 
