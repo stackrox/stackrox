@@ -604,7 +604,7 @@ func TestScheduleRescanReport(t *testing.T) {
 			Return(nil, false, nil)
 
 		m.ScheduleRescanReport("cfg-unknown")
-		assert.Empty(t, m.rescanEntryIDs)
+		assert.Empty(t, m.oneShotEntryIDs)
 	})
 
 	t.Run("one-time scans get a re-run report", func(t *testing.T) {
@@ -614,7 +614,7 @@ func TestScheduleRescanReport(t *testing.T) {
 			Return(cfg, true, nil)
 
 		m.ScheduleRescanReport("cfg-ot")
-		assert.Len(t, m.rescanEntryIDs, 1)
+		assert.Len(t, m.oneShotEntryIDs, 1)
 		assert.Empty(t, m.entryIDs, "one-time scans have no recurring entry")
 	})
 
@@ -625,12 +625,12 @@ func TestScheduleRescanReport(t *testing.T) {
 			Return(cfg, true, nil).Times(2)
 
 		m.ScheduleRescanReport("cfg1")
-		require.Len(t, m.rescanEntryIDs, 1)
-		first := m.rescanEntryIDs["cfg1"]
+		require.Len(t, m.oneShotEntryIDs, 1)
+		first := m.oneShotEntryIDs["cfg1"]
 
 		m.ScheduleRescanReport("cfg1")
-		require.Len(t, m.rescanEntryIDs, 1)
-		assert.NotEqual(t, first, m.rescanEntryIDs["cfg1"], "the pending report was replaced, not duplicated")
+		require.Len(t, m.oneShotEntryIDs, 1)
+		assert.NotEqual(t, first, m.oneShotEntryIDs["cfg1"], "the pending report was replaced, not duplicated")
 	})
 
 	t.Run("removing the configuration drops the pending report", func(t *testing.T) {
@@ -641,11 +641,11 @@ func TestScheduleRescanReport(t *testing.T) {
 
 		m.UpsertScanConfig(cfg)
 		m.ScheduleRescanReport("cfg1")
-		require.Len(t, m.rescanEntryIDs, 1)
+		require.Len(t, m.oneShotEntryIDs, 1)
 
 		m.RemoveScanConfig("cfg1")
 		assert.Empty(t, m.entryIDs)
-		assert.Empty(t, m.rescanEntryIDs)
+		assert.Empty(t, m.oneShotEntryIDs)
 	})
 
 	t.Run("disabled feature schedules nothing", func(t *testing.T) {
@@ -654,7 +654,7 @@ func TestScheduleRescanReport(t *testing.T) {
 		// No GetScanConfiguration expectation: the disabled scheduler must not read the store.
 
 		m.ScheduleRescanReport("cfg1")
-		assert.Empty(t, m.rescanEntryIDs)
+		assert.Empty(t, m.oneShotEntryIDs)
 	})
 
 	// End to end: the re-run report fires once, one delay after the latest re-run, and a
@@ -999,4 +999,98 @@ func TestAuditExpectations(t *testing.T) {
 
 		assert.Nil(t, m.auditExpectations(ctx, auditConfig(dailySchedule(0, 0)), cycleStart))
 	})
+}
+
+func TestScheduleFirstScanReport(t *testing.T) {
+	t.Setenv(env.ComplianceReportScheduleDelay.EnvVar(), "1h")
+
+	t.Run("creation outside the delay window schedules a first-scan report", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		// The schedule's next tick is hours away, so the recurring entry's first fire is far
+		// beyond the delay window: the creation cycle needs its own one-shot report.
+		nextTick := time.Now().UTC().Add(2 * time.Hour)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		cfg.Schedule = dailySchedule(int32(nextTick.Hour()), int32(nextTick.Minute()))
+
+		m.ScheduleFirstScanReport(cfg)
+
+		require.Len(t, m.oneShotEntryIDs, 1)
+		require.Contains(t, m.oneShotEntryIDs, "cfg1")
+		fireAt := oneShotFireAt(m, "cfg1")
+		require.NotNil(t, fireAt)
+		assert.InDelta(t, time.Now().Add(time.Hour).Unix(), fireAt.Unix(), 60, "the report is due one delay after creation")
+	})
+
+	t.Run("creation within the delay window is covered by the recurring entry", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		// The schedule ticked five minutes ago: the recurring entry's first fire is at
+		// tick+delay, inside the delay window, and reports the cycle in progress. No one-shot
+		// may be added, or the creation cycle would be reported twice.
+		recentTick := time.Now().UTC().Add(-5 * time.Minute)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		cfg.Schedule = dailySchedule(int32(recentTick.Hour()), int32(recentTick.Minute()))
+
+		m.ScheduleFirstScanReport(cfg)
+
+		assert.Empty(t, m.oneShotEntryIDs)
+	})
+
+	t.Run("one-time scans always get a first-scan report", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		cfg := &storage.ComplianceOperatorScanConfigurationV2{
+			Id:             "cfg-ot",
+			ScanConfigName: "cfg-one-time",
+			OneTimeScan:    true,
+		}
+
+		m.ScheduleFirstScanReport(cfg)
+
+		assert.Len(t, m.oneShotEntryIDs, 1)
+		assert.Contains(t, m.oneShotEntryIDs, "cfg-ot")
+	})
+
+	t.Run("a first-scan report coalesces with a pending re-run report", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			Return(cfg, true, nil).Times(1)
+
+		m.ScheduleRescanReport("cfg1")
+		require.Len(t, m.oneShotEntryIDs, 1)
+		first := m.oneShotEntryIDs["cfg1"]
+
+		// The first-scan report replaces the pending re-run report: one report, due one delay
+		// after the latest trigger.
+		nextTick := time.Now().UTC().Add(2 * time.Hour)
+		cfg.Schedule = dailySchedule(int32(nextTick.Hour()), int32(nextTick.Minute()))
+		m.ScheduleFirstScanReport(cfg)
+
+		require.Len(t, m.oneShotEntryIDs, 1)
+		assert.NotEqual(t, first, m.oneShotEntryIDs["cfg1"], "the pending report was replaced, not duplicated")
+	})
+
+	t.Run("disabled feature schedules nothing", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "false")
+
+		m.ScheduleFirstScanReport(scheduledScanConfig("cfg1", "cfg-one"))
+
+		assert.Empty(t, m.oneShotEntryIDs)
+	})
+}
+
+// oneShotFireAt returns the fire time of the configuration's pending one-shot entry, or nil.
+func oneShotFireAt(m *managerImpl, scanConfigID string) *time.Time {
+	entryID, ok := m.oneShotEntryIDs[scanConfigID]
+	if !ok {
+		return nil
+	}
+	for _, e := range m.cron.Entries() {
+		if e.ID == entryID {
+			if s, ok := e.Schedule.(*oneShotSchedule); ok {
+				return &s.fireAt
+			}
+		}
+	}
+	return nil
 }

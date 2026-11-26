@@ -149,6 +149,11 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	// Keep the report scheduler's entry for the configuration in sync with the stored one.
 	s.reportScheduler.UpsertScanConfig(scanConfig)
 
+	// Report the first scan cycle: the creation-triggered scans get the report delay to run
+	// before the report fires. Skipped internally when the recurring entry already reports
+	// the cycle in progress.
+	s.reportScheduler.ScheduleFirstScanReport(scanConfig)
+
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
 }
 

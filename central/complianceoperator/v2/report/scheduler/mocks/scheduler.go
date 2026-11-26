@@ -53,6 +53,18 @@ func (mr *MockManagerMockRecorder) RemoveScanConfig(scanConfigID any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveScanConfig", reflect.TypeOf((*MockManager)(nil).RemoveScanConfig), scanConfigID)
 }
 
+// ScheduleFirstScanReport mocks base method.
+func (m *MockManager) ScheduleFirstScanReport(scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ScheduleFirstScanReport", scanConfig)
+}
+
+// ScheduleFirstScanReport indicates an expected call of ScheduleFirstScanReport.
+func (mr *MockManagerMockRecorder) ScheduleFirstScanReport(scanConfig any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleFirstScanReport", reflect.TypeOf((*MockManager)(nil).ScheduleFirstScanReport), scanConfig)
+}
+
 // ScheduleRescanReport mocks base method.
 func (m *MockManager) ScheduleRescanReport(scanConfigID string) {
 	m.ctrl.T.Helper()

@@ -547,6 +547,78 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnError() {
 	}
 }
 
+// TestHandleReadyScanDecoupledReportingGatesSpawning covers the rollout cut: with the decoupled
+// report scheduler's feature enabled, a finished scan still gets its data hygiene
+// (DeleteOldResults) but no report cycle is spawned for it.
+func (m *ManagerTestSuite) TestHandleReadyScanDecoupledReportingGatesSpawning() {
+	m.T().Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
+
+	now := protocompat.TimestampNow()
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-1",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  "test-scan",
+		ScanRefId:       "ref-1",
+		LastStartedTime: now,
+	}
+
+	ctrl := gomock.NewController(m.T())
+	checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
+	scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileMocks.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	integrationDS := integrationMocks.NewMockDataStore(ctrl)
+	suiteStore := suiteDS.NewMockDataStore(ctrl)
+	bindingsStore := bindingsDS.NewMockDataStore(ctrl)
+	generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+	generator.EXPECT().Stop().AnyTimes()
+
+	manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+	manager.Start()
+	m.T().Cleanup(func() {
+		manager.Stop()
+		ctrl.Finish()
+	})
+	managerImp := manager.(*managerImpl)
+
+	// Data hygiene still runs; closing done here proves the result was processed.
+	done := make(chan struct{})
+	checkResultDS.EXPECT().
+		DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+		Times(1).
+		DoAndReturn(func(_, _, _, _ any) error {
+			close(done)
+			return nil
+		})
+	// No scanConfigDS or snapshotDS expectations: the report-cycle spawning path
+	// (GetScanConfigurationByName, snapshots, subscriptions) must not be reached.
+
+	result := &watcher.ScanWatcherResults{
+		WatcherID: "watcher-1",
+		Scan:      scan,
+		Scope: watcher.ScanScope{
+			ScanRefID:       scan.GetScanRefId(),
+			LastStartedTime: scan.GetLastStartedTime(),
+		},
+	}
+
+	concurrency.WithLock(&managerImp.watchingScansLock, func() {
+		managerImp.watchingScansStartTime[result.WatcherID] = time.Now()
+	})
+
+	managerImp.readyQueue.Push(result)
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		m.FailNow("timeout waiting for handleReadyScan to process the result")
+	}
+
+	// No scan configuration watcher may exist afterwards.
+	m.Assert().Empty(managerImp.watchingScanConfigs)
+}
+
 // TestHandleReadyScanStaleMarkingScope covers which scope handleReadyScan uses to mark prior
 // results stale: no scope at all, a result-derived scope with no Scan, and a recorded scope that
 // overrides a stale Scan's older start time.

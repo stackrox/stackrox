@@ -69,13 +69,18 @@ type Manager interface {
 	// (one-time scans) get no entry; upserting one removes any entry the configuration had.
 	UpsertScanConfig(scanConfig *storage.ComplianceOperatorScanConfigurationV2)
 	// RemoveScanConfig drops the cron entries of the scan configuration, if any, e.g. on
-	// configuration deletion. This includes a pending re-run report.
+	// configuration deletion. This includes a pending one-shot report.
 	RemoveScanConfig(scanConfigID string)
 	// ScheduleRescanReport schedules a one-shot report job for the scan configuration, due one
 	// delay after now: a re-run's scans get the delay to settle before the report is
 	// generated. Re-running again before the report fires coalesces into a single job due one
 	// delay after the latest re-run. One-time scans are included: a re-run is their only cycle.
 	ScheduleRescanReport(scanConfigID string)
+	// ScheduleFirstScanReport schedules a one-shot report job for the scan configuration's
+	// first scan cycle, due one delay after creation, so the creation-triggered scans are
+	// reported even when the recurring entry's first fire is a full schedule interval away.
+	// One-time scans are included: the first cycle is their only report.
+	ScheduleFirstScanReport(scanConfig *storage.ComplianceOperatorScanConfigurationV2)
 }
 
 type managerImpl struct {
@@ -103,12 +108,13 @@ type managerImpl struct {
 	// cron triggers one entry per scan configuration; entries submit jobs rather than running
 	// them, so the cron goroutine never blocks on report generation.
 	cron *cron.Cron
-	// cronJobsLock guards entryIDs and rescanEntryIDs.
+	// cronJobsLock guards entryIDs and oneShotEntryIDs.
 	cronJobsLock sync.Mutex
 	// entryIDs maps scan configuration IDs to their recurring schedule entries.
 	entryIDs map[string]cron.EntryID
-	// rescanEntryIDs maps scan configuration IDs to their pending one-shot re-run entries.
-	rescanEntryIDs map[string]cron.EntryID
+	// oneShotEntryIDs maps scan configuration IDs to their pending one-shot entries (re-run
+	// and first-scan reports).
+	oneShotEntryIDs map[string]cron.EntryID
 
 	// jobQueue holds submitted report jobs; readyForReports wakes the execution loop when a
 	// job is enqueued or a running one finishes.
@@ -150,7 +156,7 @@ func New(scanConfigDataStore scanConfigDS.DataStore,
 		),
 		cron:            cron.New(),
 		entryIDs:        make(map[string]cron.EntryID),
-		rescanEntryIDs:  make(map[string]cron.EntryID),
+		oneShotEntryIDs: make(map[string]cron.EntryID),
 		jobQueue:        newJobQueue(),
 		readyForReports: concurrency.NewSignal(),
 		concurrencySem:  semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
@@ -228,7 +234,7 @@ func (m *managerImpl) Stop() {
 	}
 	concurrency.WithLock(&m.cronJobsLock, func() {
 		m.entryIDs = make(map[string]cron.EntryID)
-		m.rescanEntryIDs = make(map[string]cron.EntryID)
+		m.oneShotEntryIDs = make(map[string]cron.EntryID)
 	})
 	if m.advisoryLockRelease != nil {
 		m.advisoryLockRelease()
@@ -332,8 +338,8 @@ func (m *managerImpl) RemoveScanConfig(scanConfigID string) {
 }
 
 // ScheduleRescanReport schedules a one-shot report job for the scan configuration, due one
-// delay after now. A pending re-run report is replaced, so repeated re-runs coalesce into one
-// report due one delay after the latest re-run.
+// delay after now. A pending one-shot report is replaced, so repeated re-runs coalesce into
+// one report due one delay after the latest re-run.
 func (m *managerImpl) ScheduleRescanReport(scanConfigID string) {
 	if !m.enabled() {
 		return
@@ -347,18 +353,48 @@ func (m *managerImpl) ScheduleRescanReport(scanConfigID string) {
 		log.Debugf("Compliance report scheduler: scan configuration %q not found, no re-run report scheduled", scanConfigID)
 		return
 	}
+	m.scheduleOneShotReport(scanConfig)
+}
+
+// ScheduleFirstScanReport schedules a one-shot report job for the scan configuration's first
+// scan cycle, due one delay after now. It is skipped when the recurring entry already reports
+// the cycle in progress -- its first fire falls within the delay window, which happens when
+// the configuration was created shortly after a schedule tick -- so the creation cycle is
+// reported exactly once.
+func (m *managerImpl) ScheduleFirstScanReport(scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	if !m.enabled() {
+		return
+	}
+	// One-time scans have no recurring entry: the creation cycle is their only report.
+	if !scanConfig.GetOneTimeScan() {
+		if s, err := newReportSchedule(scanConfig); err == nil {
+			if firstFire, err := s.NextFireAfter(time.Now()); err == nil &&
+				!firstFire.After(time.Now().Add(env.ComplianceReportScheduleDelay.DurationSetting())) {
+				// The recurring entry fires within the delay window, reporting the cycle in
+				// progress -- the cycle the creation scans belong to.
+				return
+			}
+		}
+	}
+	m.scheduleOneShotReport(scanConfig)
+}
+
+// scheduleOneShotReport schedules a report job due one delay after now, anchored at now. A
+// pending one-shot report for the configuration is replaced, so repeated triggers (re-runs,
+// creation) coalesce into one report due one delay after the latest trigger.
+func (m *managerImpl) scheduleOneShotReport(scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
 	scheduledAt := time.Now()
 	fireAt := scheduledAt.Add(env.ComplianceReportScheduleDelay.DurationSetting())
 	concurrency.WithLock(&m.cronJobsLock, func() {
-		if oldID, ok := m.rescanEntryIDs[scanConfigID]; ok {
+		if oldID, ok := m.oneShotEntryIDs[scanConfig.GetId()]; ok {
 			m.cron.Remove(oldID)
-			delete(m.rescanEntryIDs, scanConfigID)
+			delete(m.oneShotEntryIDs, scanConfig.GetId())
 		}
 		entryID := m.cron.Schedule(&oneShotSchedule{fireAt: fireAt}, cron.FuncJob(func() {
-			// The cycle is anchored at the re-run: scans that started since are the cycle's.
+			// The cycle is anchored at the trigger: scans that started since are the cycle's.
 			m.submitJob(scanConfig.GetId(), scanConfig.GetScanConfigName(), scheduledAt)
 		}))
-		m.rescanEntryIDs[scanConfigID] = entryID
+		m.oneShotEntryIDs[scanConfig.GetId()] = entryID
 	})
 }
 
@@ -389,9 +425,9 @@ func (m *managerImpl) removeScanConfigNoLock(scanConfigID string) {
 		m.cron.Remove(oldID)
 		delete(m.entryIDs, scanConfigID)
 	}
-	if oldID, ok := m.rescanEntryIDs[scanConfigID]; ok {
+	if oldID, ok := m.oneShotEntryIDs[scanConfigID]; ok {
 		m.cron.Remove(oldID)
-		delete(m.rescanEntryIDs, scanConfigID)
+		delete(m.oneShotEntryIDs, scanConfigID)
 	}
 }
 

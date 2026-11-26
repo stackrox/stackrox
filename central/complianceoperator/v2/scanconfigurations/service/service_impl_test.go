@@ -170,6 +170,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
 	s.reportScheduler.EXPECT().UpsertScanConfig(processResponse).Times(1)
+	s.reportScheduler.EXPECT().ScheduleFirstScanReport(processResponse).Times(1)
 	s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 		{
 			ClusterId:    fixtureconsts.Cluster1,
