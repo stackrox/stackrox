@@ -105,6 +105,18 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		totalFail:  0,
 		totalMixed: 0,
 	}
+	// While a scan of the cluster is running, the stored results mix the previous cycle's
+	// rows (stale, skipped by the filter below) with the current cycle's rows as they
+	// arrive, so a report generated at this point would include only some scans' results
+	// while looking complete: the formatter only emits the "scan in progress" notice when
+	// a cluster has no rows at all. Reports are queued behind a ScanConfigWatcher once
+	// the first scan of the configuration has received all its results, so this mainly
+	// covers on-demand reports requested before that point: return no rows so the report
+	// is either complete or marked as pending. Clusters with failed scans are exempt
+	// because their successful scans' results are still reported.
+	if clusterData.HasRunningScan && clusterData.FailedInfo == nil {
+		return ret, statuses, nil
+	}
 	successfulScanNames := clusterData.ScanNames
 	if clusterData.FailedInfo != nil {
 		if len(clusterData.FailedInfo.FailedScans) == 0 {
@@ -126,7 +138,25 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ComplianceOperatorScanName, successfulScanNames...).
 		ProtoQuery()
-	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
+	walkFn := g.aggreateResults(ctx, clusterID, &ret, statuses)
+	// No upper-bound filter: results from a newer scan cycle are not excluded. A race where a
+	// later scan completes during aggregation is practically impossible (scans take minutes,
+	// aggregation is fast). Even if it occurred, newer results overwrite the old ones in the DB,
+	// so excluding them would leave the report incomplete rather than more accurate.
+	var skippedStale int
+	filteredWalkFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
+		if startTime := clusterData.ScanStartTimes[checkResult.GetScanName()]; startTime != nil {
+			if checkResult.GetLastStartedTime() == nil || checkResult.GetLastStartedTime().AsTime().Before(startTime.AsTime()) {
+				skippedStale++
+				return nil
+			}
+		}
+		return walkFn(checkResult)
+	}
+	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, filteredWalkFn)
+	if skippedStale > 0 {
+		log.Warnf("Skipped %d stale result(s) for cluster %s in scan config %s", skippedStale, clusterID, scanConfigID)
+	}
 	return ret, statuses, err
 }
 
