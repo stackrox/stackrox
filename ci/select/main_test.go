@@ -25,6 +25,26 @@ rules:
     always_run: true
 `
 
+// testRulesWithAliases extends testRules with prow_aliases so the gate command
+// can resolve Prow job names.
+const testRulesWithAliases = `
+jobs:
+  - go
+  - name: postgres
+    prow_aliases: [gke-postgres-tests]
+  - lint
+rules:
+  - name: go-unit
+    jobs: [go]
+    skip_if_only_changed: ['^ui/', '^.*\.md$']
+  - name: db
+    jobs: [postgres]
+    run_if_changed: ['^central/', '^pkg/']
+  - name: lint
+    jobs: [lint]
+    always_run: true
+`
+
 func TestPlan(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -147,9 +167,10 @@ func TestRunHelp(t *testing.T) {
 		args []string
 		want []string
 	}{
-		"root":     {args: []string{"--help"}, want: []string{"plan", "validate"}},
+		"root":     {args: []string{"--help"}, want: []string{"plan", "validate", "gate"}},
 		"plan":     {args: []string{"plan", "--help"}, want: []string{"--rules", "--files-file"}},
 		"validate": {args: []string{"validate", "--help"}, want: []string{"--rules"}},
+		"gate":     {args: []string{"gate", "--help"}, want: []string{"--rules", "--files-file"}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
@@ -160,4 +181,76 @@ func TestRunHelp(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGateRunsByInventoryName(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRules)
+	// A central/ change: postgres runs (central match).
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "central/sac/client.go\n")
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "postgres"}, &output, &diagnostic, jobcentric.New())
+	require.NoError(t, err) // exit 0: job should run
+}
+
+func TestGateSkipsByInventoryName(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRules)
+	// Docs-only: postgres skips (no central/pkg match).
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "README.md\n")
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "postgres"}, &output, &diagnostic, jobcentric.New())
+	require.ErrorIs(t, err, errGateShouldSkip)
+}
+
+func TestGateRunsByProwAlias(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRulesWithAliases)
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "central/sac/client.go\n")
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "gke-postgres-tests"}, &output, &diagnostic, jobcentric.New())
+	require.NoError(t, err)
+}
+
+func TestGateSkipsByProwAlias(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRulesWithAliases)
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "README.md\n")
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "gke-postgres-tests"}, &output, &diagnostic, jobcentric.New())
+	require.ErrorIs(t, err, errGateShouldSkip)
+}
+
+func TestGateFailsOpenForUnknownJob(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRules)
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "README.md\n")
+	var output, diagnostic bytes.Buffer
+	// unknown-job is not in the inventory or any prow_aliases → fail open (exit 0).
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "unknown-job"}, &output, &diagnostic, jobcentric.New())
+	require.NoError(t, err)
+}
+
+func TestGateFailsOpenOnMissingRulesFile(t *testing.T) {
+	t.Parallel()
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", "nonexistent.yaml", "postgres"}, &output, &diagnostic, jobcentric.New())
+	require.NoError(t, err) // fail open
+	assert.Contains(t, diagnostic.String(), "failing open")
+}
+
+func TestGateAlwaysRunJobRuns(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	rulesFile := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRules)
+	// Even docs-only: lint always runs.
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "README.md\n")
+	var output, diagnostic bytes.Buffer
+	err := run(t.Context(), []string{"gate", "--rules", rulesFile, "--files-file", files, "lint"}, &output, &diagnostic, jobcentric.New())
+	require.NoError(t, err)
 }

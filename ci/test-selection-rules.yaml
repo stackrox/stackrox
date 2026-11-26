@@ -1,5 +1,8 @@
 # Semantics and syntax: ci/select/README.md. Every job must be decided exactly
 # once (always_run or one rule), which validation enforces.
+#
+# prow_aliases: Prow job names (passed as $1 to .openshift-ci/dispatch.sh) that
+# map to this inventory entry. Unknown aliases fail open (the job runs).
 jobs:
   - go
   - go-postgres
@@ -8,13 +11,33 @@ jobs:
   - e2e-byodb-tests
   - e2e-db-backup-restore-tests-gke
   - e2e-db-backup-restore-tests-gke-konflux
-  - e2e-gke-upgrade-tests
-  - e2e-nongroovy-tests-gke
+  - name: e2e-gke-upgrade-tests
+    prow_aliases:
+      - gke-upgrade-tests
+  - name: e2e-nongroovy-tests-gke
+    prow_aliases:
+      - gke-nongroovy-e2e-tests
+      - ocp-nongroovy-e2e-tests
   - e2e-nongroovy-tests-gke-konflux
-  - e2e-qa-tests-gke
+  - name: e2e-qa-tests-gke
+    prow_aliases:
+      - gke-qa-e2e-tests
+      - gke-external-pg-17-qa-e2e-tests
+      - gke-race-condition-qa-e2e-tests
+      - eks-qa-e2e-tests
+      - ocp-qa-e2e-tests
+      - aro-qa-e2e-tests
+      - aks-qa-e2e-tests
+      - osd-aws-qa-e2e-tests
+      - osd-gcp-qa-e2e-tests
+      - powervs-qa-e2e-tests
+      - ibmcloudz-qa-e2e-tests
   - e2e-qa-tests-gke-konflux
   - e2e-qa-tests-ocp-fips-konflux
-  - e2e-ui-tests-gke
+  - name: e2e-ui-tests-gke
+    prow_aliases:
+      - gke-ui-e2e-tests
+      - ocp-ui-e2e-tests
   - e2e-ui-tests-gke-konflux
   - local-roxctl-tests
   - golangci-lint

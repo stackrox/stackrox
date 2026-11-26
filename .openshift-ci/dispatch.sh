@@ -19,6 +19,21 @@ fi
 ci_job="$1"
 shift
 
+# Skip jobs based on file-change rules when in a PR context.
+# Fails open: if the binary cannot be built or any other error occurs the job
+# runs normally, so a misconfigured rules file never silently blocks CI.
+if is_in_PR_context && is_OPENSHIFT_CI && [[ -n "${PULL_BASE_SHA:-}" ]]; then
+    git diff --name-only "${PULL_BASE_SHA}...HEAD" > /tmp/ci-select-files.txt 2>/dev/null || true
+    if make -C "${ROOT}/ci/select" 2>/dev/null && \
+       ! "${ROOT}/ci/select/bin/ci-select" gate \
+           --rules "${ROOT}/ci/test-selection-rules.yaml" \
+           --files-file /tmp/ci-select-files.txt \
+           "$ci_job" 2>/dev/null; then
+        info "ci-select: skipping $ci_job"
+        exit 0
+    fi
+fi
+
 # Skip non-UI jobs early when the PR only touches files under ui/.
 case "$ci_job" in
     *nongroovy*|*upgrade*)

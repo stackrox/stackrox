@@ -22,7 +22,7 @@ func mapping(t *testing.T, m rules.Mapping) rules.Mapping {
 func TestResolve(t *testing.T) {
 	m := func(t *testing.T) rules.Mapping {
 		return mapping(t, rules.Mapping{
-			Jobs: []string{"go", "postgres", "sensor", "ui-e2e", "always"},
+			Jobs: []rules.JobEntry{{Name: "go"}, {Name: "postgres"}, {Name: "sensor"}, {Name: "ui-e2e"}, {Name: "always"}},
 			Rules: []*rules.Rule{
 				{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`, `^.*\.md$`}},
 				{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`, `^pkg/`}},
@@ -73,7 +73,7 @@ func TestResolve(t *testing.T) {
 
 func TestExclusionPattern(t *testing.T) {
 	m := mapping(t, rules.Mapping{
-		Jobs: []string{"go"},
+		Jobs: []rules.JobEntry{{Name: "go"}},
 		Rules: []*rules.Rule{
 			// Skip go when only docs change, but a prefetch list is not a doc.
 			{Name: "go", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{
@@ -91,7 +91,7 @@ func TestExclusionPattern(t *testing.T) {
 // which is how a subset rescue is expressed without a second clause.
 func TestExclusionPunchesRunHole(t *testing.T) {
 	m := mapping(t, rules.Mapping{
-		Jobs: []string{"sensor"},
+		Jobs: []rules.JobEntry{{Name: "sensor"}},
 		Rules: []*rules.Rule{
 			{Name: "sensor", Jobs: []string{"sensor"}, SkipIfOnlyChanged: []string{
 				`^operator/`, `!^operator/tests/chart/`,
