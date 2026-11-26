@@ -25,6 +25,15 @@ type perRPC struct {
 	Authorizers map[string]authz.Authorizer
 }
 
+// EnrichContext returns the input context unchanged.
+func (pr *perRPC) EnrichContext(ctx context.Context, fullMethodName string) context.Context {
+	authorizer, found := pr.Authorizers[fullMethodName]
+	if !found {
+		return pr.Default.EnrichContext(ctx, fullMethodName)
+	}
+	return authorizer.EnrichContext(ctx, fullMethodName)
+}
+
 // Authorized applies the default or per-RPC authorizer, as appropriate.
 func (pr *perRPC) Authorized(ctx context.Context, rpcName string) error {
 	if a, exists := pr.Authorizers[rpcName]; exists {

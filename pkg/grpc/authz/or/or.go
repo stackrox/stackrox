@@ -15,6 +15,15 @@ type or struct {
 	authorizers []authz.Authorizer
 }
 
+// EnrichContext returns the input context unchanged.
+func (o *or) EnrichContext(ctx context.Context, fullMethodName string) context.Context {
+	newCtx := ctx
+	for _, a := range o.authorizers {
+		newCtx = a.EnrichContext(ctx, fullMethodName)
+	}
+	return newCtx
+}
+
 func (o *or) Authorized(ctx context.Context, fullMethodName string) error {
 	var errors []error
 	for _, a := range o.authorizers {

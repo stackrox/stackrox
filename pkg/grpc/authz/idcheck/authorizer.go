@@ -23,6 +23,11 @@ func Wrap(idAuthorizer IdentityBasedAuthorizer) authz.Authorizer {
 	return identityBasedAuthorizerWrapper{idAuthorizer: idAuthorizer}
 }
 
+// EnrichContext returns the input context unchanged.
+func (w identityBasedAuthorizerWrapper) EnrichContext(ctx context.Context, _ string) context.Context {
+	return ctx
+}
+
 // Authorized implements the Authorizer interface.
 func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, _ string) error {
 	id, err := authn.IdentityFromContext(ctx)

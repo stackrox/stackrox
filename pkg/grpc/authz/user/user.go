@@ -30,6 +30,11 @@ type permissionChecker struct {
 	requiredPermissions []permissions.ResourceWithAccess
 }
 
+// EnrichContext returns the input context unchanged.
+func (p *permissionChecker) EnrichContext(ctx context.Context, _ string) context.Context {
+	return ctx
+}
+
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	// Pull the identity from the context.
 	id, err := authn.IdentityFromContext(ctx)

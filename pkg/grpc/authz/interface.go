@@ -9,4 +9,7 @@ type Authorizer interface {
 	// Authorized returns an error if authorization fails.
 	// If authorization is successful, it returns nil.
 	Authorized(ctx context.Context, fullMethodName string) error
+	// EnrichContext returns a context enriched with any information the authorizer
+	// wants to make available to the handler.
+	EnrichContext(ctx context.Context, fullMethodName string) context.Context
 }

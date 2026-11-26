@@ -22,6 +22,11 @@ type roleChecker struct {
 	roleName string
 }
 
+// EnrichContext returns the input context unchanged.
+func (p *roleChecker) EnrichContext(ctx context.Context, _ string) context.Context {
+	return ctx
+}
+
 func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
