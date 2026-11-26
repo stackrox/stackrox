@@ -30,6 +30,85 @@ const (
 	configID = "test-config-id"
 )
 
+func TestValidateConfigConsistency(t *testing.T) {
+	newConfig := func(issuer string, configType storage.AuthMachineToMachineConfig_Type) *storage.AuthMachineToMachineConfig {
+		return &storage.AuthMachineToMachineConfig{
+			Issuer: issuer,
+			Type:   configType,
+		}
+	}
+
+	cases := map[string]struct {
+		configs            []*storage.AuthMachineToMachineConfig
+		expectedError      error
+		expectedErrorTexts []string
+	}{
+		"No config is rejected": {
+			configs:       nil,
+			expectedError: errox.InvalidArgs,
+		},
+		"Single config is valid": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+			},
+		},
+		"Multiple consistent configs are valid": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+			},
+		},
+		"Issuer mismatch is rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://other-issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"issuer mismatch"},
+		},
+		"Type mismatch is rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GITHUB_ACTIONS),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"type mismatch"},
+		},
+		"Issuer and type mismatches are both reported": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://other-issuer.example.com", storage.AuthMachineToMachineConfig_GITHUB_ACTIONS),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"issuer mismatch", "type mismatch"},
+		},
+		"Only the first config is used as reference for mismatch reporting": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+				newConfig("https://third-issuer.example.com", storage.AuthMachineToMachineConfig_GENERIC),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"issuer mismatch", "https://issuer.example.com", "https://third-issuer.example.com"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := validateConfigConsistency(c.configs)
+
+			if c.expectedError == nil && len(c.expectedErrorTexts) == 0 {
+				assert.NoError(t, err)
+				return
+			}
+			assert.ErrorIs(t, err, c.expectedError)
+			for _, expectedErrorText := range c.expectedErrorTexts {
+				assert.ErrorContains(t, err, expectedErrorText)
+			}
+		})
+	}
+}
+
 func TestNewTokenExchanger(t *testing.T) {
 	// Serve a minimal OIDC discovery document, so that creating the OIDC provider within
 	// tokenVerifierFromConfigData succeeds without reaching out to a real issuer.
@@ -265,6 +344,7 @@ func TestExchangeToken(t *testing.T) {
 			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
 				verifier.EXPECT().VerifyIDToken(gomock.Any(), "test-raw-id-token").
 					Return(newIDToken("test-subject"), nil) // #nosec G101 -- test data
+				verifier.EXPECT().Audience().Return("")
 			},
 			prepareRoleDS: func(t *testing.T, roleDS *roleMocks.MockDataStore) {
 				roleDS.EXPECT().GetAndResolveRole(gomock.Any(), "Admin").
@@ -293,6 +373,7 @@ func TestExchangeToken(t *testing.T) {
 						Subject: "test-subject",
 						Claims:  func(any) error { return assert.AnError },
 					}, nil)
+				verifier.EXPECT().Audience().Return("")
 			},
 			expectedError:     errox.NoCredentials,
 			expectedErrorText: "extracting claims from ID token",
@@ -301,6 +382,7 @@ func TestExchangeToken(t *testing.T) {
 			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
 				verifier.EXPECT().VerifyIDToken(gomock.Any(), gomock.Any()).
 					Return(newIDToken("unknown-subject"), nil)
+				verifier.EXPECT().Audience().Return("")
 			},
 			expectedError:     errox.NoCredentials,
 			expectedErrorText: "resolving roles for id token",
@@ -309,6 +391,7 @@ func TestExchangeToken(t *testing.T) {
 			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
 				verifier.EXPECT().VerifyIDToken(gomock.Any(), gomock.Any()).
 					Return(newIDToken("test-subject"), nil)
+				verifier.EXPECT().Audience().Return("")
 			},
 			prepareRoleDS: func(t *testing.T, roleDS *roleMocks.MockDataStore) {
 				roleDS.EXPECT().GetAndResolveRole(gomock.Any(), "Admin").
@@ -339,13 +422,16 @@ func TestExchangeToken(t *testing.T) {
 			}
 
 			config := newExchangerConfig()
+			mappings := parseMappings(config.GetMappings(), "")
+			providerRoleMapper := newRoleMapperFromParsedMappings(mappings, roleDS)
 			exchanger := &machineToMachineTokenExchanger{
-				config:            config,
-				verifier:          verifier,
-				provider:          newProvider(config.GetId(), config.GetType().String(), newRoleMapperFromMappings(config.GetMappings(), roleDS)),
+				configs:           []*storage.AuthMachineToMachineConfig{config},
+				verifiers:         []tokenVerifier{verifier},
+				provider:          newProvider(config.GetId(), config.GetType().String(), providerRoleMapper),
 				issuer:            issuer,
 				roleDS:            roleDS,
 				roxClaimExtractor: newClaimExtractorForConfigType(config.GetType()),
+				mappings:          mappings,
 			}
 
 			token, err := exchanger.ExchangeToken(it.Context(), "test-raw-id-token")
