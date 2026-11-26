@@ -17,6 +17,9 @@ jobs:
   - e2e-ui-tests-gke
   - e2e-ui-tests-gke-konflux
   - local-roxctl-tests
+  - golangci-lint
+  - check-generated-files
+  - check-crd-compatibility
 
 rules:
   # Go has no frontend/doc code, so only an entirely-ui-or-docs diff is safe.
@@ -119,3 +122,29 @@ rules:
       - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
       - '!^\.openshift-ci/dev-requirements\.txt$'
       - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
+
+  - name: lint
+    jobs: [golangci-lint]
+    run_if_changed:
+      - '\.go$'
+      - '^go\.(mod|sum)$'
+
+  - name: generated-files
+    jobs: [check-generated-files]
+    run_if_changed:
+      - '\.proto$'
+      - '\.go$'
+      - '^go\.(mod|sum)$'
+      - '^\.containerignore$'
+      - '^\.dockerignore$'
+      - '^scripts/style/shellcheck_skip\.txt$'
+      - '^operator/'
+
+  - name: crd-compatibility
+    jobs: [check-crd-compatibility]
+    run_if_changed:
+      - '^operator/'
+      - '^config-controller/'
+      - '\.proto$'
+      - '^\.github/workflows/scripts/crdify\.sh$'
+      - '^\.github/workflows/check-crd-compatibility\.yaml$'

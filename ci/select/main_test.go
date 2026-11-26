@@ -78,6 +78,21 @@ func TestPlanWritesStepSummary(t *testing.T) {
 	assert.Contains(t, data, "go run")
 }
 
+func TestPlanWritesGHAOutputs(t *testing.T) {
+	dir := t.TempDir()
+	rules := writeTestFile(t, filepath.Join(dir, "rules.yaml"), testRules)
+	files := writeTestFile(t, filepath.Join(dir, "changed"), "README.md\n")
+	output := filepath.Join(t.TempDir(), "github_output")
+	t.Setenv("GITHUB_OUTPUT", output)
+	var stdout, diagnostic bytes.Buffer
+	require.NoError(t, run(t.Context(), []string{"plan", "--rules", rules, "--files-file", files}, &stdout, &diagnostic, jobcentric.New()))
+	assert.FileExists(t, output)
+	data := readFile(t, output)
+	assert.Contains(t, data, "go=skip\n")
+	assert.Contains(t, data, "postgres=skip\n")
+	assert.Contains(t, data, "lint=run\n")
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	rules := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), testRules)

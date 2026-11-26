@@ -82,8 +82,10 @@ func newPlanCommand(eng ruleengine.Engine) *cobra.Command {
 			if _, err := fmt.Fprint(cmd.OutOrStdout(), plan); err != nil {
 				return errors.Wrap(err, "print plan")
 			}
-			// Surface the plan in the GitHub Actions run summary when present.
-			return appendStepSummary(plan)
+			if err := appendStepSummary(plan); err != nil {
+				return err
+			}
+			return appendGHAOutputs(decision)
 		},
 	}
 	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules file")
@@ -135,6 +137,29 @@ func readChangedPaths(path string) ([]string, error) {
 		}
 	}
 	return changed, nil
+}
+
+func appendGHAOutputs(decision ruleengine.Decision) error {
+	path := os.Getenv("GITHUB_OUTPUT")
+	if path == "" {
+		return nil
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return errors.Wrap(err, "open github output")
+	}
+	var writeErr error
+	for job, action := range decision.Actions {
+		if _, err := fmt.Fprintf(file, "%s=%s\n", job, action); err != nil {
+			writeErr = err
+			break
+		}
+	}
+	closeErr := file.Close()
+	if writeErr != nil {
+		return errors.Wrap(writeErr, "write github output")
+	}
+	return errors.Wrap(closeErr, "close github output")
 }
 
 func appendStepSummary(plan string) error {
