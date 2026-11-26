@@ -2,6 +2,8 @@ package scannerv4
 
 import v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 
+const fullWildcardCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+
 // normalizeNodeIndexCPEs copies the report and expands only the exact shortened
 // wildcard sent by older Sensors. Scanner's CPE 2.3 parser requires all eleven
 // attributes. Nil reports, nil elements, and all other CPE strings are preserved.
@@ -45,7 +47,7 @@ func normalizeNodePackageCPEs(pkg *v4.Package) {
 
 func normalizeLegacyNodeCPE(s string) string {
 	if s == "cpe:2.3:*" {
-		return unsetCPE
+		return fullWildcardCPE
 	}
 	return s
 }
