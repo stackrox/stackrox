@@ -681,6 +681,7 @@ docker-build-main-image: copy-binaries-to-image-dir
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+	@echo '                       roxie deploy --config <(deploy/roxie-overlay.sh $(TAG))'
 
 # $(call unless-image-exists,<image-ref>,<command>) runs <command>, unless SKIP_EXISTING_IMAGES=1
 # and <image-ref> already exists in the local image store.
