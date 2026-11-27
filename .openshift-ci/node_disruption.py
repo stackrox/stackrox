@@ -56,8 +56,8 @@ def write_report(directory, expected, errors, cancelled=False):
         errors
     )
     print(("WARNING: " if failed else "") + detail.strip(), flush=True)
-    suite = ET.Element("testsuite", name="ci.gke.node", tests="1", failures="0", skipped=str(int(skipped)))
-    case = ET.SubElement(suite, "testcase", classname="ci.gke.node", name="NoNodeDisruption")
+    suite = ET.Element("testsuite", name="ci.node", tests="1", failures="0", skipped=str(int(skipped)))
+    case = ET.SubElement(suite, "testcase", classname="ci.node", name="NoNodeDisruption")
     if failed:
         ET.SubElement(case, "skipped", message="Advisory node monitor finding").text = detail
     elif skipped:

@@ -5,11 +5,9 @@ Common test run patterns
 """
 
 from datetime import datetime
-from contextlib import nullcontext
-import os
 
 import node_disruption
-from clusters import AutomationFlavorsCluster, GKECluster, NullCluster
+from clusters import NullCluster
 from pre_tests import NullPreTest
 from ci_tests import NullTest
 from post_tests import NullPostTest
@@ -91,7 +89,7 @@ class ClusterTestSetsRunner:
     def run(self):
         exception = self.cluster_provision()
         if exception is None:
-            with self.node_monitor():
+            with node_disruption.monitor():
                 exception = self.run_test_sets()
 
         try:
@@ -114,16 +112,6 @@ class ClusterTestSetsRunner:
 
         if exception is not None:
             raise exception
-
-    def node_monitor(self):
-        if isinstance(self.cluster, GKECluster):
-            return node_disruption.monitor()
-        if isinstance(self.cluster, AutomationFlavorsCluster) and (
-            os.environ.get("ORCHESTRATOR_FLAVOR") == "openshift"
-            or os.environ.get("KUBERNETES_PROVIDER") == "ocp"
-        ):
-            return node_disruption.monitor()
-        return nullcontext()
 
     def run_test_sets(self):
         exception = self.run_initial_pre_test(None)

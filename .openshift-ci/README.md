@@ -53,7 +53,7 @@ download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artif
 
 ## E2E node disruption monitoring
 
-Prow starts one monitor per GKE or OpenShift cluster runner after provisioning.
+Prow starts one monitor per cluster runner after successful provisioning.
 GitHub Actions starts a background monitor before the test and collects the
 report in a separate step. Test commands run directly with their existing step
 timeouts. QA Parts 1 and 2 use separate report directories.
@@ -66,7 +66,7 @@ Changes between samples may go undetected.
 
 The monitor writes `junit-node-monitor.xml`, `node-monitor.log`, sampled names,
 and raw snapshots under `ARTIFACT_DIR` (default `junit-reports`). The JUnit
-case is `ci.gke.node.NoNodeDisruption`. Abrupt termination may prevent a final
+case is `ci.node.NoNodeDisruption`. Abrupt termination may prevent a final
 report. Advisory results do not suppress fallback job-failure reports.
 
 Cluster-free tests live in `tests/test_node_disruption.py`. From the repo root:

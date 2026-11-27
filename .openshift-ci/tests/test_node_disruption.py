@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 
 import node_disruption as monitor
 from ci_tests import NonGroovyE2e
-from clusters import GKECluster
+from clusters import AutomationFlavorsCluster
 from runners import ClusterTestRunner
 
 
@@ -323,7 +323,7 @@ class NonGroovyIntegrationTest(unittest.TestCase):
             ), patch.object(monitor.threading, "Thread"), patch.object(
                 monitor, "sample_nodes", side_effect=OSError("kubectl") if sampling_error else sample
             ), patch.object(NonGroovyE2e, "run_with_graceful_kill", side_effect=error) as product:
-                cluster = GKECluster("test")
+                cluster = AutomationFlavorsCluster()
                 cluster.provision = lambda: None
                 cluster.teardown = unittest.mock.create_autospec(cluster.teardown)
                 test = ClusterTestRunner(cluster=cluster, test=NonGroovyE2e())
@@ -339,6 +339,8 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                     output_dir="/tmp/e2e-test-logs",
                 )
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
+                self.assertEqual(report.getroot().get("name"), "ci.node")
+                self.assertEqual(report.find(".//testcase").get("classname"), "ci.node")
                 self.assertEqual(report.find(".//testcase").get("name"), "NoNodeDisruption")
                 self.assertEqual(report.getroot().get("skipped"), str(int(sampling_error)))
 
