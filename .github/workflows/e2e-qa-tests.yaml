@@ -250,7 +250,16 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
+      - name: Start node monitor (part-1)
+        id: start-node-monitor-part-1
+        if: inputs.cluster-provisioning-method == 'direct-gke' || inputs.infra-flavor == 'gke-default' || startsWith(inputs.infra-flavor, 'openshift')
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          python3 .openshift-ci/node_disruption.py start --phase part-1
+
       - name: Run Part 1 tests
+        id: run-product-tests
         env: &test_env
           USE_ROXIE_DEPLOY: true
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -285,6 +294,15 @@ jobs:
         timeout-minutes: ${{ inputs.part1-timeout-minutes }}
         run: qa-tests-backend/scripts/run-part-1.sh
 
+      - name: Finish node monitor (part-1)
+        if: always() && steps.start-node-monitor-part-1.outcome != 'skipped'
+        env:
+          TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          python3 .openshift-ci/node_disruption.py finish --phase part-1 --outcome "$TEST_OUTCOME"
+
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
         shell: python
@@ -298,11 +316,28 @@ jobs:
           )
           post.run([os.environ['ARTIFACT_DIR']])
 
+      - name: Start node monitor (part-2)
+        id: start-node-monitor-part-2
+        if: inputs.cluster-provisioning-method == 'direct-gke' || inputs.infra-flavor == 'gke-default' || startsWith(inputs.infra-flavor, 'openshift')
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          python3 .openshift-ci/node_disruption.py start --phase part-2
+
       - name: Run Part 2 tests
         id: run-part-2
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}
         run: qa-tests-backend/scripts/run-part-2.sh
+
+      - name: Finish node monitor (part-2)
+        if: always() && steps.start-node-monitor-part-2.outcome != 'skipped'
+        env:
+          TEST_OUTCOME: ${{ steps.run-part-2.outcome }}
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          python3 .openshift-ci/node_disruption.py finish --phase part-2 --outcome "$TEST_OUTCOME"
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''

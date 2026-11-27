@@ -126,7 +126,14 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
+    - name: Start node monitor
+      id: start-node-monitor
+      continue-on-error: true
+      timeout-minutes: 1
+      run: python3 .openshift-ci/node_disruption.py start
+
     - name: Run BYODB test
+      id: run-product-tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -159,6 +166,14 @@ jobs:
         USE_ROXIE_DEPLOY: true
       timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
+
+    - name: Finish node monitor
+      if: always() && steps.start-node-monitor.outcome != 'skipped'
+      env:
+        TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+      continue-on-error: true
+      timeout-minutes: 2
+      run: python3 .openshift-ci/node_disruption.py finish --outcome "$TEST_OUTCOME"
 
     - name: Persist env vars for post-test
       if: always()

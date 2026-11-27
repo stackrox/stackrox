@@ -5,6 +5,8 @@ Common test run patterns
 """
 
 from datetime import datetime
+
+import node_disruption
 from clusters import NullCluster
 from pre_tests import NullPreTest
 from ci_tests import NullTest
@@ -86,19 +88,9 @@ class ClusterTestSetsRunner:
 
     def run(self):
         exception = self.cluster_provision()
-        exception = self.run_initial_pre_test(exception)
-
         if exception is None:
-            for test_set in self.sets:
-                if exception is None or test_set.always_run:
-                    try:
-                        log_event("About to run", test_set)
-                        test_set.run()
-                        log_event("run completed", test_set)
-                    except Exception as err:
-                        log_event(f"ERROR: run failed [{err}]", test_set)
-                        if exception is None:
-                            exception = err
+            with node_disruption.monitor():
+                exception = self.run_test_sets()
 
         try:
             log_event("About to teardown")
@@ -120,6 +112,23 @@ class ClusterTestSetsRunner:
 
         if exception is not None:
             raise exception
+
+    def run_test_sets(self):
+        exception = self.run_initial_pre_test(None)
+
+        if exception is None:
+            for test_set in self.sets:
+                if exception is None or test_set.always_run:
+                    try:
+                        log_event("About to run", test_set)
+                        test_set.run()
+                        log_event("run completed", test_set)
+                    except Exception as err:
+                        log_event(f"ERROR: run failed [{err}]", test_set)
+                        if exception is None:
+                            exception = err
+
+        return exception
 
     def cluster_provision(self):
         exception = None

@@ -1,13 +1,21 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from runners import ClusterTestRunner, ClusterTestSetsRunner, TestSet
 
 
-class TestClusterTestRunner(unittest.TestCase):
+class RunnerTestCase(unittest.TestCase):
+    def setUp(self):
+        monitor_patch = patch("runners.node_disruption.monitor")
+        self.monitor = monitor_patch.start()
+        self.addCleanup(monitor_patch.stop)
+
+
+class TestClusterTestRunner(RunnerTestCase):
     def test_provisions(self):
         cluster = Mock()
         ClusterTestRunner(cluster=cluster).run()
         cluster.provision.assert_called_once()
+        self.monitor.assert_called_once_with()
 
     def test_runs_pre_test(self):
         pre_test = Mock()
@@ -55,6 +63,7 @@ class TestClusterTestRunner(unittest.TestCase):
         post_test.run.assert_not_called()  # skips post test
         cluster.teardown.assert_called_once()  # still tearsdown
         final_post.run.assert_called_once()  # still runs the final post
+        self.monitor.assert_not_called()
 
     def test_pre_test_failure(self):
         cluster = Mock()
@@ -163,7 +172,7 @@ class TestClusterTestRunner(unittest.TestCase):
             ClusterTestRunner(cluster=cluster, final_post=final_post).run()
 
 
-class TestClusterTestSetsRunner(unittest.TestCase):
+class TestClusterTestSetsRunner(RunnerTestCase):
     def test_provisions(self):
         cluster = Mock()
         ClusterTestSetsRunner(cluster=cluster).run()

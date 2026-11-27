@@ -122,7 +122,14 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
+    - name: Start node monitor
+      id: start-node-monitor
+      continue-on-error: true
+      timeout-minutes: 1
+      run: python3 .openshift-ci/node_disruption.py start
+
     - name: Run UI E2E tests
+      id: run-product-tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -130,6 +137,14 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       timeout-minutes: 120
       run: tests/e2e/run-ui-e2e.sh
+
+    - name: Finish node monitor
+      if: always() && steps.start-node-monitor.outcome != 'skipped'
+      env:
+        TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+      continue-on-error: true
+      timeout-minutes: 2
+      run: python3 .openshift-ci/node_disruption.py finish --outcome "$TEST_OUTCOME"
 
     - name: Run post-test
       if: always() && env.KUBECONFIG != ''
