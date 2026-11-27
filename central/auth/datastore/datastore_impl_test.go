@@ -16,10 +16,13 @@ import (
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -49,7 +52,7 @@ type datastorePostgresTestSuite struct {
 
 func (s *datastorePostgresTestSuite) SetupTest() {
 	m2m.SetKubernetesIssuerForTest(s.T(), testIssuer)
-	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.ctx = sac.WithGlobalAccessScopeChecker(s.T().Context(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access),
@@ -610,4 +613,53 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 	})
 	s.NoError(err)
 	s.Nil(foundConfig, "Config should NOT be persisted when UpsertTokenExchanger fails - transaction should have been rolled back")
+}
+
+// TestGetTokenExchangerReturnsUpsertedConfig is a smoke test verifying that after
+// upserting an M2M config in the database, GetTokenExchanger returns an exchanger
+// holding the very config that was injected on upsert.
+func (s *datastorePostgresTestSuite) TestGetTokenExchangerReturnsUpsertedConfig() {
+	authStore := store.New(s.pool.DB)
+
+	// Use the real token exchanger set, but with a factory creating stub exchangers
+	// that simply wrap the given config, to avoid external OIDC calls.
+	tokenExchangerSet := m2m.TokenExchangerSetForTesting(s.T(), s.roleDataStore, nil,
+		func(_ context.Context, config *storage.AuthMachineToMachineConfig,
+			_ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
+			// Clone the config, so the comparison below does not trivially compare
+			// the injected object with itself.
+			return &stubTokenExchanger{config: config.CloneVT()}, nil
+		})
+
+	authDataStore := New(authStore, s.roleDataStore, tokenExchangerSet)
+
+	config := getBasicM2mConfig(imperativeTraits, uuid.NewV4().String(), "https://smoke-test-issuer.example.com", testRole1)
+
+	upsertedConfig, err := authDataStore.UpsertAuthM2MConfig(s.ctx, config)
+	s.Require().NoError(err)
+	s.Require().NotNil(upsertedConfig)
+
+	exchanger, exists := authDataStore.GetTokenExchanger(s.ctx, config.GetIssuer())
+	s.Require().True(exists, "expected a token exchanger to exist for issuer %q", config.GetIssuer())
+	s.Require().NotNil(exchanger)
+
+	protoassert.Equal(s.T(), config, exchanger.Config())
+}
+
+// stubTokenExchanger is a minimal TokenExchanger implementation for testing,
+// which only exposes the config it was created with.
+type stubTokenExchanger struct {
+	config *storage.AuthMachineToMachineConfig
+}
+
+func (s *stubTokenExchanger) ExchangeToken(_ context.Context, _ string) (string, error) {
+	return "", errors.New("not implemented")
+}
+
+func (s *stubTokenExchanger) Provider() authproviders.Provider {
+	return nil
+}
+
+func (s *stubTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
+	return s.config
 }

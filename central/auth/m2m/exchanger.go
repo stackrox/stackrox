@@ -2,7 +2,6 @@ package m2m
 
 import (
 	"context"
-	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -31,7 +30,6 @@ type TokenExchanger interface {
 
 type machineToMachineTokenExchanger struct {
 	config            *storage.AuthMachineToMachineConfig
-	configRegExps     []*regexp.Regexp
 	verifier          tokenVerifier
 	provider          authproviders.Provider
 	issuer            tokens.Issuer
@@ -42,21 +40,20 @@ type machineToMachineTokenExchanger struct {
 // newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
 func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig,
 	roleDS roleDataStore.DataStore, issuerFactory tokens.IssuerFactory) (TokenExchanger, error) {
-	tokenTTL, err := time.ParseDuration(config.GetTokenExpirationDuration())
+	tokenTTL, err := getTTLFromConfigs([]*storage.AuthMachineToMachineConfig{config})
 	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
 	// data store).
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing token expiration duration")
 	}
 
-	configRegExps := createRegexp(config)
-
-	verifier, err := tokenVerifierFromConfig(ctx, config)
+	verifier, err := tokenVerifierFromConfigData(ctx, config.GetType(), config.GetIssuer(), config.GetAudience())
 	if err != nil {
 		return nil, err
 	}
-	provider := newProviderFromConfig(config, newRoleMapper(config, roleDS, configRegExps))
-	roxClaimExtractor := newClaimExtractorFromConfig(config)
+	claimToRoleMapper := newRoleMapperFromMappings(config.GetMappings(), roleDS)
+	provider := newProviderFromConfigData(config.GetId(), config.GetType().String(), claimToRoleMapper)
+	roxClaimExtractor := newClaimExtractorForConfigType(config.GetType())
 	issuer, err := issuerFactory.CreateIssuer(provider, tokens.WithTTL(tokenTTL))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating token issuer")
@@ -64,13 +61,32 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 
 	return &machineToMachineTokenExchanger{
 		config:            config,
-		configRegExps:     configRegExps,
 		issuer:            issuer,
 		verifier:          verifier,
 		provider:          provider,
 		roxClaimExtractor: roxClaimExtractor,
 		roleDS:            roleDS,
 	}, nil
+}
+
+func getTTLFromConfigs(configs []*storage.AuthMachineToMachineConfig) (time.Duration, error) {
+	if len(configs) == 0 {
+		return time.Duration(0), errox.InvalidArgs.New("should have at least one config in input")
+	}
+	ttl, err := time.ParseDuration(configs[0].GetTokenExpirationDuration())
+	if err != nil {
+		return time.Duration(0), errox.InvalidArgs.CausedBy(err)
+	}
+	for _, config := range configs[1:] {
+		configTTL, err := time.ParseDuration(config.GetTokenExpirationDuration())
+		if err != nil {
+			return time.Duration(0), errox.InvalidArgs.CausedBy(err)
+		}
+		if configTTL < ttl {
+			ttl = configTTL
+		}
+	}
+	return ttl, nil
 }
 
 func (m *machineToMachineTokenExchanger) Provider() authproviders.Provider {
@@ -96,7 +112,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	// Additionally, since the context will have no access, elevate it locally to fetch roles.
 	resolveRolesCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
-	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings(), m.configRegExps)
+	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, parseMappings(m.config.GetMappings()))
 	if err != nil {
 		return "", errox.NoCredentials.New("resolving roles for id token").CausedBy(err)
 	}
@@ -118,15 +134,4 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 
 func (m *machineToMachineTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
 	return m.config
-}
-
-func createRegexp(config *storage.AuthMachineToMachineConfig) []*regexp.Regexp {
-	regExps := make([]*regexp.Regexp, 0, len(config.GetMappings()))
-
-	for _, mapping := range config.GetMappings() {
-		// The mapping value is validated on insert / update to contain a valid regexp, thus we can use MustCompile here.
-		regExps = append(regExps, regexp.MustCompile(mapping.GetValueExpression()))
-	}
-
-	return regExps
 }
