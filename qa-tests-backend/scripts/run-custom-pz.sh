@@ -44,7 +44,23 @@ config_custom() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    # roxie only ships x86/arm binaries, so power/s390x jobs cannot use deploy_stackrox()
+    # (which requires roxie). Deploy via the operator instead, which has no architecture
+    # dependency on the deploy host.
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    deploy_stackrox_operator
+    deploy_central "stackrox"
+    export_central_basic_auth_creds
+    wait_for_api
+    setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    record_build_info
+    deploy_sensor "stackrox" "stackrox"
+    sensor_wait
+    wait_for_collectors_to_be_operational
+    if retrying_kubectl </dev/null -n "stackrox" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "stackrox"
+    fi
+    touch "${STATE_DEPLOYED}"
     deploy_optional_e2e_components
 
     deploy_default_psp
