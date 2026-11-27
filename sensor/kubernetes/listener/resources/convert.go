@@ -393,11 +393,17 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	// containers within a pod, so one set covers both.
 	metadataTaken := set.NewStringSet()
 
+	// Containers whose digest, repository and pullability have been supplied by an
+	// observation reporting a per-architecture child manifest. Such an observation
+	// supersedes one that only confirms the pinned index, and nothing may replace it
+	// afterwards. Rebuilt per build, for the same reason as metadataTaken.
+	childTaken := set.NewStringSet()
+
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		// Process regular and init container statuses separately to avoid building a combined status slice.
-		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, metadataTaken, p.GetName())
-		w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, metadataTaken, p.GetName())
+		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, metadataTaken, childTaken, p.GetName())
+		w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, metadataTaken, childTaken, p.GetName())
 	}
 }
 
@@ -409,6 +415,7 @@ func (w *deploymentWrap) processContainerStatuses(
 	containersByName map[string]*storage.Container,
 	localImages set.StringSet,
 	metadataTaken set.StringSet,
+	childTaken set.StringSet,
 	podName string,
 ) {
 	for i := range statuses {
@@ -464,13 +471,6 @@ func (w *deploymentWrap) processContainerStatuses(
 			// than the live container image, because the live name may already have been
 			// rewritten by this rewrite or by updateImageWithNewerImageName during an earlier
 			// pass over the same wrap.
-			//
-			// Requiring the image to still carry the pinned digest also makes the rewrite
-			// non-repeatable: within one build, pods are visited newest first, so the first
-			// pod that supplies a usable child digest wins and a later pod cannot replace
-			// it. The rewritten digest persists on the stored deployment wrap, so the same
-			// pod keeps winning until the wrap is rebuilt from the Deployment and the image
-			// id resets to the pinned digest.
 			if features.MultiArchWorkloadChildDigest.Enabled() {
 				pinned := w.pinnedImages[c.Name]
 				specRepo, specDigest := podSpecImageReference(specContainers, c.Name, w.registryOverride)
@@ -478,31 +478,36 @@ func (w *deploymentWrap) processContainerStatuses(
 
 				if pinned.digest != "" {
 					childDigest := runtimeChildDigest(c.ImageID)
-					// The image still carrying the pinned digest means no observation has
-					// supplied a child digest yet, so the rewrite below is available and
-					// this pod may contribute metadata if it is running the current
-					// revision. Once some observation has supplied one, only a pod
-					// reporting that same digest describes the image now recorded, so only
-					// it may contribute. That keeps the digest, the repository it was read
-					// from, and its pullability from being taken from different pods --
-					// including a replica on another architecture, or a second pod of the
-					// same revision reporting a bare config ID. It holds across repeated
-					// builds of one wrap, since it is derived from the recorded digest
-					// rather than from progress made during a single pass.
-					if image.GetId() == pinned.digest {
-						contributeMetadata = podMatchesPin
-					} else {
-						contributeMetadata = podMatchesPin && childDigest == image.GetId()
-					}
-					// Several pods can legitimately report the same child digest, each from
-					// the location its own node pulled from. They are equally valid, so
-					// without a tie-break the last one visited would decide the repository
-					// and, through it, IdV2. Pods are visited newest first, so taking the
-					// first reporting pod makes the choice deterministic, and deterministic
-					// in the same way on every rebuild of this wrap.
-					if metadataTaken.Contains(c.Name) {
-						contributeMetadata = false
-					}
+
+					// An observation describes the image as currently recorded only if it
+					// comes from a pod running the deployment's declared reference and
+					// either the image still carries the pin -- so no observation has
+					// supplied a child digest yet -- or the observation reports exactly the
+					// child digest already recorded. Once some observation has supplied a
+					// child, a pod reporting a different one (a replica on another
+					// architecture) no longer describes this record. Deriving this from the
+					// recorded digest rather than from progress made during a single pass
+					// is what makes it hold across repeated builds of one wrap.
+					describesRecorded := podMatchesPin &&
+						(image.GetId() == pinned.digest || childDigest == image.GetId())
+
+					// Whether this observation reports the per-architecture child manifest
+					// rather than merely confirming the index the deployment pinned.
+					suppliesChild := describesRecorded && childDigest != "" && childDigest != pinned.digest
+
+					// The digest, the repository it was read from, and its pullability must
+					// all come from one observation. The first child-supplying observation
+					// takes the container, and nothing may replace any of the three
+					// afterwards; pods are visited newest first, so that choice is the same
+					// on every rebuild even though several pods may legitimately report the
+					// same child digest from the location each node happened to pull it
+					// from. An observation that only confirms the pinned index -- or that
+					// reports a bare config ID carrying no repository -- is a fallback: it
+					// supplies metadata while no child has been reported, and is superseded
+					// by, rather than mixed with, a child-supplying observation found later
+					// in the same build.
+					contributeMetadata = describesRecorded && !childTaken.Contains(c.Name) &&
+						(suppliesChild || !metadataTaken.Contains(c.Name))
 
 					// localImages is rebuilt on every build from the deployment's current
 					// image names, which may already be the rewritten child reference while
@@ -515,10 +520,16 @@ func (w *deploymentWrap) processContainerStatuses(
 						isClusterLocal = localImages.Contains(pinned.fullName)
 					}
 
-					if podMatchesPin && image.GetId() == pinned.digest &&
-						childDigest != "" && childDigest != pinned.digest {
-						image.Id = childDigest
-						imageUtils.NormalizeImageFullName(imageName, childDigest)
+					if contributeMetadata && suppliesChild {
+						// This observation now owns the container's digest, repository and
+						// pullability for the rest of this build.
+						childTaken.Add(c.Name)
+						// On a rebuild the recorded id is already this child digest, and
+						// only the metadata below has to be reapplied.
+						if image.GetId() == pinned.digest {
+							image.Id = childDigest
+							imageUtils.NormalizeImageFullName(imageName, childDigest)
+						}
 					}
 				}
 			}
@@ -847,6 +858,17 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 		original:         w.original, // original is only always read
 		registryOverride: w.registryOverride,
 		Deployment:       w.GetDeployment().CloneVT(),
+	}
+	// The cloned Deployment may already carry a container image rewritten to a child
+	// digest. Carrying the captured pin over keeps the clone's record of what the
+	// deployment itself declared; without it the next build over the clone would
+	// capture the rewritten reference as the pin, and pods still declaring the
+	// original index would no longer match it.
+	if w.pinnedImages != nil {
+		ret.pinnedImages = make(map[string]pinnedImageRef, len(w.pinnedImages))
+		for name, ref := range w.pinnedImages {
+			ret.pinnedImages[name] = ref
+		}
 	}
 	if w.pods != nil {
 		ret.pods = make([]*v1.Pod, len(w.pods))

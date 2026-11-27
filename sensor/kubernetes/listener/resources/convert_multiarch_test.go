@@ -744,3 +744,167 @@ func TestRuntimeChildDigest(t *testing.T) {
 		})
 	}
 }
+
+func TestPopulateImageMetadataMultiArchConsistentObservation(t *testing.T) {
+	// The digest, the repository it was read from and its pullability must all come from one
+	// pod observation, and the answer must not change when the same wrap is built again.
+	const (
+		indexDigest = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
+		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+	)
+	const (
+		repo       = "quay.io/example/multiarch"
+		mirrorRepo = "mirror.example.com/platform/multiarch"
+		indexPin   = repo + "@" + indexDigest
+	)
+
+	newerPod := metav1.NewTime(time.Now())
+	olderPod := metav1.NewTime(time.Now().Add(-time.Hour))
+
+	type testPod struct {
+		imageID string
+		created metav1.Time
+	}
+
+	cases := map[string]struct {
+		pods             []testPod
+		expectedID       string
+		expectedName     string
+		expectedRegistry string
+		expectedRemote   string
+		expectedPullable bool
+	}{
+		"a child reported by an older pod supersedes an index observation from a mirror": {
+			// The newest pod only confirms the index, but from a mirror, and is not pullable.
+			// The older pod reports the child from the pinned repository. Taking the digest
+			// from the older pod and the repository from the newest used to publish
+			// mirror.example.com/platform/multiarch@<child>.
+			pods: []testPod{
+				{imageID: "docker://" + mirrorRepo + "@" + indexDigest, created: newerPod},
+				{imageID: "docker-pullable://" + repo + "@" + amd64Child, created: olderPod},
+			},
+			expectedID:       amd64Child,
+			expectedName:     repo + "@" + amd64Child,
+			expectedRegistry: "quay.io",
+			expectedRemote:   "example/multiarch",
+			expectedPullable: true,
+		},
+		"index-only observations still supply the mirror metadata and keep the pin (invariant)": {
+			// No pod reports a child, so the newest index observation is the fallback. This
+			// passes with and without the change; it guards against over-correcting.
+			pods: []testPod{
+				{imageID: "docker-pullable://" + mirrorRepo + "@" + indexDigest, created: newerPod},
+				{imageID: "docker-pullable://" + repo + "@" + indexDigest, created: olderPod},
+			},
+			expectedID:       indexDigest,
+			expectedName:     mirrorRepo + "@" + indexDigest,
+			expectedRegistry: "mirror.example.com",
+			expectedRemote:   "platform/multiarch",
+			expectedPullable: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+			testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, true)
+			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
+
+			build := func(passes int) *storage.ContainerImage {
+				img, err := imageUtils.GenerateImageFromString(indexPin)
+				require.NoError(t, err)
+				wrap := deploymentWrap{Deployment: &storage.Deployment{}}
+				wrap.Containers = []*storage.Container{{Name: "container-0", Image: img}}
+
+				pods := make([]*v1.Pod, 0, len(c.pods))
+				for _, p := range c.pods {
+					pods = append(pods, &v1.Pod{
+						ObjectMeta: metav1.ObjectMeta{CreationTimestamp: p.created},
+						Spec:       v1.PodSpec{Containers: []v1.Container{{Name: "container-0", Image: indexPin}}},
+						Status: v1.PodStatus{ContainerStatuses: []v1.ContainerStatus{
+							{Name: "container-0", ImageID: p.imageID},
+						}},
+					})
+				}
+				for range passes {
+					wrap.populateImageMetadata(set.NewStringSet(), pods...)
+				}
+				return wrap.GetDeployment().GetContainers()[0].GetImage()
+			}
+
+			single := build(1)
+			assert.Equal(t, c.expectedID, single.GetId())
+			assert.Equal(t, c.expectedName, single.GetName().GetFullName())
+			assert.Equal(t, c.expectedRegistry, single.GetName().GetRegistry())
+			assert.Equal(t, c.expectedRemote, single.GetName().GetRemote())
+			assert.Equal(t, c.expectedPullable, !single.GetNotPullable())
+			expectedName := &storage.ImageName{FullName: c.expectedName}
+			assert.Equal(t, utils.NewImageV2ID(expectedName, c.expectedID), single.GetIdV2())
+
+			// Building again over the same wrap must give the identical record.
+			protoassert.Equal(t, single, build(2))
+		})
+	}
+}
+
+func TestDeploymentWrapCloneKeepsPinnedImages(t *testing.T) {
+	const (
+		indexDigest = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
+		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+	)
+	const (
+		repo        = "quay.io/example/multiarch"
+		indexPin    = repo + "@" + indexDigest
+		otherMirror = "other-mirror.example.com/platform/multiarch"
+	)
+
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, true)
+	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
+
+	newPod := func(imageID string) *v1.Pod {
+		return &v1.Pod{
+			Spec: v1.PodSpec{Containers: []v1.Container{{Name: "container-0", Image: indexPin}}},
+			Status: v1.PodStatus{ContainerStatuses: []v1.ContainerStatus{
+				{Name: "container-0", ImageID: imageID},
+			}},
+		}
+	}
+
+	img, err := imageUtils.GenerateImageFromString(indexPin)
+	require.NoError(t, err)
+	orig := &deploymentWrap{Deployment: &storage.Deployment{}}
+	orig.Containers = []*storage.Container{{Name: "container-0", Image: img}}
+
+	orig.populateImageMetadata(set.NewStringSet(), newPod("docker-pullable://"+repo+"@"+amd64Child))
+	require.Equal(t, amd64Child, orig.GetDeployment().GetContainers()[0].GetImage().GetId(), "setup: image must be rewritten")
+
+	clone := orig.Clone()
+
+	t.Run("the clone records the declared reference, not the rewritten one", func(t *testing.T) {
+		assert.Equal(t, pinnedImageRef{fullName: indexPin, repo: repo, digest: indexDigest}, clone.pinnedImages["container-0"])
+	})
+
+	t.Run("the clone's pins are a distinct map from the original's", func(t *testing.T) {
+		clone.pinnedImages["container-0"] = pinnedImageRef{digest: "mutated"}
+		clone.pinnedImages["extra"] = pinnedImageRef{digest: "extra"}
+		assert.Equal(t, pinnedImageRef{fullName: indexPin, repo: repo, digest: indexDigest}, orig.pinnedImages["container-0"])
+		assert.NotContains(t, orig.pinnedImages, "extra")
+		// Restore, so the behavioral check below runs against an unmodified clone.
+		clone.pinnedImages = map[string]pinnedImageRef{"container-0": orig.pinnedImages["container-0"]}
+	})
+
+	t.Run("a build over the clone behaves like a build over the original (invariant)", func(t *testing.T) {
+		// The pod still declares the original index and now reports the same child from
+		// another mirror. Because it still matches the pin, it contributes metadata on both.
+		pod := newPod("docker-pullable://" + otherMirror + "@" + amd64Child)
+		clone.populateImageMetadata(set.NewStringSet(), pod)
+		orig.populateImageMetadata(set.NewStringSet(), pod)
+
+		got := clone.GetDeployment().GetContainers()[0].GetImage()
+		assert.Equal(t, amd64Child, got.GetId())
+		assert.Equal(t, "other-mirror.example.com", got.GetName().GetRegistry())
+		assert.Equal(t, "platform/multiarch", got.GetName().GetRemote())
+		protoassert.Equal(t, orig.GetDeployment().GetContainers()[0].GetImage(), got)
+	})
+}
