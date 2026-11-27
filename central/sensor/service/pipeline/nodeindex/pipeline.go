@@ -11,6 +11,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	scannerDefinitions "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -22,6 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/scannerv4/scos"
 )
 
 var (
@@ -38,18 +41,20 @@ func GetPipeline() pipeline.Fragment {
 // newPipeline returns a new instance of Pipeline.
 func newPipeline(clusters clusterDataStore.DataStore, nodes nodeDatastore.DataStore, enricher enricher.NodeEnricher, riskManager riskManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
-		clusterStore:  clusters,
-		nodeDatastore: nodes,
-		enricher:      enricher,
-		riskManager:   riskManager,
+		clusterStore:   clusters,
+		nodeDatastore:  nodes,
+		enricher:       enricher,
+		riskManager:    riskManager,
+		getSCOSMapping: scannerDefinitions.RepositoryToCPEMapping,
 	}
 }
 
 type pipelineImpl struct {
-	clusterStore  clusterDataStore.DataStore
-	nodeDatastore nodeDatastore.DataStore
-	enricher      enricher.NodeEnricher
-	riskManager   riskManager.Manager
+	clusterStore   clusterDataStore.DataStore
+	nodeDatastore  nodeDatastore.DataStore
+	enricher       enricher.NodeEnricher
+	riskManager    riskManager.Manager
+	getSCOSMapping func(context.Context) (*repositorytocpe.MappingFile, error)
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {
@@ -99,8 +104,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		len(report.GetContents().GetRepositories()),
 		len(report.GetContents().GetRepositoriesDEPRECATED()),
 	)
-	report = report.CloneVT()
-
 	// Query storage for the node this report comes from
 	nodeId := event.GetId()
 	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
@@ -109,6 +112,19 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 	if !found {
 		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
+	}
+	report = report.CloneVT()
+	if scos.Enabled() {
+		if profile, ok := scos.Detect(node.GetOsImage(), node.GetKernelVersion()); ok {
+			mapping, err := p.getSCOSMapping(ctx)
+			if err != nil {
+				return errors.Wrap(err, "loading SCOS repository mapping")
+			}
+			report, err = scos.AddCompatibility(report, profile, mapping)
+			if err != nil {
+				return errors.Wrap(err, "preparing SCOS report")
+			}
+		}
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan

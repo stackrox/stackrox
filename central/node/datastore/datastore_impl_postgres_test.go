@@ -259,6 +259,40 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.False(exists)
 }
 
+func (suite *NodePostgresDataStoreTestSuite) TestSCOSScanIsIsolatedFromOtherNodeScans() {
+	ctx := sac.WithAllAccess(suite.T().Context())
+	scosNode := getTestNodeForPostgres(fixtureconsts.Node1, "scos-node")
+	scosNode.GetScan().OperatingSystem = "scos:10:x86_64"
+	suite.Require().NoError(suite.datastore.UpsertNode(ctx, scosNode))
+
+	// An older collector can report the same packages without any findings.
+	legacyNode := scosNode.CloneVT()
+	legacyNode.Id = fixtureconsts.Node2
+	legacyNode.GetScan().OperatingSystem = ""
+	for _, component := range legacyNode.GetScan().GetComponents() {
+		component.Vulnerabilities = nil
+	}
+	suite.Require().NoError(suite.datastore.UpsertNode(ctx, legacyNode))
+
+	// A node metadata refresh must retain the previously stored full scan.
+	metadata := scosNode.CloneVT()
+	metadata.Scan = nil
+	suite.Require().NoError(suite.datastore.UpsertNode(ctx, metadata))
+
+	storedNode, exists, err := suite.datastore.GetNode(ctx, scosNode.GetId())
+	suite.Require().NoError(err)
+	suite.Require().True(exists)
+	suite.Equal("scos:10:x86_64", storedNode.GetScan().GetOperatingSystem())
+	var cves []string
+	for _, component := range storedNode.GetScan().GetComponents() {
+		for _, vulnerability := range component.GetVulnerabilities() {
+			cves = append(cves, vulnerability.GetCveBaseInfo().GetCve())
+		}
+	}
+	suite.Contains(cves, "cve1")
+	suite.Contains(cves, "cve2")
+}
+
 func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 	node := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
 	allowAllCtx := sac.WithAllAccess(context.Background())
