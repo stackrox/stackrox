@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -666,6 +667,233 @@ func (m *ManagerTestSuite) TestHandleReadyScanStaleMarkingScope() {
 			}
 		})
 	}
+}
+
+// TestStaleNotApplicableRedelivery covers how NOT-APPLICABLE scans whose latest run was
+// already reported participate in report cycles: their re-deliveries are dropped like any
+// other already-handled scan (a re-delivery must not start a cycle on its own, which
+// without new runs of the other scans could only end in the schedule-watcher timeout),
+// while the scans themselves are counted into every cycle started by a fresher scan. The
+// counted set is derived from the datastores at cycle start, so no state is kept between
+// cycles (ROX-35908).
+func (m *ManagerTestSuite) TestStaleNotApplicableRedelivery() {
+	now := protocompat.TimestampNow()
+	scanConfig := getTestScanConfig()
+
+	staleNotApplicable := &storage.ComplianceOperatorScanV2{
+		Id:              "na-scan",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  scanConfig.GetScanConfigName(),
+		ScanName:        "worker",
+		ScanRefId:       "na-ref",
+		LastStartedTime: now,
+		Status: &storage.ScanStatus{
+			Phase:  "DONE",
+			Result: watcher.ScanResultNotApplicable,
+		},
+	}
+	fresh := &storage.ComplianceOperatorScanV2{
+		Id:              "fresh-scan",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  scanConfig.GetScanConfigName(),
+		ScanName:        "master",
+		ScanRefId:       "fresh-ref",
+		LastStartedTime: now,
+	}
+	freshResult := &watcher.ScanWatcherResults{
+		WatcherID: "cluster-1:fresh-scan",
+		Scan:      fresh,
+		Scope: watcher.ScanScope{
+			ScanRefID:       "fresh-ref",
+			LastStartedTime: now,
+		},
+	}
+
+	// newStartedManager returns a started manager backed by fresh mocks, plus a cleanup
+	// that stops it before the mock controller is finished.
+	newStartedManager := func(ctrl *gomock.Controller) (*managerImpl, *stubManagerMocks) {
+		mocks := newStubManagerMocks(ctrl)
+		manager := New(mocks.scanConfigDS, mocks.scanDS, mocks.profileDS, mocks.snapshotDS,
+			mocks.integrationDS, mocks.suiteStore, mocks.bindingsStore, mocks.checkResultDS, mocks.generator)
+		manager.Start()
+		m.T().Cleanup(func() {
+			manager.Stop()
+			ctrl.Finish()
+		})
+		return manager.(*managerImpl), mocks
+	}
+
+	m.Run("HandleScan drops the re-delivery", func() {
+		ctrl := gomock.NewController(m.T())
+		impl, mocks := newStartedManager(ctrl)
+
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Times(1).
+			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig}, nil)
+		// A snapshot with the same scan ref and a same-or-newer start time exists: the
+		// re-delivered run was already reported.
+		mocks.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
+			Return([]*storage.ComplianceOperatorReportSnapshotV2{{ReportId: "delivered-report"}}, nil)
+
+		m.Require().NoError(impl.HandleScan(context.Background(), staleNotApplicable.CloneVT()))
+
+		// The re-delivery starts neither a scan watcher nor a report cycle.
+		concurrency.WithLock(&impl.watchingScansLock, func() {
+			m.Assert().Empty(impl.watchingScans)
+		})
+		concurrency.WithLock(&impl.watchingScanConfigsLock, func() {
+			m.Assert().Empty(impl.watchingScanConfigs)
+		})
+	})
+
+	m.Run("cycle started by a fresh scan counts already-reported N/A scans", func() {
+		ctrl := gomock.NewController(m.T())
+		impl, mocks := newStartedManager(ctrl)
+
+		mocks.checkResultDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			AnyTimes().Return(nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Eq(scanConfig.GetScanConfigName())).
+			AnyTimes().Return(scanConfig, nil)
+		// Report data for the automatic snapshot of the new cycle.
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), gomock.Eq(scanConfig.GetId())).AnyTimes().
+			Return(getTestClusterStatusFromScanConfig(scanConfig), nil)
+		mocks.suiteStore.EXPECT().GetSuites(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.bindingsStore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.generator.EXPECT().ProcessReportRequest(gomock.Any()).AnyTimes().Return(nil)
+		// Both scans of the configuration are visible to the datastores.
+		mocks.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorProfileV2{{Id: "profile-1"}}, nil)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorScanV2{fresh, staleNotApplicable}, nil)
+
+		// Snapshot searches, in order: the fresh run starting the cycle was never
+		// reported; the NOT-APPLICABLE scan's latest run was already reported.
+		mocks.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+		mocks.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
+			Return([]*storage.ComplianceOperatorReportSnapshotV2{{ReportId: "delivered-report"}}, nil)
+		// Collect the scan refs each snapshot upsert carries, at upsert time.
+		scanRefsCh := make(chan []string, 16)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+			DoAndReturn(func(_, s any) error {
+				snapshot := s.(*storage.ComplianceOperatorReportSnapshotV2)
+				refs := make([]string, 0, len(snapshot.GetScans()))
+				for _, scan := range snapshot.GetScans() {
+					refs = append(refs, scan.GetScanRefId())
+				}
+				scanRefsCh <- refs
+				return nil
+			})
+
+		impl.readyQueue.Push(freshResult)
+
+		// Both the fresh scan and the already-reported NOT-APPLICABLE scan are recorded on
+		// the automatic snapshot's scan list, without any re-delivery of the latter.
+		m.Require().Eventually(func() bool {
+			for {
+				select {
+				case refs := <-scanRefsCh:
+					if slices.Contains(refs, "fresh-ref") && slices.Contains(refs, "na-ref") {
+						return true
+					}
+				default:
+					return false
+				}
+			}
+		}, 2*time.Second, 10*time.Millisecond)
+		// The cycle completes and its watcher is removed.
+		m.Require().Eventually(func() bool {
+			return concurrency.WithLock1[bool](&impl.watchingScanConfigsLock, func() bool {
+				_, running := impl.watchingScanConfigs[scanConfig.GetId()]
+				return !running
+			})
+		}, 2*time.Second, 10*time.Millisecond)
+	})
+
+	m.Run("cycle does not count N/A scans that were not reported yet", func() {
+		ctrl := gomock.NewController(m.T())
+		impl, mocks := newStartedManager(ctrl)
+
+		mocks.checkResultDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			AnyTimes().Return(nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Eq(scanConfig.GetScanConfigName())).
+			AnyTimes().Return(scanConfig, nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), gomock.Eq(scanConfig.GetId())).AnyTimes().
+			Return(getTestClusterStatusFromScanConfig(scanConfig), nil)
+		mocks.suiteStore.EXPECT().GetSuites(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.bindingsStore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.generator.EXPECT().ProcessReportRequest(gomock.Any()).AnyTimes().Return(nil)
+		mocks.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorProfileV2{{Id: "profile-1"}}, nil)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorScanV2{fresh, staleNotApplicable}, nil)
+		// No run of the configuration was ever reported.
+		mocks.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+		impl.readyQueue.Push(freshResult)
+
+		// The fresh scan is recorded on the cycle's watcher...
+		m.Require().Eventually(func() bool {
+			return concurrency.WithLock1[bool](&impl.watchingScanConfigsLock, func() bool {
+				w, running := impl.watchingScanConfigs[scanConfig.GetId()]
+				if !running {
+					return false
+				}
+				for _, scan := range w.GetScans() {
+					if scan.GetScanRefId() == "fresh-ref" {
+						return true
+					}
+				}
+				return false
+			})
+		}, 2*time.Second, 10*time.Millisecond)
+		// ... but the NOT-APPLICABLE scan is not counted in: its run was never reported,
+		// so it is still expected to be delivered on its own.
+		m.Assert().Never(func() bool {
+			return concurrency.WithLock1[bool](&impl.watchingScanConfigsLock, func() bool {
+				w, running := impl.watchingScanConfigs[scanConfig.GetId()]
+				if !running {
+					return false
+				}
+				for _, scan := range w.GetScans() {
+					if scan.GetScanRefId() == "na-ref" {
+						return true
+					}
+				}
+				return false
+			})
+		}, 300*time.Millisecond, 10*time.Millisecond)
+	})
+}
+
+// stubManagerMocks groups the datastore mocks backing a manager in tests.
+type stubManagerMocks struct {
+	checkResultDS *checkResultsMocks.MockDataStore
+	scanConfigDS  *scanConfigurationDS.MockDataStore
+	scanDS        *scanMocks.MockDataStore
+	profileDS     *profileMocks.MockDataStore
+	snapshotDS    *snapshotMocks.MockDataStore
+	integrationDS *integrationMocks.MockDataStore
+	suiteStore    *suiteDS.MockDataStore
+	bindingsStore *bindingsDS.MockDataStore
+	generator     *reportGen.MockComplianceReportGenerator
+}
+
+func newStubManagerMocks(ctrl *gomock.Controller) *stubManagerMocks {
+	mocks := &stubManagerMocks{
+		checkResultDS: checkResultsMocks.NewMockDataStore(ctrl),
+		scanConfigDS:  scanConfigurationDS.NewMockDataStore(ctrl),
+		scanDS:        scanMocks.NewMockDataStore(ctrl),
+		profileDS:     profileMocks.NewMockDataStore(ctrl),
+		snapshotDS:    snapshotMocks.NewMockDataStore(ctrl),
+		integrationDS: integrationMocks.NewMockDataStore(ctrl),
+		suiteStore:    suiteDS.NewMockDataStore(ctrl),
+		bindingsStore: bindingsDS.NewMockDataStore(ctrl),
+		generator:     reportGen.NewMockComplianceReportGenerator(ctrl),
+	}
+	mocks.generator.EXPECT().Stop().AnyTimes()
+	return mocks
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {

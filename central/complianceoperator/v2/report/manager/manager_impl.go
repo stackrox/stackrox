@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -364,15 +365,14 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
-		if errors.Is(err, watcher.ErrScanAlreadyHandled) && !watcher.IsScanNotApplicable(scan) {
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			// This also covers NOT-APPLICABLE scans re-delivering an already-reported run:
+			// they are counted into report cycles by pushStaleNotApplicableScans when the
+			// cycle starts, so their re-deliveries need no exception here (ROX-35908).
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
 			return nil
 		}
-		if !errors.Is(err, watcher.ErrScanAlreadyHandled) {
-			return err
-		}
-		log.Debugf("Scan %s was already handled but is NOT-APPLICABLE, allowing through", scan.GetScanName())
-		id = fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId())
+		return err
 	}
 	numChecks, err := watcher.GetExpectedNumChecks(scan)
 	if err != nil {
@@ -530,6 +530,12 @@ func (m *managerImpl) handleReadyScan() {
 		if err := w.PushScanResults(scanWatcherResult); err != nil {
 			log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 		}
+		if !wasAlreadyRunning {
+			// The watcher was just created: count in the configuration's NOT-APPLICABLE
+			// scans whose latest run was already reported. They are pushed after the scan
+			// that started the cycle so the cycle stays anchored on fresh scan data.
+			m.pushStaleNotApplicableScans(scanConfig, w)
+		}
 	}
 }
 
@@ -554,7 +560,10 @@ func (m *managerImpl) markPriorResultsStale(scanWatcherResult *watcher.ScanWatch
 	}
 }
 
-// getOrCreateScanConfigWatcher returns the ScanConfigWatcher of a given scan
+// getOrCreateScanConfigWatcher returns the running ScanConfigWatcher of the scan
+// configuration of the given scan, creating it if none is running. A scan whose run was
+// already reported is dropped with watcher.ErrScanAlreadyHandled: re-deliveries of
+// already-reported runs must not start report cycles.
 func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, *storage.ComplianceOperatorScanConfigurationV2, bool, error) {
 	sc, err := watcher.GetScanConfigFromScan(m.automaticReportingCtx, results.Scan, ds)
 	if err != nil {
@@ -576,7 +585,7 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "unable to retrieve snapshots from the store")
 		}
-		if len(snapshot) > 0 && !watcher.IsScanNotApplicable(results.Scan) {
+		if len(snapshot) > 0 {
 			// We already handled a scan newer than this one, we ignore this scanResults
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
@@ -587,6 +596,47 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		})
 	}
 	return w, sc, watcherIsRunning, nil
+}
+
+// pushStaleNotApplicableScans pushes into the given, newly created ScanConfigWatcher the
+// scans of the configuration whose latest run completed as NOT-APPLICABLE and was already
+// reported. Such scans only ever re-deliver already-reported runs, which are dropped, so
+// without counting them here a cycle could only end in the schedule-watcher timeout
+// waiting for them (ROX-35908). The set is derived from the datastores at cycle start, so
+// no state is kept between cycles: scans that re-run, or are removed, are picked up (or
+// dropped) on whatever the next cycle sees.
+func (m *managerImpl) pushStaleNotApplicableScans(sc *storage.ComplianceOperatorScanConfigurationV2, w watcher.ScanConfigWatcher) {
+	scans, err := watcher.GetScanListFromScanConfiguration(m.automaticReportingCtx, sc, m.profileDataStore, m.scanDataStore)
+	if err != nil {
+		log.Warnf("Unable to list the scans of scan configuration %s: %v", sc.GetScanConfigName(), err)
+		return
+	}
+	for _, scan := range scans {
+		if !watcher.IsScanNotApplicable(scan) {
+			continue
+		}
+		alreadyHandled, err := watcher.IsScanAlreadyHandled(m.automaticReportingCtx, scan.GetScanRefId(), scan.GetLastStartedTime(), m.snapshotDataStore)
+		if err != nil {
+			log.Warnf("Unable to check whether scan %s was already reported: %v", scan.GetScanName(), err)
+			continue
+		}
+		if !alreadyHandled {
+			// The run was never reported, so it is still expected to be delivered.
+			continue
+		}
+		results := &watcher.ScanWatcherResults{
+			WatcherID:    fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId()),
+			Scan:         scan,
+			CheckResults: set.NewStringSet(),
+			Scope: watcher.ScanScope{
+				ScanRefID:       scan.GetScanRefId(),
+				LastStartedTime: scan.GetLastStartedTime(),
+			},
+		}
+		if err := w.PushScanResults(results); err != nil {
+			log.Debugf("Unable to push scan %s into the scan configuration watcher: %v", scan.GetScanName(), err)
+		}
+	}
 }
 
 // createAutomaticSnapshotAndSubscribe creates a snapshot for an automatic report (not on-demand)

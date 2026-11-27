@@ -114,6 +114,23 @@ func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complian
 	return coStatus[0], nil
 }
 
+// IsScanAlreadyHandled returns true if a snapshot exists that already reported the given
+// scan run, i.e. one recorded with the same scan ref and a same-or-newer start time.
+func IsScanAlreadyHandled(ctx context.Context, scanRefID string, startTime *protocompat.Timestamp, snapshotDataStore snapshotDS.DataStore) (bool, error) {
+	if scanRefID == "" || startTime == nil {
+		return false, nil
+	}
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, startTime.AsTime(), timestamp.InfiniteFuture.GoTime()).
+		ProtoQuery()
+	snapshots, err := snapshotDataStore.SearchSnapshots(ctx, query)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to retrieve snapshots from the store")
+	}
+	return len(snapshots) > 0, nil
+}
+
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
 func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, snapshotDataStore snapshotDS.DataStore, scanConfigDataStore scanConfigDS.DataStore, overrideTimestamp *protocompat.Timestamp) (string, error) {
 	if scan == nil {
