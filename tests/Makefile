@@ -28,9 +28,10 @@ external-backup-tests:
 	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -v -run TestExternalBackup 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=external-backup-tests-results
 
+# The freshness tests add minutes of time-based waits, so the suite needs a longer timeout.
 .PHONY: compliance-v2-tests
 compliance-v2-tests:
-	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 30m -cover -v -run TestComplianceV2 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 45m -cover -v -run TestComplianceV2 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
 .PHONY: vm-scanning-tests
