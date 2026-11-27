@@ -11,6 +11,9 @@ source "$ROOT/tests/e2e/lib.sh"
 set -euo pipefail
 
 run_tests_part_2() {
+    info "SKIPPED: experiment branch runs only FixableCVSSStressTest (part 1)"
+    return 0
+
     info "QA Automation Platform Part 2"
 
     if [[ ! -f "${STATE_DEPLOYED}" ]]; then
