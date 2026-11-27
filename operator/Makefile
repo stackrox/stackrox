@@ -282,7 +282,7 @@ test-integration: manifests generate fmt vet envtest ## Run go integration tests
 
 test-helm: ## Run operator helm chart tests.
 	ROX_PRODUCT_BRANDING=RHACS_BRANDING $(MAKE) chart # Setting the env var to produce the rhacs- flavor assumed by the subsequent test.
-	go test -tags operator_helmtest -v ./tests/chart/...
+	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
 
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
