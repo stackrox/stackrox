@@ -9,6 +9,7 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -67,6 +68,7 @@ type testPipeline struct {
 
 func newTestPipeline(t *testing.T) *testPipeline {
 	t.Helper()
+	testutils.PrepareRandomForSynctest(t)
 	mockCtrl := gomock.NewController(t)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 	clusterStore := clusterentities.NewStore(0, nil, false)

@@ -60,6 +60,8 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: fips140=on
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
@@ -78,6 +80,8 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      env:
+        GODEBUG: fips140=on
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
@@ -172,6 +176,8 @@ jobs:
         fi
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: fips140=on
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
@@ -537,6 +543,8 @@ jobs:
         done < sensor/tests/images-to-prefetch.txt
 
     - name: Run sensor integration tests
+      env:
+        GODEBUG: fips140=on
       run: make sensor-integration-test
 
     - name: Generate junit report
