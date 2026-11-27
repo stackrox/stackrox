@@ -33,6 +33,18 @@ const (
 	ReadinessVulnerability MatcherReadiness = "vulnerability"
 )
 
+// MatcherStoreType selects the vulnerability matcher datastore backend.
+type MatcherStoreType string
+
+const (
+	// MatcherStorePostgres keeps the matcher vulnerability store in Postgres
+	// (the default, persisted backend).
+	MatcherStorePostgres MatcherStoreType = "postgres"
+	// MatcherStoreInMem keeps the matcher vulnerability store in an in-memory,
+	// column-native snapshot rebuilt from the bundle on every boot.
+	MatcherStoreInMem MatcherStoreType = "inmem"
+)
+
 var (
 	// defaultConfiguration provides the default values for the scanner configuration.
 	defaultConfiguration = Config{
@@ -51,6 +63,7 @@ var (
 		Matcher: MatcherConfig{
 			Enable:    true,
 			Readiness: ReadinessDatabase,
+			Store:     MatcherStorePostgres,
 			Database: Database{
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
@@ -173,6 +186,20 @@ type MatcherConfig struct {
 	Database Database `mapstructure:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
 	Enable bool `mapstructure:"enable"`
+	// Store selects the matcher vulnerability datastore backend: "postgres"
+	// (default, persisted) or "inmem" (in-memory column-native snapshot,
+	// rebuilt from the bundle on every boot).
+	Store MatcherStoreType `mapstructure:"store"`
+	// InMemBlobDir overrides the directory where the in-memory matcher stores
+	// off-heap mmap column and blob files. When empty, defaults to
+	// filepath.Join(os.TempDir(), "scanner-v4-inmem").
+	InMemBlobDir string `mapstructure:"inmem_blob_dir"`
+	// InMemMaxRows, when positive, caps the total live vulnerability row count
+	// accepted by the in-memory matcher store. Zero disables the cap.
+	InMemMaxRows int `mapstructure:"inmem_max_rows"`
+	// InMemMaxOffHeapBytes, when positive, caps the total off-heap mmap file
+	// bytes accepted by the in-memory matcher store. Zero disables the cap.
+	InMemMaxOffHeapBytes int64 `mapstructure:"inmem_max_offheap_bytes"`
 	// IndexerAddr forces the matcher to retrieve index reports from a remote indexer
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
@@ -231,8 +258,25 @@ func (c *MatcherConfig) validate() error {
 		return nil
 	}
 
-	if err := c.Database.validate(); err != nil {
-		return fmt.Errorf("database: %w", err)
+	if c.Store == "" {
+		c.Store = MatcherStorePostgres
+	}
+	switch c.Store {
+	case MatcherStorePostgres, MatcherStoreInMem:
+	default:
+		return fmt.Errorf("store: invalid store type %q (want %q or %q)", c.Store, MatcherStorePostgres, MatcherStoreInMem)
+	}
+
+	if c.Store == MatcherStorePostgres {
+		if err := c.Database.validate(); err != nil {
+			return fmt.Errorf("database: %w", err)
+		}
+	}
+	if c.InMemMaxRows < 0 {
+		return fmt.Errorf("inmem_max_rows: must be non-negative (got %d)", c.InMemMaxRows)
+	}
+	if c.InMemMaxOffHeapBytes < 0 {
+		return fmt.Errorf("inmem_max_offheap_bytes: must be non-negative (got %d)", c.InMemMaxOffHeapBytes)
 	}
 
 	c.RemoteIndexerEnabled = c.IndexerAddr != ""
@@ -268,6 +312,11 @@ func (c *MatcherConfig) validate() error {
 	case ReadinessDatabase, ReadinessVulnerability:
 	default:
 		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
+	}
+	// An in-memory store has no database connection; require vulnerability
+	// readiness so Ready() never reports healthy before the initial load finishes.
+	if c.Store == MatcherStoreInMem {
+		c.Readiness = ReadinessVulnerability
 	}
 
 	c.VulnBundleAllowlist = NormalizeStringList(c.VulnBundleAllowlist)

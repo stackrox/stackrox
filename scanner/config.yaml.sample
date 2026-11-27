@@ -10,6 +10,10 @@ indexer:
   name_to_repos_url: https://security.access.redhat.com/data/metrics/container-name-repos-map.json
 matcher:
   enable: true
+  # store selects the vulnerability matcher datastore backend:
+  #   postgres (default): persisted Postgres store.
+  #   inmem: in-memory column-native store rebuilt from the bundle on boot.
+  store: postgres
   database:
     conn_string: "host=/var/run/postgresql"
     password_file: ""

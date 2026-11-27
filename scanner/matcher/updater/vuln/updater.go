@@ -2,6 +2,7 @@ package vuln
 
 import (
 	"archive/zip"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -9,12 +10,14 @@ import (
 	"io/fs"
 	"log/slog"
 	"math/rand"
+	randv2 "math/rand/v2"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -22,13 +25,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/klauspost/compress/zstd"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/toolkit/log"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -46,6 +53,8 @@ const (
 
 	defaultRetryMax   = 12
 	defaultRetryDelay = 10 * time.Second
+
+	alignedMaxJitter = 30 * time.Second
 )
 
 var (
@@ -57,6 +66,13 @@ var (
 		15 * time.Minute,
 		20 * time.Minute,
 	}
+
+	bundleTimestampGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ScannerSubsystem.String(),
+		Name:      "matcher_bundle_timestamp_seconds",
+		Help:      "Unix timestamp of the most recently loaded vulnerability bundle.",
+	})
 )
 
 // Opts represents Updater options.
@@ -65,7 +81,7 @@ var (
 // The rest are optional.
 type Opts struct {
 	Store         postgres.MatcherStore
-	Locker        *ctxlock.Locker
+	Locker        updates.LockSource
 	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client
@@ -81,6 +97,15 @@ type Opts struct {
 	RetryMax   int
 
 	VulnBundleAllowlist []string
+
+	// ImportConcurrency sets the maximum number of bundles imported in parallel
+	// per update cycle. Defaults to 1 (serial).
+	ImportConcurrency int
+
+	// AlignedPolling aligns post-initialization update ticks to wall-clock
+	// multiples of UpdateInterval plus a small 0-30s jitter, shrinking
+	// cross-replica skew for independent in-memory matcher pods.
+	AlignedPolling bool
 }
 
 // Updater represents a vulnerability updater.
@@ -114,6 +139,8 @@ type Updater struct {
 	retryMax   int
 
 	vulnBundleAllowlist set.FrozenSet[string]
+	importConcurrency   int
+	alignedPolling      bool
 
 	distManager *distManager
 }
@@ -145,7 +172,9 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
 
-		distManager: newDistManager(opts.Store),
+		importConcurrency: opts.ImportConcurrency,
+		alignedPolling:    opts.AlignedPolling,
+		distManager:       newDistManager(opts.Store),
 	}
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
 		return u.Import(ctx, reader)
@@ -187,6 +216,9 @@ func fillOpts(opts *Opts) error {
 	}
 	if opts.RetryMax == 0 {
 		opts.RetryMax = defaultRetryMax
+	}
+	if opts.ImportConcurrency < 1 {
+		opts.ImportConcurrency = 1
 	}
 	return nil
 }
@@ -329,14 +361,7 @@ func (u *Updater) Start() error {
 			}
 			slog.InfoContext(ctx, "completed update")
 
-			// Skip jitter when vulns have never been loaded, so that
-			// failed initial attempts (e.g. Central not yet ready at startup)
-			// retry quicker to get the matcher into a functional state.
-			interval := u.updateInterval + jitter()
-			if !u.Initialized(ctx) {
-				interval = u.updateInterval
-			}
-			timer.Reset(interval)
+			timer.Reset(u.nextUpdateDelay(time.Now(), u.Initialized(ctx)))
 		}
 	}
 }
@@ -442,25 +467,89 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
+	type batchPublisher interface {
+		BeginBatch()
+		EndBatch()
+	}
+	var endBatchOnce sync.Once
+	endBatch := func() {}
+	if bp, ok := u.store.(batchPublisher); ok {
+		bp.BeginBatch()
+		endBatch = func() {
+			endBatchOnce.Do(bp.EndBatch)
+		}
+		defer endBatch()
+	}
+
 	// Process each vulnerability bundle in the .zip archive.
 	// Errors are collected so all bundles are attempted even when some fail.
 	//
 	// TODO(ROX-36437): succeeded counts lock-skipped and already-current
 	// bundles as successes; distinguish genuinely imported bundles from
 	// skipped ones.
-	var bundleErrs []error
-	succeeded := 0
-	for _, bundleF := range bundles {
+	var (
+		resMu      sync.Mutex
+		bundleErrs []error
+		succeeded  int
+	)
+	processBundle := func(bundleF *zip.File) {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
-			continue
+			concurrency.WithLock(&resMu, func() {
+				bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
+			})
+			return
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
-		succeeded++
+		concurrency.WithLock(&resMu, func() {
+			succeeded++
+		})
 	}
+
+	if u.importConcurrency <= 1 || len(bundles) <= 1 {
+		for _, bundleF := range bundles {
+			if err := ctx.Err(); err != nil {
+				bundleErrs = append(bundleErrs, err)
+				break
+			}
+			processBundle(bundleF)
+		}
+	} else {
+		// Schedule largest compressed bundles first (LPT) so heavy feeds overlap
+		// cleanly and minimize wall-clock makespan.
+		work := slices.Clone(bundles)
+		slices.SortFunc(work, func(a, b *zip.File) int {
+			return cmp.Compare(b.CompressedSize64, a.CompressedSize64)
+		})
+		jobs := make(chan *zip.File, len(work))
+		for _, f := range work {
+			jobs <- f
+		}
+		close(jobs)
+		workers := min(u.importConcurrency, len(work))
+		var wg sync.WaitGroup
+		wg.Add(workers)
+		for range workers {
+			go func() {
+				defer wg.Done()
+				for bundleF := range jobs {
+					if ctx.Err() != nil {
+						return
+					}
+					processBundle(bundleF)
+				}
+			}()
+		}
+		wg.Wait()
+		if err := ctx.Err(); err != nil {
+			bundleErrs = append(bundleErrs, err)
+		}
+	}
+	// Atomically publish staged fragments (if the store supports batching)
+	// before refreshing known distributions.
+	endBatch()
 
 	// Skip GC and distribution update only when every bundle that was
 	// attempted returned an error (i.e., no partial success to build on).
@@ -489,15 +578,24 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 
 	_ = u.Initialized(ctx)
+	if !zipTime.IsZero() {
+		bundleTimestampGauge.Set(float64(zipTime.Unix()))
+	}
 
 	return true, errors.Join(bundleErrs...)
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
 	if err := lCtx.Err(); err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
 		slog.InfoContext(ctx, "skipping: did not obtain lock", "reason", err)
 		return nil
 	}
@@ -630,6 +728,19 @@ func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp ti
 
 func jitter() time.Duration {
 	return jitterMinutes[random.Intn(len(jitterMinutes))]
+}
+
+func (u *Updater) nextUpdateDelay(now time.Time, initialized bool) time.Duration {
+	if !initialized {
+		// Skip jitter when vulns have never been loaded, so failed initial
+		// attempts (e.g. Central not yet ready at startup) retry quicker.
+		return u.updateInterval
+	}
+	if u.alignedPolling {
+		nextBoundary := now.Truncate(u.updateInterval).Add(u.updateInterval)
+		return nextBoundary.Sub(now) + randv2.N(alignedMaxJitter)
+	}
+	return u.updateInterval + jitter()
 }
 
 func closeResponse(resp *http.Response) {

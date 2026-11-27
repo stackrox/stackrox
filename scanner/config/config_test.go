@@ -107,6 +107,29 @@ matcher:
 				return &cfg
 			}(),
 		},
+		{
+			name: "when matcher store env var is set to inmem",
+			yaml: `---
+matcher:
+  enable: true
+`,
+			env: map[string]string{
+				"SCANNER_V4_MATCHER_STORE":                   "inmem",
+				"SCANNER_V4_MATCHER_INMEM_BLOB_DIR":          "/var/tmp/custom-inmem",
+				"SCANNER_V4_MATCHER_INMEM_MAX_ROWS":          "1000000",
+				"SCANNER_V4_MATCHER_INMEM_MAX_OFFHEAP_BYTES": "2147483648",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Matcher.Store = MatcherStoreInMem
+				cfg.Matcher.Readiness = ReadinessVulnerability
+				cfg.Matcher.InMemBlobDir = "/var/tmp/custom-inmem"
+				cfg.Matcher.InMemMaxRows = 1000000
+				cfg.Matcher.InMemMaxOffHeapBytes = 2147483648
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -317,6 +340,40 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"https://example.com/v1/vuln.zip"}, c.VulnerabilitiesURLs)
+	})
+	t.Run("when store is inmem then empty database config is allowed and readiness becomes vulnerability", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			Store:              MatcherStoreInMem,
+			VulnerabilitiesURL: "https://example.com/vuln.zip",
+			Readiness:          ReadinessDatabase,
+		}
+		require.NoError(t, c.validate())
+		assert.Equal(t, ReadinessVulnerability, c.Readiness)
+	})
+	t.Run("when inmem limits are negative then error", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			Store:              MatcherStoreInMem,
+			InMemMaxRows:       -1,
+			VulnerabilitiesURL: "https://example.com/vuln.zip",
+			Readiness:          ReadinessVulnerability,
+		}
+		assert.ErrorContains(t, c.validate(), "inmem_max_rows")
+
+		c.InMemMaxRows = 0
+		c.InMemMaxOffHeapBytes = -10
+		assert.ErrorContains(t, c.validate(), "inmem_max_offheap_bytes")
+	})
+	t.Run("when store is invalid then error", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			Store:              "sqlite",
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "https://example.com/vuln.zip",
+			Readiness:          ReadinessVulnerability,
+		}
+		assert.ErrorContains(t, c.validate(), "invalid store type")
 	})
 }
 

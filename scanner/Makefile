@@ -261,7 +261,7 @@ endif
 #################
 
 db-integration-timeout := 20m
-db-integration-d       := datastore/postgres
+db-integration-d       := datastore
 db-integration-go-tag  := scanner_db_integration
 
 .PHONY: db-integration-test
