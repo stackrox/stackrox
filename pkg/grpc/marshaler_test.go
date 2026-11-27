@@ -72,17 +72,25 @@ func (a *MarshalerTest) TestDurationParsing() {
 	a.T().Cleanup(func() { api.Stop() })
 
 	for given, expected := range map[string]string{
-		`{"cves": ["ABC", "XYZ"], "duration": "24h"}`: `ABC, XYZ, 24h0m0s`,
-		`{"cves": ["ABC", "XYZ"], "duration": "24s"}`: `ABC, XYZ, 24s`,
-		`{"cves": ["ABC", "XYZ"], "duration": "XYZ"}`: `invalid google.protobuf.Duration value \"XYZ\"`,
+		`{"cves": ["ABC", "XYZ"], "duration": "0"}`:      `invalid google.protobuf.Duration value \"0\"`,
+		`{"cves": ["ABC", "XYZ"], "duration": "0s"}`:     `ABC, XYZ, 0s`,
+		`{"cves": ["ABC", "XYZ"], "duration": "86400s"}`: `ABC, XYZ, 24h0m0s`,
+		`{"cves": ["ABC", "XYZ"], "duration": "24s"}`:    `ABC, XYZ, 24s`,
+		`{"cves": ["ABC", "XYZ"], "duration": "24h"}`:    `invalid google.protobuf.Duration value \"24h\"`,
+		`{"cves": ["ABC", "XYZ"], "duration": "XYZ"}`:    `invalid google.protobuf.Duration value \"XYZ\"`,
 	} {
 		a.Run(expected, func() {
 			req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(given))
-			a.NoError(err)
+			a.Require().NoError(err)
 
 			req.Header.Set("Content-Type", "application/json")
 			resp, err := http.DefaultClient.Do(req)
-			a.NoError(err)
+			a.Require().NoError(err)
+
+			defer testutils.SafeClientClose(resp)
+			if strings.HasPrefix(expected, "invalid") {
+				a.Equal(http.StatusBadRequest, resp.StatusCode)
+			}
 
 			body, err := io.ReadAll(resp.Body)
 			a.Require().NoError(err)
