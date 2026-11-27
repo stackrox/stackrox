@@ -222,6 +222,7 @@ func (m *ExchangeTokenResponse) CloneVT() *ExchangeTokenResponse {
 	r.ClientState = m.ClientState
 	r.Test = m.Test
 	r.User = m.User.CloneVT()
+	r.AuthorizeRoxctl = m.AuthorizeRoxctl
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -562,6 +563,9 @@ func (this *ExchangeTokenResponse) EqualVT(that *ExchangeTokenResponse) bool {
 		return false
 	}
 	if !this.User.EqualVT(that.User) {
+		return false
+	}
+	if this.AuthorizeRoxctl != that.AuthorizeRoxctl {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1113,6 +1117,16 @@ func (m *ExchangeTokenResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.AuthorizeRoxctl {
+		i--
+		if m.AuthorizeRoxctl {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.User != nil {
 		size, err := m.User.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -1441,6 +1455,9 @@ func (m *ExchangeTokenResponse) SizeVT() (n int) {
 	if m.User != nil {
 		l = m.User.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AuthorizeRoxctl {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2564,6 +2581,26 @@ func (m *ExchangeTokenResponse) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthorizeRoxctl", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AuthorizeRoxctl = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3924,6 +3961,26 @@ func (m *ExchangeTokenResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthorizeRoxctl", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AuthorizeRoxctl = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
