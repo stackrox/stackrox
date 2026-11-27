@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-external-db
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  central-external-db.yaml: |
+    centralDB:
+      external: false
+      source: >
+        host=central-db.stackrox.svc
+        port=5432
+        user=postgres
+        sslmode=verify-full
+        sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        statement_timeout=1.2e+06
+        pool_min_conns=10
+        pool_max_conns=90
+        client_encoding=UTF8
