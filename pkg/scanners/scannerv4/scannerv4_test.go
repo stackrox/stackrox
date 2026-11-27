@@ -15,6 +15,8 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/registries/mocks"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
@@ -663,4 +665,55 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 		Vulnerabilities:        vulns,
 		Notes:                  []v4.VulnerabilityReport_Note{},
 	}
+}
+
+func testImageForScan() *storage.Image {
+	return &storage.Image{
+		Id: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Name: &storage.ImageName{
+			Registry: "example.com",
+			Remote:   "repo",
+		},
+		Metadata: &storage.ImageMetadata{},
+	}
+}
+
+func TestGetScan(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRegistries := mocks.NewMockSet(ctrl)
+	mockRegistries.EXPECT().GetRegistryMetadataByImage(gomock.Any()).Return(&types.Config{})
+
+	mockClient := s4ClientMocks.NewMockScanner(ctrl)
+	mockClient.EXPECT().IndexAndScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&v4.VulnerabilityReport{}, nil)
+	mockClient.EXPECT().CreateAndScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+
+	s := &scannerv4{scannerClient: mockClient, activeRegistries: mockRegistries}
+
+	scan, err := s.GetScan(testImageForScan())
+	require.NoError(t, err)
+	assert.NotNil(t, scan)
+}
+
+func TestGetScanForceReindex(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRegistries := mocks.NewMockSet(ctrl)
+	mockRegistries.EXPECT().GetRegistryMetadataByImage(gomock.Any()).Return(&types.Config{})
+
+	mockClient := s4ClientMocks.NewMockScanner(ctrl)
+	mockClient.EXPECT().CreateAndScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&v4.VulnerabilityReport{}, nil)
+	mockClient.EXPECT().IndexAndScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+
+	s := &scannerv4{scannerClient: mockClient, activeRegistries: mockRegistries}
+
+	scan, err := s.GetScanForceReindex(testImageForScan())
+	require.NoError(t, err)
+	assert.NotNil(t, scan)
 }

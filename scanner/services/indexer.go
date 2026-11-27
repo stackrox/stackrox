@@ -58,12 +58,15 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
-	return s.createIndexReport(ctx, req)
+	// CreateIndexReport always discards any previously indexed data for this manifest and
+	// performs a genuine fresh re-index, unlike GetOrCreateIndexReport's internal fallback
+	// below, which should only index manifests ClairCore hasn't seen before.
+	return s.createIndexReport(ctx, req, true)
 }
 
 // createIndexReport creates an Index Report for the given request.
 // This function writes logs using the given context.
-func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
+func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest, force bool) (*v4.IndexReport, error) {
 	slog.InfoContext(ctx, "creating index report for container image")
 
 	// TODO We currently only support container images, hence we assume the resource
@@ -86,6 +89,7 @@ func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIn
 		}))
 	}
 	opts = append(opts, indexer.InsecureSkipTLSVerify(req.GetContainerImage().GetInsecureSkipTlsVerify()))
+	opts = append(opts, indexer.Force(force))
 	// Create index report.
 	slog.InfoContext(ctx, "creating index report for container image",
 		"image_url", req.GetContainerImage().GetUrl(),
@@ -166,7 +170,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: req.GetContainerImage(),
 		},
-	})
+	}, false)
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {

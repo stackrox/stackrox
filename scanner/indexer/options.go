@@ -15,6 +15,7 @@ type options struct {
 	auth                  authn.Authenticator
 	platform              v1.Platform
 	insecureSkipTLSVerify bool
+	force                 bool
 }
 
 // WithAuth specifies the authentication to use
@@ -31,6 +32,25 @@ func InsecureSkipTLSVerify(insecure bool) Option {
 	return func(o *options) {
 		o.insecureSkipTLSVerify = insecure
 	}
+}
+
+// Force, when true, discards any previously stored ClairCore manifest/index-report/
+// scanned-state for this exact manifest before indexing, so IndexContainerImage
+// performs a genuine from-scratch re-index instead of reusing ClairCore's own
+// per-manifest cache (which is keyed on image content and the configured scanner
+// set, not on indexer configuration such as feature flags).
+func Force(force bool) Option {
+	return func(o *options) {
+		o.force = force
+	}
+}
+
+// ResolveForce reports the force setting that the given Options resolve to.
+// Exported so callers in other packages (e.g. scanner/services tests) that
+// only hold a []Option can verify which value was actually set, since the
+// options struct itself is unexported.
+func ResolveForce(opts ...Option) bool {
+	return makeOptions(opts...).force
 }
 
 // defaultPlatform is the linux operating system
