@@ -8,13 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
-// newProviderFromConfigData returns a provider that can be used to extract tokens issued
-// based on data from machine to machine configs.
-func newProviderFromConfigData(configID string, configType string, rm permissions.RoleMapper) authproviders.Provider {
+// newProvider returns a provider that can be used to extract tokens that were issued
+// based on data from machine to machine configurations.
+func newProvider(providerID string, providerType string, rm permissions.RoleMapper) authproviders.Provider {
 	return tokenbased.NewTokenAuthProvider(
-		configID,
-		fmt.Sprintf("%s-%s", configType, configID),
-		configType,
+		providerID,
+		fmt.Sprintf("%s-%s", providerType, providerID),
+		providerType,
 		tokenbased.WithRoleMapper(rm),
 	)
 }
