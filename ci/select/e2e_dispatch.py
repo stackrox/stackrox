@@ -92,6 +92,12 @@ def main():
         wait_for_konflux_images = inputs.event_name != 'pull_request' or ('konflux-build' in inputs.pr_labels and any(jobs.values()))
         write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
 
+        # Print a human-readable summary of which jobs will be dispatched.
+        print()
+        width = max(len(name) for name in jobs)
+        for name in sorted(jobs):
+            print(f'{name:<{width}}  {"✓" if jobs[name] else ""}')
+
 
 if __name__ == '__main__':
     main()
