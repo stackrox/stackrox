@@ -2,7 +2,7 @@ name: Cache Go Dependencies
 description: Cache Go Dependencies
 inputs:
   save:
-    description: Whether this job saves caches on pushes to the default branch.
+    description: Whether this job saves caches on default-branch pushes and PRs labeled ci-save-cache.
     required: false
     default: 'true'
   key-suffix:
@@ -44,8 +44,15 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
+    - name: Determine cache save eligibility
+      id: cache-save
+      env:
+        ENABLED: ${{ inputs.save == 'true' && ((github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-save-cache'))) }}
+      run: echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+      shell: bash
+
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: steps.cache-save.outputs.enabled == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -55,7 +62,7 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: steps.cache-save.outputs.enabled != 'true'
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}

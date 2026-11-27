@@ -141,12 +141,8 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Install bats
-      run: |
-        sudo npm install -g bats bats-support bats-assert
-        sudo mkdir -p /usr/lib/node_modules
-        sudo ln -s /usr/local/lib/node_modules/bats-support /usr/lib/node_modules/bats-support
-        sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
+    - name: Install Bats
+      uses: ./.github/actions/setup-bats
 
     - name: Run e2e tests
       # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.

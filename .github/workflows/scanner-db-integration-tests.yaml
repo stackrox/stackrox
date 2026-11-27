@@ -22,13 +22,9 @@ jobs:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-24.04
-    container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -36,8 +32,12 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        version=$(pg_lsclusters --no-header | awk '$2 == "main" && $3 == 5432 {print $1}')
+        test -n "$version"
+        sudo pg_dropcluster --stop "$version" main
+        sudo pg_createcluster "$version" main -- --auth=trust
+        sudo pg_ctlcluster "$version" main start
+        psql -w -h 127.0.0.1 -U postgres -d postgres -c 'SELECT version()'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies

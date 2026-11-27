@@ -1,0 +1,9 @@
+{
+  "name": "stackrox-ci-bats",
+  "private": true,
+  "dependencies": {
+    "bats": "1.13.0",
+    "bats-assert": "2.2.4",
+    "bats-support": "0.3.0"
+  }
+}
