@@ -122,6 +122,11 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
+    - name: Set up Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
     - name: Run UI E2E tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
