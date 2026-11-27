@@ -146,6 +146,39 @@ func IsSortBySeverityCounts(q *v1.Query) bool {
 	return false
 }
 
+// WithMaxSeveritySortTiebreakers makes a severity-based CVE sort both meaningful and deterministic.
+// When a CVE list is grouped by CVE and sorted by severity, the sort key is max(severity), which has
+// only a handful of distinct values. Without additional keys, LIMIT/OFFSET pagination is
+// nondeterministic (rows can repeat or disappear across pages). When the primary sort is by
+// Severity, this appends CVSS (a finer-grained severity signal, same direction) and CVE (a unique
+// key) as secondary sorts when they are not already present. It is a no-op for any other sort.
+//
+// It must be called before UpdateSortAggs so the appended CVSS field is converted to its aggregate.
+func WithMaxSeveritySortTiebreakers(q *v1.Query) *v1.Query {
+	sortOptions := q.GetPagination().GetSortOptions()
+	if len(sortOptions) == 0 || !strings.EqualFold(sortOptions[0].GetField(), search.Severity.String()) {
+		return q
+	}
+
+	cloned := q.CloneVT()
+	present := make(map[string]struct{}, len(cloned.GetPagination().GetSortOptions()))
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
+		present[strings.ToUpper(sortOption.GetField())] = struct{}{}
+	}
+	if _, ok := present[search.CVSS.ToUpper()]; !ok {
+		cloned.Pagination.SortOptions = append(cloned.Pagination.SortOptions, &v1.QuerySortOption{
+			Field:    search.CVSS.String(),
+			Reversed: sortOptions[0].GetReversed(),
+		})
+	}
+	if _, ok := present[search.CVE.ToUpper()]; !ok {
+		cloned.Pagination.SortOptions = append(cloned.Pagination.SortOptions, &v1.QuerySortOption{
+			Field: search.CVE.String(),
+		})
+	}
+	return cloned
+}
+
 // UpdateSortAggs takes a sort option and converts it to an aggregation as we are working with views
 // and are grouping rows by CVE or Component
 func UpdateSortAggs(q *v1.Query) *v1.Query {

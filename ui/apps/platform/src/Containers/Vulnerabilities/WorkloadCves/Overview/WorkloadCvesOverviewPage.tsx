@@ -188,7 +188,7 @@ function WorkloadCvesOverviewPage() {
 
     const sort = useURLSort({
         sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
         onSort: () => pagination.setPage(1),
     });
 
@@ -221,7 +221,7 @@ function WorkloadCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
+        sort.setSortOption(getDefaultSortOption(entityTab));
         trackEntityTabViewed(entityTab);
     }
 

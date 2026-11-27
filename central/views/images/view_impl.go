@@ -45,6 +45,50 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 	return ret, nil
 }
 
+// SeverityRankSortField is a virtual sort field the UI can request to order images by severity.
+// It expands into a lexicographic ordering (critical first) across the denormalized, per-image
+// scanstats_*cvecount columns on images_v2, instead of computing a per-request count(distinct)
+// aggregate over image_cves_v2. The stored counts are unfiltered totals across all vulnerability
+// states; which images appear is still gated by the query's own filters (e.g. State:OBSERVED).
+const SeverityRankSortField = "Severity Rank"
+
+// severityRankStoredCountFields are the stored per-severity count fields that SeverityRankSortField
+// expands into, ordered from most to least severe.
+var severityRankStoredCountFields = []search.FieldLabel{
+	search.CriticalCVECount,
+	search.ImportantCVECount,
+	search.ModerateCVECount,
+	search.LowCVECount,
+	search.UnknownCVECount,
+}
+
+// expandSeverityRankSort replaces a SeverityRankSortField sort option with the ordered set of stored
+// per-severity count sorts (preserving the requested direction) followed by a unique tiebreaker so
+// LIMIT/OFFSET pagination stays deterministic across pages.
+func expandSeverityRankSort(q *v1.Query, tiebreaker search.FieldLabel) {
+	sortOptions := q.GetPagination().GetSortOptions()
+	idx := -1
+	for i, sortOption := range sortOptions {
+		if sortOption.GetField() == SeverityRankSortField {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return
+	}
+
+	reversed := sortOptions[idx].GetReversed()
+	expanded := make([]*v1.QuerySortOption, 0, len(sortOptions)+len(severityRankStoredCountFields))
+	expanded = append(expanded, sortOptions[:idx]...)
+	for _, field := range severityRankStoredCountFields {
+		expanded = append(expanded, &v1.QuerySortOption{Field: field.String(), Reversed: reversed})
+	}
+	expanded = append(expanded, &v1.QuerySortOption{Field: tiebreaker.String()})
+	expanded = append(expanded, sortOptions[idx+1:]...)
+	q.Pagination.SortOptions = expanded
+}
+
 func withSelectQuery(query *v1.Query) *v1.Query {
 	cloned := query.CloneVT()
 	var searchField search.FieldLabel
@@ -56,6 +100,10 @@ func withSelectQuery(query *v1.Query) *v1.Query {
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(searchField).Proto(),
 	}
+
+	// Expand the virtual "Severity Rank" sort into stored-column sorts before the severity-count
+	// detection below, so it takes the cheap stored-column path rather than the count(distinct) one.
+	expandSeverityRankSort(cloned, searchField)
 
 	if common.IsSortBySeverityCounts(cloned) {
 		cloned.GroupBy = &v1.QueryGroupBy{

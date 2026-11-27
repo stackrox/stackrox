@@ -39,33 +39,13 @@ export function getWorkloadCveOverviewSortFields(
 ): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
-            return [
-                'CVE',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'CVSS',
-                'Image Sha',
-                'CVE Created Time',
-            ];
+            // Severity resolves to max(severity) server-side; the UI sends a single 'Severity' sort
+            // and the backend appends CVSS/CVE tiebreakers for deterministic pagination.
+            return ['CVE', 'Severity', 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return [
-                'Image',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Image OS',
-                'Image Created Time',
-                'Image Scan Time',
-            ];
+            // 'Severity Rank' is a virtual sort the backend expands into the stored per-severity CVE
+            // count columns (critical first), avoiding the expensive count(distinct) aggregate.
+            return ['Image', 'Severity Rank', 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             return [
                 'Deployment',
@@ -92,23 +72,15 @@ export function getWorkloadCveOverviewSortFields(
  * @returns The default sort option
  */
 export function getWorkloadCveOverviewDefaultSortOption(
-    entityTab: WorkloadEntityTab,
-    searchFilter?: SearchFilter
+    entityTab: WorkloadEntityTab
 ): SortOption | NonEmptyArray<SortOption> {
-    // Array.prototype.map does not currently retain the arity of an input tuple, so
-    // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
-    // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
-    const appliedSeveritySortOptions = getSeveritySortOptions(
-        getAppliedSeverities(searchFilter ?? {})
-    ).map((o) => ({ ...o, direction: 'desc' })) as NonEmptyArray<SortOption>;
-
     switch (entityTab) {
         case 'CVE':
-            return appliedSeveritySortOptions;
+            return { field: 'Severity', direction: 'desc' };
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
-            return appliedSeveritySortOptions;
+            return { field: 'Severity Rank', direction: 'desc' };
         default:
             return ensureExhaustive(entityTab);
     }

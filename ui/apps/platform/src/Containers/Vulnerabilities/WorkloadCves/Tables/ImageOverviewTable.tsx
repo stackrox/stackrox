@@ -34,7 +34,6 @@ import VerifiedSignatureLabel, {
     getVerifiedSignatureInResults,
 } from '../components/VerifiedSignatureLabel';
 import getImageScanMessage from '../utils/getImageScanMessage';
-import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
@@ -247,10 +246,7 @@ function ImageOverviewTable({
                     <TooltipTh
                         className={getVisibilityClass('cvesBySeverity')}
                         tooltip="CVEs by severity across this image"
-                        sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
+                        sort={getSortParams('Severity Rank')}
                     >
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}

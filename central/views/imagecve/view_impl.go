@@ -83,6 +83,9 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// A severity sort resolves to max(severity), which is low-cardinality; add tiebreakers so
+	// pagination is deterministic before converting sorts to aggregations.
+	cloned = common.WithMaxSeveritySortTiebreakers(cloned)
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
 
