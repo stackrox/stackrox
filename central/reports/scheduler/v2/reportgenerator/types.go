@@ -36,6 +36,7 @@ type ImageCVEQueryResponse struct {
 	Deployment               *string                        `db:"deployment"`
 	ContainerName            *string                        `db:"deployment_container_name"`
 	Image                    *string                        `db:"image"`
+	ImageSHA                 *string                        `db:"image_sha"`
 	Component                *string                        `db:"component"`
 	ComponentVersion         *string                        `db:"component_version"`
 	CVEID                    *string                        `db:"cve_id"`
@@ -56,7 +57,8 @@ type ImageCVEQueryResponse struct {
 	Origin                   *storage.VulnOrigin            `db:"cve_origin"`
 	State                    *storage.VulnerabilityState    `db:"vulnerability_state"`
 
-	Link string
+	Link      string
+	BaseImage string
 }
 
 func (res *ImageCVEQueryResponse) GetCluster() string {
@@ -92,6 +94,13 @@ func (res *ImageCVEQueryResponse) GetImage() string {
 		return ""
 	}
 	return *res.Image
+}
+
+func (res *ImageCVEQueryResponse) GetImageSHA() string {
+	if res.ImageSHA == nil {
+		return ""
+	}
+	return *res.ImageSHA
 }
 
 func (res *ImageCVEQueryResponse) GetComponent() string {

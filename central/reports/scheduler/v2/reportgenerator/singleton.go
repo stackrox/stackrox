@@ -1,11 +1,13 @@
 package reportgenerator
 
 import (
+	baseImageRepositoryDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
+	imageMapperDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -31,6 +33,8 @@ func initialize() {
 		clusterDS.Singleton(),
 		namespaceDS.Singleton(),
 		imageCVE2DS.Singleton(),
+		imageMapperDS.Singleton(),
+		baseImageRepositoryDS.Singleton(),
 	)
 }
 

@@ -10,6 +10,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageMapperDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -125,7 +126,8 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore)
+		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore,
+		imageMapperDS.New(bts.resolver.ImageDataStore, bts.resolver.ImageV2DataStore), nil)
 }
 
 func BenchmarkEntityScopeReportGenerator(b *testing.B) {
@@ -163,7 +165,8 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 
 	reportGenerator := newReportGeneratorImpl(testDB, nil, resolver.DeploymentDataStore,
 		watchedImageDatastore, nil, nil, nil, clusterDatastore,
-		nsDatastore, resolver.ImageCVEV2DataStore)
+		nsDatastore, resolver.ImageCVEV2DataStore,
+		imageMapperDS.New(resolver.ImageDataStore, resolver.ImageV2DataStore), nil)
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
