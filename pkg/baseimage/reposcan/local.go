@@ -105,15 +105,20 @@ func (c *LocalScanner) ScanRepository(
 
 		// Fetch metadata concurrently for tags that need it.
 		if len(toFetch) > 0 {
-			// Create fetcher for this repo, uses a list of cached digests and a shared the
-			// limiter per registry integration.
+			// Create fetcher for this repo, uses the cached tag state and a shared
+			// limiter per registry integration. Entries written at an older
+			// derivation version are treated as misses, so their fetched
+			// metadata is yielded and written.
 			id := reg.Source().GetId()
 			limiter := c.getRateLimiter(id)
-			digests := make(map[string]string, len(req.CheckTags))
-			for tag, tagInfo := range req.CheckTags {
-				digests[tag] = tagInfo.GetManifestDigest()
+			known := make(map[string]tagfetcher.KnownTag, len(req.CheckTags))
+			for tag, cached := range req.CheckTags {
+				known[tag] = tagfetcher.KnownTag{
+					ManifestDigest:  cached.GetManifestDigest(),
+					MetadataVersion: cached.GetMetadataVersion(),
+				}
 			}
-			fetcher := tagfetcher.NewTagFetcher(reg, name, limiter, digests)
+			fetcher := tagfetcher.NewTagFetcher(reg, name, limiter, known)
 
 			// Fetch tags, and yield events.
 			for metadata := range fetcher.Fetch(ctx, toFetch) {

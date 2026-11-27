@@ -3,6 +3,7 @@ package watcher
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 	"time"
 
@@ -115,6 +116,84 @@ func TestPromoteTags_CopiesHistory(t *testing.T) {
 		tagLimit:    10,
 	}
 	require.NoError(t, w.promoteTags(context.Background(), repo))
+}
+
+// TestDoScan_StampsMetadataVersion verifies that the watcher persists the
+// version stamped by the fetcher so stale cache rows can be detected later.
+func TestDoScan_StampsMetadataVersion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+
+	repoID := uuid.NewV4().String()
+	repo := &storage.BaseImageRepository{
+		Id:             repoID,
+		RepositoryPath: "registry.redhat.io/ubi9/ubi",
+		TagPattern:     "9.*",
+	}
+	created := time.Now()
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repoID, gomock.Any()).
+		Return(nil, nil)
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), repoID).
+		Return(nil, nil).
+		Times(2) // doScan and promoteTags.
+	mockTagDS.EXPECT().
+		UpsertMany(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, tags []*storage.BaseImageTag) error {
+			require.Len(t, tags, 1)
+			assert.Equal(t, "9.8", tags[0].GetTag())
+			assert.Equal(t, tagfetcher.CurrentMetadataVersion, tags[0].GetMetadataVersion())
+			return nil
+		})
+	mockBaseImageDS.EXPECT().
+		ReplaceByRepository(gomock.Any(), repoID, gomock.Any()).
+		Return(nil)
+
+	w := &watcherImpl{
+		repoDS:      mockRepoDS,
+		tagDS:       mockTagDS,
+		baseImageDS: mockBaseImageDS,
+		localScanner: stubScanner{events: []reposcan.TagEvent{{
+			Type: reposcan.TagEventMetadata,
+			Tag:  "9.8",
+			Metadata: &tagfetcher.TagMetadata{
+				Tag:             "9.8",
+				ManifestDigest:  "sha256:new",
+				Created:         &created,
+				LayerDigests:    []string{"sha256:layer"},
+				MetadataVersion: tagfetcher.CurrentMetadataVersion,
+			},
+		}}},
+		tagLimit:  10,
+		batchSize: 10,
+	}
+	require.NoError(t, w.doScan(context.Background(), repo))
+}
+
+// stubScanner yields a fixed sequence of events, or one error.
+type stubScanner struct {
+	events []reposcan.TagEvent
+	err    error
+}
+
+func (s stubScanner) Name() string { return "stub" }
+
+func (s stubScanner) ScanRepository(context.Context, *storage.BaseImageRepository, reposcan.ScanRequest) iter.Seq2[reposcan.TagEvent, error] {
+	return func(yield func(reposcan.TagEvent, error) bool) {
+		if s.err != nil {
+			yield(reposcan.TagEvent{}, s.err)
+			return
+		}
+		for _, event := range s.events {
+			if !yield(event, nil) {
+				return
+			}
+		}
+	}
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
@@ -789,6 +868,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.25",
 			ManifestDigest:        "sha256:digest-25",
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-1 * time.Hour)), // Newest
 		},
 		{
@@ -796,6 +876,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.24",
 			ManifestDigest:        "sha256:digest-24",
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-2 * time.Hour)),
 		},
 		{
@@ -803,6 +884,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.23",
 			ManifestDigest:        "sha256:digest-23",
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-3 * time.Hour)), // Oldest
 		},
 	}
@@ -862,7 +944,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 				digest = "sha256:digest-23"
 			}
 			return &storage.ImageMetadata{
-				V1: &storage.V1Metadata{},
+				V1: &storage.V1Metadata{Created: timestamppb.Now()},
 				V2: &storage.V2Metadata{
 					Digest: digest,
 				},
@@ -1326,15 +1408,34 @@ func TestValidate_TagEventMetadata_Valid(t *testing.T) {
 		Tag:  "1.0",
 		Type: reposcan.TagEventMetadata,
 		Metadata: &tagfetcher.TagMetadata{
-			Tag:            "1.0",
-			ManifestDigest: "sha256:abc123",
-			Created:        &now,
-			LayerDigests:   []string{"sha256:layer1", "sha256:layer2"},
+			Tag:             "1.0",
+			ManifestDigest:  "sha256:abc123",
+			Created:         &now,
+			LayerDigests:    []string{"sha256:layer1", "sha256:layer2"},
+			MetadataVersion: tagfetcher.CurrentMetadataVersion,
 		},
 	}
 
 	err := validate(event)
 	assert.NoError(t, err)
+}
+
+func TestValidate_TagEventMetadata_EmptyMetadataVersion(t *testing.T) {
+	now := time.Now()
+	event := reposcan.TagEvent{
+		Tag:  "1.0",
+		Type: reposcan.TagEventMetadata,
+		Metadata: &tagfetcher.TagMetadata{
+			Tag:            "1.0",
+			ManifestDigest: "sha256:abc123",
+			Created:        &now,
+			LayerDigests:   []string{"sha256:layer1"},
+		},
+	}
+
+	err := validate(event)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "metadata version is empty")
 }
 
 func TestValidate_TagEventMetadata_WithError(t *testing.T) {

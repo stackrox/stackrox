@@ -416,6 +416,7 @@ func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageReposit
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
 				LayerDigests:          metadata.LayerDigests,
 				History:               metadata.History,
+				MetadataVersion:       metadata.MetadataVersion,
 			}
 			adds = append(adds, tag)
 			if len(adds) >= w.batchSize {
@@ -555,6 +556,9 @@ func validate(event reposcan.TagEvent) error {
 		}
 		if event.Metadata.Created == nil {
 			return errors.New("metadata created timestamp is empty")
+		}
+		if event.Metadata.MetadataVersion == 0 {
+			return errors.New("metadata version is empty")
 		}
 	default:
 		return fmt.Errorf("unknown event type: %d", event.Type)

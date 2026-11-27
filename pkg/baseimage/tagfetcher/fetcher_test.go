@@ -258,10 +258,10 @@ func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {
 	reg := mocks.NewMockRegistry(ctrl)
 	name := testImageName("registry.example.com", "repo/image")
 
-	// v1.0.0 has unchanged digest, v1.1.0 has changed digest.
-	knownDigests := map[string]string{
-		"v1.0.0": "sha256:unchanged",
-		"v1.1.0": "sha256:old-digest",
+	// v1.0.0 has an unchanged digest, v1.1.0 has a changed digest.
+	knownTags := map[string]KnownTag{
+		"v1.0.0": {ManifestDigest: "sha256:unchanged", MetadataVersion: CurrentMetadataVersion},
+		"v1.1.0": {ManifestDigest: "sha256:old-digest", MetadataVersion: CurrentMetadataVersion},
 	}
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
@@ -281,13 +281,80 @@ func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {
 		}, nil
 	})
 
-	fetcher := NewTagFetcher(reg, name, testLimiter(), knownDigests)
+	fetcher := NewTagFetcher(reg, name, testLimiter(), knownTags)
 	collected := collectResults(fetcher.Fetch(context.Background(), []string{"v1.0.0", "v1.1.0"}))
 
 	// Only v1.1.0 should be in results (v1.0.0 skipped due to unchanged digest).
 	require.Len(t, collected, 1)
 	assert.Equal(t, "v1.1.0", collected[0].Tag)
 	assert.Equal(t, "sha256:new-digest", collected[0].ManifestDigest)
+}
+
+// TestTagFetcher_RefetchesStaleVersion verifies that a cache entry with a
+// matching digest but an older MetadataVersion is refetched once, which is how
+// cache fields can be added without a data migration.
+func TestTagFetcher_RefetchesStaleVersion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	reg := mocks.NewMockRegistry(ctrl)
+	name := testImageName("registry.example.com", "repo/image")
+
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
+	reg.EXPECT().Metadata(gomock.Any()).Times(4).DoAndReturn(func(_ *storage.Image) (*storage.ImageMetadata, error) {
+		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{Created: protoTime},
+			V2: &storage.V2Metadata{Digest: "sha256:same"},
+		}, nil
+	})
+
+	knownTags := map[string]KnownTag{
+		// Legacy row: predates versioning.
+		"legacy": {ManifestDigest: "sha256:same", MetadataVersion: 0},
+		// Written by an older derivation.
+		"older": {ManifestDigest: "sha256:same", MetadataVersion: CurrentMetadataVersion - 1},
+		// Current, but with no cached digest.
+		"no-digest": {ManifestDigest: "", MetadataVersion: CurrentMetadataVersion},
+	}
+
+	fetcher := NewTagFetcher(reg, name, testLimiter(), knownTags)
+	collected := collectResults(fetcher.Fetch(context.Background(), []string{"legacy", "older", "no-digest", "unknown"}))
+
+	// No entry is fresh, so all four are emitted.
+	require.Len(t, collected, 4)
+	for _, result := range collected {
+		assert.NoError(t, result.Error)
+		assert.Equal(t, CurrentMetadataVersion, result.MetadataVersion)
+	}
+}
+
+// TestTagFetcher_SkipsCurrentEntry verifies that a current entry with a
+// matching digest is not emitted.
+func TestTagFetcher_SkipsCurrentEntry(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	reg := mocks.NewMockRegistry(ctrl)
+	name := testImageName("registry.example.com", "repo/image")
+
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
+	reg.EXPECT().Metadata(gomock.Any()).DoAndReturn(func(_ *storage.Image) (*storage.ImageMetadata, error) {
+		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{Created: protoTime},
+			V2: &storage.V2Metadata{Digest: "sha256:same"},
+		}, nil
+	})
+
+	fetcher := NewTagFetcher(reg, name, testLimiter(), map[string]KnownTag{
+		"v1.0.0": {ManifestDigest: "sha256:same", MetadataVersion: CurrentMetadataVersion},
+	})
+	collected := collectResults(fetcher.Fetch(context.Background(), []string{"v1.0.0"}))
+
+	assert.Empty(t, collected)
 }
 
 func Test_tagMetadata_FullMetadata(t *testing.T) {
