@@ -6,9 +6,6 @@ import { disableFragmentWarnings } from '@apollo/client';
 // `cveFields` fragment that is dynamically used throughout Vuln Management
 disableFragmentWarnings();
 
-// Use the test document's origin-scoped storage even when Node exposes its own localStorage.
-vi.stubGlobal('localStorage', globalThis.jsdom.window.localStorage);
-
 vi.setConfig({ testTimeout: 15000 });
 class Spy {
     spy = null;

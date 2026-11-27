@@ -354,7 +354,7 @@ jobs:
       with:
         working-directory: ui/apps/platform
         install: false
-        command: npm run test-component -- --browser electron
+        command: npm run test-component -- --browser chrome
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
