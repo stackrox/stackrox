@@ -32,7 +32,7 @@ message AuthMachineToMachineConfig {
 
   // The issuer is related to an ID token's issuer.
   // Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-  string issuer = 5; // @gotags: sql:"unique"
+  string issuer = 5;
 
   Traits traits = 6;
 

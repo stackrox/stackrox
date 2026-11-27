@@ -82,7 +82,7 @@ type AuthMachineToMachineConfig struct {
 	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer is related to an ID token's issuer.
 	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-	Issuer string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Issuer string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	Traits *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
 	// The expected audience (aud claim) of the ID token.
 	// When set, the OIDC token verifier validates that the token's aud

@@ -248,14 +248,31 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		return pkgErrors.Wrap(err, "failed to get service account issuer")
 	}
 
-	var tokenExchangerErrors []error
-	var kubeSAConfig *storage.AuthMachineToMachineConfig
-	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
-		if config.GetIssuer() == kubeSAIssuer {
-			kubeSAConfig = config
-			return nil
-		}
+	configControllerM2MConfig := &storage.AuthMachineToMachineConfig{
+		Id:                      uuid.NewV5FromNonUUIDs(kubeSAIssuer, configControllerServiceAccountName).String(),
+		Issuer:                  kubeSAIssuer,
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1h",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "sub",
+				ValueExpression: configControllerServiceAccountName,
+				Role:            "Configuration Controller",
+			},
+		},
+		Audience: configControllerM2MAudience,
+		Traits:   &storage.Traits{Origin: storage.Traits_DEFAULT},
+	}
+	upsertCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
+	// This inits the token exchanger, too
+	if _, err := d.upsertAuthM2MConfigNoLock(upsertCtx, configControllerM2MConfig); err != nil {
+		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
+	}
+
+	var tokenExchangerErrors []error
+	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
 		if err := d.set.UpsertConfigForIssuer(ctx, config.GetIssuer(), config); err != nil {
 			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
@@ -263,12 +280,6 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	}
 	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
-	}
-	if kubeSAConfig == nil {
-		kubeSAConfig = newKubeM2MConfig(kubeSAIssuer)
-	}
-	if err := d.configureConfigControllerAccess(kubeSAConfig); err != nil {
-		return pkgErrors.Wrap(err, "failed to configure config controller access")
 	}
 
 	return errors.Join(tokenExchangerErrors...)
