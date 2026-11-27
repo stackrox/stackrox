@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
@@ -18,6 +19,30 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
+
+func TestK8sAuthorizerPlatformResources(t *testing.T) {
+	for name, openshift := range map[string]string{"Kubernetes": "false", "OpenShift": "true"} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(env.OpenshiftAPI.EnvVar(), openshift)
+			client := fake.NewClientset()
+			client.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+				sar := action.(k8sTesting.CreateAction).GetObject().(*authv1.SubjectAccessReview)
+				return true, &authv1.SubjectAccessReview{
+					Status: authv1.SubjectAccessReviewStatus{Allowed: sar.Spec.ResourceAttributes.Group != "apps.openshift.io"},
+				}, nil
+			})
+			request := httptest.NewRequest(http.MethodGet, "/v1/deployments", nil)
+			request.Header.Set(stackroxNamespaceHeader, "payments")
+			err := newK8sAuthorizer(client).authorize(t.Context(),
+				&authenticationv1.UserInfo{Username: "inventory"}, request)
+			if openshift == "true" {
+				require.ErrorContains(t, err, "deploymentconfigs.apps.openshift.io")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestK8sAuthorizer_MissingToken(t *testing.T) {
 	fakeClient := fake.NewClientset()

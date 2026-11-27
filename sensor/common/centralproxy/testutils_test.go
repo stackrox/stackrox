@@ -1,6 +1,8 @@
 package centralproxy
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,13 +13,17 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
@@ -32,15 +38,6 @@ func newReverseProxyForTest(baseURL *url.URL, transport http.RoundTripper) *http
 		Rewrite:      func(r *httputil.ProxyRequest) { r.SetURL(baseURL) },
 		ErrorHandler: proxyErrorHandler,
 	}
-}
-
-// testClusterIDGetter is a test implementation of clusterIDGetter.
-type testClusterIDGetter struct {
-	clusterID string
-}
-
-func (t *testClusterIDGetter) GetNoWait() string {
-	return t.clusterID
 }
 
 // mockTokenTransport is a test RoundTripper that injects a static token or returns an error.
@@ -59,7 +56,7 @@ func (m *mockTokenTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 	reqCopy := req.Clone(req.Context())
 	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", m.token))
-	return m.base.RoundTrip(reqCopy) //nolint:wrapcheck
+	return m.base.RoundTrip(reqCopy)
 }
 
 // newTestHandler creates a Handler for testing with the given components.
@@ -72,9 +69,9 @@ func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTrip
 	}
 
 	return &Handler{
-		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-		authorizer:      authorizer,
-		proxy:           newReverseProxyForTest(baseURL, transport),
+		authorizer: authorizer,
+		policy:     newStaticClientPolicy(t, defaultClientPolicy()),
+		proxy:      newReverseProxyForTest(baseURL, transport),
 	}
 }
 
@@ -87,9 +84,9 @@ func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer
 	}
 
 	return &Handler{
-		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-		authorizer:      authorizer,
-		proxy:           newReverseProxyForTest(baseURL, transport),
+		authorizer: authorizer,
+		policy:     newStaticClientPolicy(t, defaultClientPolicy()),
+		proxy:      newReverseProxyForTest(baseURL, transport),
 	}
 }
 
@@ -178,6 +175,7 @@ var errTransportError = errors.New("transport error")
 // It registers a cleanup function that clears the capabilities and allowed paths.
 func setupCentralCapsForTest(t *testing.T) {
 	t.Helper()
+	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "true")
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported,
 		centralsensor.CentralProxyPathFiltering,
@@ -187,6 +185,72 @@ func setupCentralCapsForTest(t *testing.T) {
 		centralcaps.Set(nil)
 		allowedpaths.Reset()
 	})
+}
+
+func consoleTestProfile(scope string) *proxyTokenProfile {
+	return &proxyTokenProfile{
+		identity:        clientAuthKubernetesBearer + ":test-user",
+		permissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+		clusterScope:    scope,
+		legacyConsole:   !centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens),
+	}
+}
+
+// The scope-focused tests exercise the console profile with negotiated token support.
+func (p *tokenProvider) getTokenForScope(ctx context.Context, scope string) (string, error) {
+	return p.getTokenForProfile(ctx, consoleTestProfile(scope))
+}
+
+func (p *tokenProvider) buildTokenRequest(scope string) (*centralv1.GenerateTokenForPermissionsAndScopeRequest, error) {
+	return p.buildProfileTokenRequest(consoleTestProfile(scope))
+}
+
+func (p *tokenProvider) invalidateToken(scope string) {
+	p.invalidateProfile(consoleTestProfile(scope))
+}
+
+func (p *tokenProvider) tokenCacheKey(scope string, permissionSet bool) string {
+	profile := consoleTestProfile(scope)
+	profile.legacyConsole = !permissionSet
+	return p.profileCacheKey(profile)
+}
+
+func roundTripConsole(transport *scopedTokenTransport, req *http.Request) (*http.Response, error) {
+	profile := consoleTestProfile(req.Header.Get(stackroxNamespaceHeader))
+	return transport.RoundTrip(req.WithContext(withProxyTokenProfile(req.Context(), profile)))
+}
+
+func newStaticClientPolicy(t testing.TB, doc clientPolicyDocument, caMaps ...*corev1.ConfigMap) *ClientPolicy {
+	t.Helper()
+	data, err := json.Marshal(doc)
+	require.NoError(t, err)
+	parsed, err := parseClientPolicy(&corev1.ConfigMap{Data: map[string]string{ClientPolicyDataKey: string(data)}})
+	require.NoError(t, err)
+	policy := NewClientPolicy(nil)
+	t.Cleanup(policy.Stop)
+	caRoots := make(map[clientPolicyCARef]*clientCAWatch)
+	for ref := range clientPolicyCARefs(parsed) {
+		watch := &clientCAWatch{}
+		for _, cm := range caMaps {
+			watch.update(cm, ref)
+		}
+		caRoots[ref] = watch
+	}
+	policy.policy.Store(&clientPolicySnapshot{document: parsed, caRoots: caRoots})
+	policy.ready.Store(true)
+	return policy
+}
+
+// testClientCARef returns the CA reference matching clientCAConfigMap's location.
+func testClientCARef(t *testing.T) json.RawMessage {
+	t.Helper()
+	ref, err := json.Marshal(clientPolicyCARef{
+		Namespace: env.SecureMetricsClientCANamespace.Setting(),
+		ConfigMap: env.SecureMetricsClientCAConfigMap.Setting(),
+		Key:       env.SecureMetricsClientCAKey.Setting(),
+	})
+	require.NoError(t, err)
+	return ref
 }
 
 // proxyTestFixture bundles the boilerplate shared by the majority of handler

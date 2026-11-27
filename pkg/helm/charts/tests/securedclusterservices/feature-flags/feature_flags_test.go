@@ -45,6 +45,12 @@ func TestWithDifferentFeatureFlags(t *testing.T) {
 			},
 			flavor: defaults.RHACSReleaseImageFlavor(),
 		},
+		"ocp-console-integration-disabled": {
+			featureFlags: map[string]bool{
+				"ROX_OCP_CONSOLE_INTEGRATION": false,
+			},
+			flavor: defaults.RHACSReleaseImageFlavor(),
+		},
 	}
 
 	for testCaseName, testCaseSpec := range testCases {

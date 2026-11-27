@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"testing"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMock "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -179,8 +177,8 @@ func (s *sensorServiceTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
 	err := sensorService.Communicate(mockServer)
 	s.NoError(err)
 	centralHello := retrieveCentralHello(s, mockServer)
-	s.Equal(features.OCPConsoleIntegration.Enabled(),
-		slices.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyPermissionSetTokens.String()))
+	s.Contains(centralHello.GetCapabilities(), centralsensor.InternalTokenAPISupported.String())
+	s.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyPermissionSetTokens.String())
 
 	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }

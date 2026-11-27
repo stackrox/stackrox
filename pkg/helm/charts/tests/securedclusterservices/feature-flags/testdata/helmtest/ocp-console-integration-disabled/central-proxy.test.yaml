@@ -1,0 +1,58 @@
+server:
+  availableSchemas:
+  - openshift-4.12
+  - com.coreos
+tests:
+- name: "Central proxy is disabled by default without console integration"
+  set:
+    env.openshift: 4
+    monitoring.openshift.enabled: false
+  expect: &disabled |
+    .services["sensor-proxy"] | assertThat(. == null)
+    .networkpolicys["sensor-proxy"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] |
+      assertThat(length == 0)
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] |
+      assertThat(length == 0)
+    [.deployments.sensor.spec.template.spec.containers[0].volumeMounts[] | select(.name == "proxy-tls-volume")] |
+      assertThat(length == 0)
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] |
+      assertThat(length == 0)
+- name: "Central proxy can be explicitly disabled without console integration"
+  set:
+    env.openshift: 4
+    monitoring.openshift.enabled: false
+    sensor.centralProxy.enabled: false
+  expect: *disabled
+- name: "Native Kubernetes proxy is disabled by default without console integration"
+  set:
+    env.openshift: false
+  expect: *disabled
+- name: "Native Kubernetes proxy can be opted in without console integration"
+  set:
+    env.openshift: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"].spec.ports | assertThat(. == [{"name": "https", "port": 443, "targetPort": "proxy-https", "protocol": "TCP"}])
+    .services["sensor-proxy"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] | assertThat(. == [{"name": "ROX_CENTRAL_PROXY_ENABLED", "value": "true"}])
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] | assertThat(. == [{"name": "proxy-https", "containerPort": 9444}])
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] | assertThat(. == [{"name": "proxy-tls-volume", "secret": {"secretName": "sensor-proxy-tls"}}])
+    .networkpolicys["sensor-proxy"].spec.ingress | assertThat(. == [])
+- name: "Central proxy can be opted in without console integration"
+  set:
+    env.openshift: 4
+    monitoring.openshift.enabled: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] | assertThat(. == "sensor-proxy-tls")
+    .services["sensor-proxy"].spec.ports | assertThat(. == [{"name": "https", "port": 443, "targetPort": "proxy-https", "protocol": "TCP"}])
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] |
+      assertThat(. == [{"name": "ROX_CENTRAL_PROXY_ENABLED", "value": "true"}])
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] |
+      assertThat(. == [{"name": "proxy-https", "containerPort": 9444}])
+    [.deployments.sensor.spec.template.spec.containers[0].volumeMounts[] | select(.name == "proxy-tls-volume")] |
+      assertThat(. == [{"name": "proxy-tls-volume", "mountPath": "/run/secrets/stackrox.io/proxy-tls/", "readOnly": true}])
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] |
+      assertThat(. == [{"name": "proxy-tls-volume", "secret": {"secretName": "sensor-proxy-tls"}}])
+    .networkpolicys["sensor-proxy"].spec.ingress | assertThat(. == [])

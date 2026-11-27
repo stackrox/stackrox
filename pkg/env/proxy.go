@@ -11,4 +11,7 @@ var (
 
 	// CentralProxyPort is the port on which the proxy server listens.
 	CentralProxyPort = RegisterSetting("ROX_CENTRAL_PROXY_PORT", WithDefault(":9444"))
+
+	// CentralProxyEnabled enables configured Central proxy clients on Kubernetes and OpenShift.
+	CentralProxyEnabled = RegisterBooleanSetting("ROX_CENTRAL_PROXY_ENABLED", false)
 )

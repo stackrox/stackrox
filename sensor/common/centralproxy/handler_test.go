@@ -80,13 +80,15 @@ func TestValidateRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{
-				clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-			}
+			h := &Handler{}
 			h.centralReachable.Store(tt.centralReachable)
 
 			req := httptest.NewRequest(tt.method, "/v1/alerts", nil)
 			err := h.validateRequest(req)
+			if err == nil {
+				profile := consoleTestProfile("")
+				err = validateClientRequest(&ClientPolicyGrant{PermissionSetID: profile.permissionSetID}, req)
+			}
 
 			if tt.wantStatusCode == 0 {
 				assert.NoError(t, err)

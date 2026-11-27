@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/coalescer"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
@@ -83,7 +84,7 @@ type k8sAuthorizer struct {
 // newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
 // SubjectAccessReview caching.
 func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
-	return &k8sAuthorizer{
+	authorizer := &k8sAuthorizer{
 		client:           client,
 		tokenCache:       expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
 		authzCache:       expiringcache.NewExpiringCache[authzCacheKey, authzResult](defaultCacheTTL),
@@ -99,9 +100,13 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 			{Resource: "statefulsets", Group: "apps"},
 			{Resource: "cronjobs", Group: "batch"},
 			{Resource: "jobs", Group: "batch"},
-			{Resource: "deploymentconfigs", Group: "apps.openshift.io"},
 		},
 	}
+	if env.OpenshiftAPI.BooleanSetting() {
+		authorizer.resourcesToCheck = append(authorizer.resourcesToCheck,
+			k8sResource{Resource: "deploymentconfigs", Group: "apps.openshift.io"})
+	}
+	return authorizer
 }
 
 // formatForbiddenErr creates a consistent forbidden error message for authorization failures.
