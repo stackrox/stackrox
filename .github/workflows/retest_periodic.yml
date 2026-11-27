@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         sparse-checkout: |
           .github
           tools/retest
 
     - name: Setup Go environment
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+      uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
 

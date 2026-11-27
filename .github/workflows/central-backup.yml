@@ -41,7 +41,7 @@ jobs:
       PREVIOUS_VERSION: ${{ github.event.inputs.previous-version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         fetch-depth: 0
         persist-credentials: false
@@ -80,7 +80,7 @@ jobs:
       run: scripts/ci/central-backup.sh
 
     - name: Upload backup as an artifact
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
       with:
         name: postgres-db-${{ inputs.version }}-backup
         path: postgres_db_${{ inputs.version }}.sql.zip
@@ -93,7 +93,7 @@ jobs:
 
     - name: Preserve logs on failure
       if: failure()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
       with:
         name: stackrox-logs
         path: /tmp/stackrox-logs
