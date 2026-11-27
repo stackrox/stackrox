@@ -274,7 +274,7 @@ class IntegrationsTest extends BaseSpecification {
         and:
         "check notifier is scrubbed"
         NotifierService.getNotifiers().notifiersList.each {
-            it.getNotifierSecret() == "******"
+            assert it.getNotifierSecret() in ["", "******"]
         }
 
         cleanup:
