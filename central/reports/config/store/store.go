@@ -15,6 +15,7 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
+	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ReportConfiguration, []int, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ReportConfiguration) error) error

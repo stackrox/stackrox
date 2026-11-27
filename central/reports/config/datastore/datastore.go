@@ -19,6 +19,7 @@ type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 
+	Exists(ctx context.Context, id string) (bool, error)
 	GetReportConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ReportConfiguration, error)
 	GetReportConfiguration(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
 	AddReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) (string, error)

@@ -590,7 +590,7 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 		if !tc.isError {
 			s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
 				Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
-			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
+			s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
 		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
@@ -609,13 +609,25 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfigurationWithCentralWorker(
 	ctx := sac.WithAllAccess(context.Background())
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), configID).
 		Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(ctx, configID).Return(nil).Times(1)
 	s.db.EXPECT().Exec(ctx, "SELECT pg_notify($1, $2)", pgNotify.ReportConfigChanged, configID).
 		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
 
 	_, err := s.service.DeleteReportConfiguration(ctx, &apiV2.ResourceByID{Id: configID})
 	s.NoError(err)
+}
+
+func (s *ReportServiceTestSuite) TestDeleteReportConfiguration_ActiveSnapshotCountError() {
+	ctx := sac.WithAllAccess(context.Background())
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "config-id").
+		Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
+		Return(0, errors.New("count failed")).Times(1)
+
+	_, err := s.service.DeleteReportConfiguration(ctx, &apiV2.ResourceByID{Id: "config-id"})
+	s.Error(err)
+	s.Contains(err.Error(), "count failed")
 }
 
 func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []upsertTestCase {

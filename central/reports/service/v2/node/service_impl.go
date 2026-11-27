@@ -298,11 +298,11 @@ func (s *serviceImpl) DeleteNodeReportConfiguration(ctx context.Context, id *api
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
-	reportSnapshots, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
+	numActiveSnapshots, err := s.snapshotDatastore.Count(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to search for active report snapshots")
+		return nil, errors.Wrap(err, "failed to count active report snapshots")
 	}
-	if len(reportSnapshots) > 0 {
+	if numActiveSnapshots > 0 {
 		return nil, errox.InvalidArgs.CausedByf("report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}
 

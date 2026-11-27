@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/pkg/errors"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/common"
@@ -295,8 +296,8 @@ func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfiguration() {
 			Id:   "test-id",
 			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
 		}, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{}, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
+		Return(0, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(gomock.Any(), "test-id").
 		Return(nil).Times(1)
 	s.scheduler.EXPECT().RemoveReportSchedule("test-id").Times(1)
@@ -306,20 +307,27 @@ func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfiguration() {
 }
 
 func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfiguration_HasRunningJob() {
-	runningSnapshot := &storage.ReportSnapshot{
-		ReportId: "test-report-id",
-		ReportStatus: &storage.ReportStatus{
-			RunState: storage.ReportStatus_PREPARING,
-		},
-	}
-
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "test-id").
 		Return(&storage.ReportConfiguration{
 			Id:   "test-id",
 			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
 		}, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{runningSnapshot}, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
+		Return(1, nil).Times(1)
+
+	resp, err := s.service.DeleteNodeReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "test-id"})
+	s.Error(err)
+	s.Nil(resp)
+}
+
+func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfiguration_ActiveSnapshotCountError() {
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "test-id").
+		Return(&storage.ReportConfiguration{
+			Id:   "test-id",
+			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		}, true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
+		Return(0, errors.New("count failed")).Times(1)
 
 	resp, err := s.service.DeleteNodeReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "test-id"})
 	s.Error(err)
@@ -1286,8 +1294,8 @@ func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfigurationWithCentra
 			Id:   "test-id",
 			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
 		}, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{}, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
+		Return(0, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(gomock.Any(), "test-id").
 		Return(nil).Times(1)
 	s.expectNotify(s.ctx, pgNotify.ReportConfigChanged, "test-id")
