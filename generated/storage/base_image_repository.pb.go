@@ -267,10 +267,101 @@ func (x *BaseImageRepository) GetLastFailureMessage() string {
 	return ""
 }
 
+// BaseImagePlatform holds per-platform metadata for a single platform of a tag.
+// os, architecture and variant identify the platform; variant distinguishes platforms
+// that share an os/architecture (e.g. arm v6/v7/v8), so os/architecture alone is not a
+// unique key.
+type BaseImagePlatform struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Os           string                 `protobuf:"bytes,1,opt,name=os,proto3" json:"os,omitempty"`
+	Architecture string                 `protobuf:"bytes,2,opt,name=architecture,proto3" json:"architecture,omitempty"`
+	Variant      string                 `protobuf:"bytes,3,opt,name=variant,proto3" json:"variant,omitempty"`
+	// This platform's (non-list) manifest digest.
+	ManifestDigest string `protobuf:"bytes,4,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
+	// Layer digests in order, for base image matching via layer commonality.
+	LayerDigests []string `protobuf:"bytes,5,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
+	// Config history, including empty lines, stored for promotion to base_images.
+	History       []*BaseImageHistoryEntry `protobuf:"bytes,6,rep,name=history,proto3" json:"history,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BaseImagePlatform) Reset() {
+	*x = BaseImagePlatform{}
+	mi := &file_storage_base_image_repository_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BaseImagePlatform) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BaseImagePlatform) ProtoMessage() {}
+
+func (x *BaseImagePlatform) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_base_image_repository_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BaseImagePlatform.ProtoReflect.Descriptor instead.
+func (*BaseImagePlatform) Descriptor() ([]byte, []int) {
+	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BaseImagePlatform) GetOs() string {
+	if x != nil {
+		return x.Os
+	}
+	return ""
+}
+
+func (x *BaseImagePlatform) GetArchitecture() string {
+	if x != nil {
+		return x.Architecture
+	}
+	return ""
+}
+
+func (x *BaseImagePlatform) GetVariant() string {
+	if x != nil {
+		return x.Variant
+	}
+	return ""
+}
+
+func (x *BaseImagePlatform) GetManifestDigest() string {
+	if x != nil {
+		return x.ManifestDigest
+	}
+	return ""
+}
+
+func (x *BaseImagePlatform) GetLayerDigests() []string {
+	if x != nil {
+		return x.LayerDigests
+	}
+	return nil
+}
+
+func (x *BaseImagePlatform) GetHistory() []*BaseImageHistoryEntry {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 10
+// Next tag: 11
 type BaseImageTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique identifier.
@@ -293,14 +384,17 @@ type BaseImageTag struct {
 	// Layer digests for this tag, stored for promotion to base_images.
 	LayerDigests []string `protobuf:"bytes,8,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
 	// Config history, including empty lines, stored for promotion to base_images.
-	History       []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty"`
+	History []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty"`
+	// Per-platform metadata, one entry per linux platform, stored for promotion to
+	// base_images. For a single-platform tag this has exactly one entry.
+	Platforms     []*BaseImagePlatform `protobuf:"bytes,10,rep,name=platforms,proto3" json:"platforms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BaseImageTag) Reset() {
 	*x = BaseImageTag{}
-	mi := &file_storage_base_image_repository_proto_msgTypes[1]
+	mi := &file_storage_base_image_repository_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +406,7 @@ func (x *BaseImageTag) String() string {
 func (*BaseImageTag) ProtoMessage() {}
 
 func (x *BaseImageTag) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_base_image_repository_proto_msgTypes[1]
+	mi := &file_storage_base_image_repository_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +419,7 @@ func (x *BaseImageTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseImageTag.ProtoReflect.Descriptor instead.
 func (*BaseImageTag) Descriptor() ([]byte, []int) {
-	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{1}
+	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BaseImageTag) GetId() string {
@@ -391,6 +485,13 @@ func (x *BaseImageTag) GetHistory() []*BaseImageHistoryEntry {
 	return nil
 }
 
+func (x *BaseImageTag) GetPlatforms() []*BaseImagePlatform {
+	if x != nil {
+		return x.Platforms
+	}
+	return nil
+}
+
 var File_storage_base_image_repository_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_repository_proto_rawDesc = "" +
@@ -423,7 +524,14 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
-	"\bDISABLED\x10\x02\"\xdc\x03\n" +
+	"\bDISABLED\x10\x02\"\xe9\x01\n" +
+	"\x11BaseImagePlatform\x12\x0e\n" +
+	"\x02os\x18\x01 \x01(\tR\x02os\x12\"\n" +
+	"\farchitecture\x18\x02 \x01(\tR\farchitecture\x12\x18\n" +
+	"\avariant\x18\x03 \x01(\tR\avariant\x12'\n" +
+	"\x0fmanifest_digest\x18\x04 \x01(\tR\x0emanifestDigest\x12#\n" +
+	"\rlayer_digests\x18\x05 \x03(\tR\flayerDigests\x128\n" +
+	"\ahistory\x18\x06 \x03(\v2\x1e.storage.BaseImageHistoryEntryR\ahistory\"\x96\x04\n" +
 	"\fBaseImageTag\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
@@ -433,7 +541,9 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12I\n" +
 	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x12#\n" +
 	"\rlayer_digests\x18\b \x03(\tR\flayerDigests\x128\n" +
-	"\ahistory\x18\t \x03(\v2\x1e.storage.BaseImageHistoryEntryR\ahistory\x1a>\n" +
+	"\ahistory\x18\t \x03(\v2\x1e.storage.BaseImageHistoryEntryR\ahistory\x128\n" +
+	"\tplatforms\x18\n" +
+	" \x03(\v2\x1a.storage.BaseImagePlatformR\tplatforms\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B.\n" +
@@ -452,31 +562,34 @@ func file_storage_base_image_repository_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_base_image_repository_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_storage_base_image_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_storage_base_image_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_base_image_repository_proto_goTypes = []any{
 	(BaseImageRepository_Status)(0),       // 0: storage.BaseImageRepository.Status
 	(BaseImageRepository_HealthStatus)(0), // 1: storage.BaseImageRepository.HealthStatus
 	(*BaseImageRepository)(nil),           // 2: storage.BaseImageRepository
-	(*BaseImageTag)(nil),                  // 3: storage.BaseImageTag
-	nil,                                   // 4: storage.BaseImageTag.ListDigestsEntry
-	(*timestamppb.Timestamp)(nil),         // 5: google.protobuf.Timestamp
-	(*SlimUser)(nil),                      // 6: storage.SlimUser
-	(*BaseImageHistoryEntry)(nil),         // 7: storage.BaseImageHistoryEntry
+	(*BaseImagePlatform)(nil),             // 3: storage.BaseImagePlatform
+	(*BaseImageTag)(nil),                  // 4: storage.BaseImageTag
+	nil,                                   // 5: storage.BaseImageTag.ListDigestsEntry
+	(*timestamppb.Timestamp)(nil),         // 6: google.protobuf.Timestamp
+	(*SlimUser)(nil),                      // 7: storage.SlimUser
+	(*BaseImageHistoryEntry)(nil),         // 8: storage.BaseImageHistoryEntry
 }
 var file_storage_base_image_repository_proto_depIdxs = []int32{
-	0, // 0: storage.BaseImageRepository.status:type_name -> storage.BaseImageRepository.Status
-	5, // 1: storage.BaseImageRepository.updated_at:type_name -> google.protobuf.Timestamp
-	1, // 2: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
-	6, // 3: storage.BaseImageRepository.created_by:type_name -> storage.SlimUser
-	5, // 4: storage.BaseImageRepository.last_polled_at:type_name -> google.protobuf.Timestamp
-	5, // 5: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
-	4, // 6: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
-	7, // 7: storage.BaseImageTag.history:type_name -> storage.BaseImageHistoryEntry
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	0,  // 0: storage.BaseImageRepository.status:type_name -> storage.BaseImageRepository.Status
+	6,  // 1: storage.BaseImageRepository.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 2: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
+	7,  // 3: storage.BaseImageRepository.created_by:type_name -> storage.SlimUser
+	6,  // 4: storage.BaseImageRepository.last_polled_at:type_name -> google.protobuf.Timestamp
+	8,  // 5: storage.BaseImagePlatform.history:type_name -> storage.BaseImageHistoryEntry
+	6,  // 6: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
+	5,  // 7: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
+	8,  // 8: storage.BaseImageTag.history:type_name -> storage.BaseImageHistoryEntry
+	3,  // 9: storage.BaseImageTag.platforms:type_name -> storage.BaseImagePlatform
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_repository_proto_init() }
@@ -492,7 +605,7 @@ func file_storage_base_image_repository_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_base_image_repository_proto_rawDesc), len(file_storage_base_image_repository_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -1087,6 +1087,11 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 			upsertCalled = true
 			require.NotEmpty(t, tags, "UpsertMany should receive tags")
 			require.LessOrEqual(t, len(tags), 3, "Should have at most 3 tags")
+			for _, tg := range tags {
+				require.Len(t, tg.GetPlatforms(), 1, "tag should carry per-platform metadata")
+				assert.Equal(t, "amd64", tg.GetPlatforms()[0].GetArchitecture())
+				assert.Equal(t, []string{"sha256:layer1", "sha256:layer2"}, tg.GetPlatforms()[0].GetLayerDigests())
+			}
 			return nil
 		}).
 		Times(1)

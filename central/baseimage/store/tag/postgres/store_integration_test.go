@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/baseimage/store/repository/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,6 +80,54 @@ func (s *BaseImageTagsIntegrationSuite) TestCompositeUniqueConstraint() {
 	}
 	err := s.tagStore.Upsert(ctx, tag2)
 	s.Error(err) // Unique violation expected
+}
+
+func (s *BaseImageTagsIntegrationSuite) TestPlatformsRoundTrip() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	repo := &storage.BaseImageRepository{
+		Id:             uuid.NewV4().String(),
+		RepositoryPath: "registry.redhat.io/ubi8/ubi",
+		TagPattern:     "8.10-*",
+	}
+	s.NoError(s.repoStore.Upsert(ctx, repo))
+
+	tag := &storage.BaseImageTag{
+		Id:                    uuid.NewV4().String(),
+		BaseImageRepositoryId: repo.GetId(),
+		Tag:                   "8.10-1234",
+		ManifestDigest:        "sha256:list",
+		IsManifestList:        true,
+		ListDigests: map[string]string{
+			"linux/amd64":  "sha256:amd",
+			"linux/arm/v7": "sha256:armv7",
+		},
+		Platforms: []*storage.BaseImagePlatform{
+			{
+				Os:             "linux",
+				Architecture:   "amd64",
+				ManifestDigest: "sha256:amd",
+				LayerDigests:   []string{"sha256:amd-l1", "sha256:amd-l2"},
+				History: []*storage.BaseImageHistoryEntry{
+					{Instruction: "ADD", Value: "file"},
+					{Instruction: "USER", Value: "1001", Empty: true},
+				},
+			},
+			{
+				Os:             "linux",
+				Architecture:   "arm",
+				Variant:        "v7",
+				ManifestDigest: "sha256:armv7",
+				LayerDigests:   []string{"sha256:armv7-l1"},
+			},
+		},
+	}
+	s.NoError(s.tagStore.Upsert(ctx, tag))
+
+	got, found, err := s.tagStore.Get(ctx, tag.GetId())
+	s.NoError(err)
+	s.True(found)
+	protoassert.Equal(s.T(), tag, got)
 }
 
 func (s *BaseImageTagsIntegrationSuite) TestCascadeDelete() {
