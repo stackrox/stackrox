@@ -12,9 +12,12 @@ import (
 	"testing"
 
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/coalescer"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -64,6 +67,95 @@ func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string)
 		tp.client.Store(&client)
 	}
 	return tp
+}
+
+func TestTokenProviderPermissionSetCapability(t *testing.T) {
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	for name, capable := range map[string]bool{"legacy Central": false, "permission set Central": true} {
+		t.Run(name, func(t *testing.T) {
+			centralcaps.Set(nil)
+			if capable {
+				centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPermissionSetTokens})
+			}
+			for name, scope := range map[string]string{"bootstrap": "", "namespace": "prod", "cluster": FullClusterAccessScope} {
+				t.Run(name, func(t *testing.T) {
+					client := &fakeTokenServiceClient{response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "token"}}
+					provider := newTestTokenProvider(client, "sensor-cluster")
+					_, err := provider.getTokenForScope(t.Context(), scope)
+					require.NoError(t, err)
+					req := client.lastRequest
+					require.NotNil(t, req)
+					if capable {
+						assert.Empty(t, req.GetPermissions())
+						require.Len(t, req.GetPermissionSets(), 1)
+						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSets()[0].GetId())
+					} else {
+						assert.Empty(t, req.GetPermissionSets())
+						assert.Equal(t, map[string]centralv1.Access{
+							"Deployment": centralv1.Access_READ_ACCESS, "Image": centralv1.Access_READ_ACCESS,
+						}, req.GetPermissions())
+					}
+					assert.Equal(t, tokenTTL, req.GetLifetime().AsDuration())
+					if scope == "" {
+						assert.Empty(t, req.GetClusterScopes())
+					} else {
+						require.Len(t, req.GetClusterScopes(), 1)
+						assert.Equal(t, "sensor-cluster", req.GetClusterScopes()[0].GetClusterId())
+						assert.Equal(t, scope == FullClusterAccessScope, req.GetClusterScopes()[0].GetFullClusterAccess())
+						if scope != FullClusterAccessScope {
+							assert.Equal(t, []string{scope}, req.GetClusterScopes()[0].GetNamespaces())
+						}
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestTokenProviderPermissionSetFailureDoesNotFallBack(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPermissionSetTokens})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	var calls atomic.Int32
+	lookupErr := errors.New("permission set not found")
+	client := &fakeTokenServiceClient{err: lookupErr, callCount: &calls}
+	transport := &scopedTokenTransport{
+		tokenProvider: newTestTokenProvider(client, "sensor-cluster"),
+		base: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			t.Fatal("failed token issuance must not forward the request")
+			return nil, nil
+		}),
+	}
+	response, err := transport.RoundTrip(httptest.NewRequest(http.MethodGet, "/v1/metadata", nil))
+	require.ErrorIs(t, err, lookupErr)
+	assert.Nil(t, response)
+	assert.EqualValues(t, 1, calls.Load())
+	assert.Empty(t, client.lastRequest.GetPermissions())
+	require.Len(t, client.lastRequest.GetPermissionSets(), 1)
+	assert.NotEmpty(t, client.lastRequest.GetPermissionSets()[0].GetId())
+}
+
+func TestTokenProviderCapabilityChangeDoesNotReuseLegacyToken(t *testing.T) {
+	centralcaps.Set(nil)
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	var calls atomic.Int32
+	client := &fakeTokenServiceClient{
+		response:  &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "legacy-token"},
+		callCount: &calls,
+	}
+	provider := newTestTokenProvider(client, "sensor-cluster")
+	token, err := provider.getTokenForScope(t.Context(), "prod")
+	require.NoError(t, err)
+	assert.Equal(t, "legacy-token", token)
+
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPermissionSetTokens})
+	client.response = &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "permission-set-token"}
+	token, err = provider.getTokenForScope(t.Context(), "prod")
+	require.NoError(t, err)
+	assert.Equal(t, "permission-set-token", token)
+	assert.EqualValues(t, 2, calls.Load())
+	assert.Empty(t, client.lastRequest.GetPermissions())
+	require.Len(t, client.lastRequest.GetPermissionSets(), 1)
+	assert.NotEmpty(t, client.lastRequest.GetPermissionSets()[0].GetId())
 }
 
 func TestScopedTokenTransport_RoundTrip(t *testing.T) {
@@ -339,7 +431,7 @@ func TestTokenProvider_ErrorHandling(t *testing.T) {
 		assert.Contains(t, err.Error(), "empty token")
 
 		// Ensure nothing was cached for this scope
-		_, found := provider.tokenCache.Get("namespace")
+		_, found := provider.tokenCache.Get(provider.tokenCacheKey("namespace", false))
 		assert.False(t, found)
 	})
 
@@ -357,7 +449,7 @@ func TestTokenProvider_ErrorHandling(t *testing.T) {
 		assert.Contains(t, err.Error(), "rpc failure")
 
 		// Ensure token is not cached for the failing scope
-		_, found := provider.tokenCache.Get("namespace-error")
+		_, found := provider.tokenCache.Get(provider.tokenCacheKey("namespace-error", false))
 		assert.False(t, found)
 	})
 }

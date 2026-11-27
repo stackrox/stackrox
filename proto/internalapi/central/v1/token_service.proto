@@ -39,6 +39,19 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
+  // Selects one or more Central-managed read-only, cluster/namespace-constrained
+  // permission sets instead of permissions. Each selector must be nonempty.
+  // permissions and permission sets are mutually exclusive.
+  repeated SelectedPermissionSet permission_sets = 5;
+}
+
+// SelectedPermissionSet selects one permission set by id or name.
+message SelectedPermissionSet {
+  // Exactly one nonempty selector is required.
+  oneof selector {
+    string id = 1;
+    string name = 2;
+  }
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

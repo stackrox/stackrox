@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -35,10 +37,8 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 	}
 }
 
-// defaultTokenPolicy returns the hardcoded policy for internal tokens issued
-// to sensors. It caps lifetime to 1 hour and allows read access to Deployment
-// and Image resources.
-// This policy should be kept in sync with the needs of the ocp console plugin.
+// defaultTokenPolicy caps Sensor token lifetimes to one hour. Requests without
+// permission sets use the legacy console permission allowlist.
 func defaultTokenPolicy() *tokenPolicy {
 	// defaultAllowedPermissions lists the resource permissions that the default
 	// policy allows sensors to request. These must stay in sync with the needs
@@ -116,7 +116,51 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 			"only sensor may access this API, unexpected service type %q",
 			identity.Service().GetType())
 	}
-	return identity.Service().GetId(), nil
+	clusterID := identity.Service().GetId()
+	if clusterID == "" {
+		return "", errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	return clusterID, nil
+}
+
+// maxPermissionSetsPerRequest bounds how many permission sets a single token
+// request may select.
+const maxPermissionSetsPerRequest = 32
+
+// validatePermissionSets checks that permission sets are not combined with
+// legacy permissions, that their number stays bounded, and that every
+// selector is well-formed.
+func validatePermissionSets(req *v1.GenerateTokenForPermissionsAndScopeRequest) error {
+	if len(req.GetPermissions()) != 0 {
+		return errox.InvalidArgs.New("permission grant forms are mutually exclusive")
+	}
+	if len(req.GetPermissionSets()) > maxPermissionSetsPerRequest {
+		return errox.InvalidArgs.New("too many permission sets")
+	}
+	for _, selected := range req.GetPermissionSets() {
+		if err := validatePermissionSetSelector(selected); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validatePermissionSetSelector checks that exactly one nonempty id or name
+// selector is present.
+func validatePermissionSetSelector(selected *v1.SelectedPermissionSet) error {
+	switch selector := selected.GetSelector().(type) {
+	case *v1.SelectedPermissionSet_Id:
+		if _, err := uuid.FromString(selector.Id); err != nil {
+			return errox.InvalidArgs.New("permission set ID must be a UUID")
+		}
+	case *v1.SelectedPermissionSet_Name:
+		if selector.Name == "" || strings.TrimSpace(selector.Name) != selector.Name {
+			return errox.InvalidArgs.New("permission set name must be nonempty without surrounding whitespace")
+		}
+	default:
+		return errox.InvalidArgs.New("permission set selector is required")
+	}
+	return nil
 }
 
 // enforce validates the request against all policy checks and returns the
@@ -129,8 +173,14 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
+	if len(req.GetPermissionSets()) > 0 {
+		if err := validatePermissionSets(req); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
+			return nil, err
+		}
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err

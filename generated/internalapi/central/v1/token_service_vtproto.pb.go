@@ -43,6 +43,13 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 		}
 		r.ClusterScopes = tmpContainer
 	}
+	if rhs := m.PermissionSets; rhs != nil {
+		tmpContainer := make([]*SelectedPermissionSet, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.PermissionSets = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -52,6 +59,45 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 
 func (m *GenerateTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *SelectedPermissionSet) CloneVT() *SelectedPermissionSet {
+	if m == nil {
+		return (*SelectedPermissionSet)(nil)
+	}
+	r := new(SelectedPermissionSet)
+	if m.Selector != nil {
+		r.Selector = m.Selector.(interface {
+			CloneVT() isSelectedPermissionSet_Selector
+		}).CloneVT()
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *SelectedPermissionSet) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *SelectedPermissionSet_Id) CloneVT() isSelectedPermissionSet_Selector {
+	if m == nil {
+		return (*SelectedPermissionSet_Id)(nil)
+	}
+	r := new(SelectedPermissionSet_Id)
+	r.Id = m.Id
+	return r
+}
+
+func (m *SelectedPermissionSet_Name) CloneVT() isSelectedPermissionSet_Selector {
+	if m == nil {
+		return (*SelectedPermissionSet_Name)(nil)
+	}
+	r := new(SelectedPermissionSet_Name)
+	r.Name = m.Name
+	return r
 }
 
 func (m *ClusterScope) CloneVT() *ClusterScope {
@@ -135,6 +181,23 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTo
 	if this.Requester != that.Requester {
 		return false
 	}
+	if len(this.PermissionSets) != len(that.PermissionSets) {
+		return false
+	}
+	for i, vx := range this.PermissionSets {
+		vy := that.PermissionSets[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &SelectedPermissionSet{}
+			}
+			if q == nil {
+				q = &SelectedPermissionSet{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -145,6 +208,68 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg p
 	}
 	return this.EqualVT(that)
 }
+func (this *SelectedPermissionSet) EqualVT(that *SelectedPermissionSet) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Selector == nil && that.Selector != nil {
+		return false
+	} else if this.Selector != nil {
+		if that.Selector == nil {
+			return false
+		}
+		if !this.Selector.(interface {
+			EqualVT(isSelectedPermissionSet_Selector) bool
+		}).EqualVT(that.Selector) {
+			return false
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *SelectedPermissionSet) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*SelectedPermissionSet)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *SelectedPermissionSet_Id) EqualVT(thatIface isSelectedPermissionSet_Selector) bool {
+	that, ok := thatIface.(*SelectedPermissionSet_Id)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Id != that.Id {
+		return false
+	}
+	return true
+}
+
+func (this *SelectedPermissionSet_Name) EqualVT(thatIface isSelectedPermissionSet_Selector) bool {
+	that, ok := thatIface.(*SelectedPermissionSet_Name)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Name != that.Name {
+		return false
+	}
+	return true
+}
+
 func (this *ClusterScope) EqualVT(that *ClusterScope) bool {
 	if this == that {
 		return true
@@ -225,6 +350,18 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.PermissionSets) > 0 {
+		for iNdEx := len(m.PermissionSets) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.PermissionSets[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
 	if len(m.Requester) > 0 {
 		i -= len(m.Requester)
 		copy(dAtA[i:], m.Requester)
@@ -274,6 +411,76 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 	return len(dAtA) - i, nil
 }
 
+func (m *SelectedPermissionSet) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SelectedPermissionSet) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SelectedPermissionSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if vtmsg, ok := m.Selector.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SelectedPermissionSet_Id) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SelectedPermissionSet_Id) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Id)
+	copy(dAtA[i:], m.Id)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *SelectedPermissionSet_Name) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SelectedPermissionSet_Name) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Name)
+	copy(dAtA[i:], m.Name)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
 func (m *ClusterScope) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -401,10 +608,49 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if len(m.PermissionSets) > 0 {
+		for _, e := range m.PermissionSets {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
 	n += len(m.unknownFields)
 	return n
 }
 
+func (m *SelectedPermissionSet) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if vtmsg, ok := m.Selector.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *SelectedPermissionSet_Id) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *SelectedPermissionSet_Name) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
 func (m *ClusterScope) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -685,6 +931,155 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			m.Requester = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSets", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PermissionSets = append(m.PermissionSets, &SelectedPermissionSet{})
+			if err := m.PermissionSets[len(m.PermissionSets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SelectedPermissionSet) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SelectedPermissionSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SelectedPermissionSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Selector = &SelectedPermissionSet_Id{Id: string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Selector = &SelectedPermissionSet_Name{Name: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1177,6 +1572,163 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Requester = stringValue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSets", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PermissionSets = append(m.PermissionSets, &SelectedPermissionSet{})
+			if err := m.PermissionSets[len(m.PermissionSets)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SelectedPermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SelectedPermissionSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SelectedPermissionSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Selector = &SelectedPermissionSet_Id{Id: stringValue}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Selector = &SelectedPermissionSet_Name{Name: stringValue}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
