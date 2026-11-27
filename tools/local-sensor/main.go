@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -582,21 +583,40 @@ func createDeploymentIdentificationWithNamespace(namespace string) *storage.Sens
 	}
 }
 
-func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
-	certFetcherOpts := []certs.OptionFunc{
-		certs.WithOutputDir("tmp/"),
-		certs.WithNamespace(localConfig.Namespace),
-	}
-	// Operator installations do not have the clusterNameSecret (usually 'helm-effective-cluster-name')
-	if localConfig.OperatorInstall {
-		certFetcherOpts = append(certFetcherOpts, certs.WithClusterName("", "", ""))
-	}
-	certFetcher := certs.NewCertificateFetcher(cli, certFetcherOpts...)
-	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
-		utils.CrashOnError(errors.Wrap(err, "failed to retrieve sensor's certificates"))
-	}
-	utils.CrashOnError(os.Setenv("ROX_CERTIFICATE_CACHE_DIR", "tmp/.local-sensor-cache"))
+func hasPreconfiguredMTLSCerts() bool {
+	return os.Getenv(mtls.CertFilePathEnvName) != "" &&
+		os.Getenv(mtls.KeyFileEnvName) != "" &&
+		os.Getenv(mtls.CAFileEnvName) != ""
+}
 
+func ensureRealConnectionCerts(cli client.Interface, localConfig localSensorConfig) error {
+	if hasPreconfiguredMTLSCerts() {
+		log.Printf("Using preconfigured mTLS certificates from environment (%s, %s, %s); skipping Kubernetes secret fetch",
+			mtls.CertFilePathEnvName, mtls.KeyFileEnvName, mtls.CAFileEnvName)
+	} else {
+		certFetcherOpts := []certs.OptionFunc{
+			certs.WithOutputDir("tmp/"),
+			certs.WithNamespace(localConfig.Namespace),
+		}
+		// Operator installations do not have the clusterNameSecret (usually 'helm-effective-cluster-name')
+		if localConfig.OperatorInstall {
+			certFetcherOpts = append(certFetcherOpts, certs.WithClusterName("", "", ""))
+		}
+		certFetcher := certs.NewCertificateFetcher(cli, certFetcherOpts...)
+		if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
+			return errors.Wrap(err, "failed to retrieve sensor's certificates")
+		}
+	}
+	if os.Getenv("ROX_CERTIFICATE_CACHE_DIR") == "" {
+		if err := os.Setenv("ROX_CERTIFICATE_CACHE_DIR", "tmp/.local-sensor-cache"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
+	utils.CrashOnError(ensureRealConnectionCerts(cli, localConfig))
 	utils.CrashOnError(os.Setenv("ROX_CENTRAL_ENDPOINT", localConfig.CentralEndpoint))
 
 	clientconn.SetUserAgent(clientconn.Sensor)
