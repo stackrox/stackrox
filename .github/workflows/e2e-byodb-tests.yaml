@@ -165,8 +165,8 @@ jobs:
       run: |
         source tests/e2e/lib.sh
         wait_for_api
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+        ci_export API_ENDPOINT "${API_ENDPOINT}"
+        ci_export ROX_ADMIN_PASSWORD "$(cat deploy/k8s/central-deploy/password)"
 
     - name: Run post-test
       if: always()
