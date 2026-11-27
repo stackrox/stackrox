@@ -115,12 +115,14 @@ type fakeRegistryScanner struct {
 	scanner           *fakeScanner
 	requestedMetadata bool
 	notMatch          bool
+	metadataErr       error
 }
 
 type opts struct {
 	requestedScan     bool
 	requestedMetadata bool
 	notMatch          bool
+	metadataErr       error
 }
 
 func newFakeRegistryScanner(opts opts) *fakeRegistryScanner {
@@ -131,11 +133,15 @@ func newFakeRegistryScanner(opts opts) *fakeRegistryScanner {
 		},
 		requestedMetadata: opts.requestedMetadata,
 		notMatch:          opts.notMatch,
+		metadataErr:       opts.metadataErr,
 	}
 }
 
 func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, error) {
 	f.requestedMetadata = true
+	if f.metadataErr != nil {
+		return nil, f.metadataErr
+	}
 	return &storage.ImageMetadata{}, nil
 }
 
