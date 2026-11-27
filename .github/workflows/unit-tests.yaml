@@ -280,7 +280,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
       with:
-        node-version-file: ui/package.json
+        node-version-file: ui/.node-version
 
     - name: Cache UI dependencies
       id: cache-ui
@@ -335,7 +335,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
       with:
-        node-version-file: ui/package.json
+        node-version-file: ui/.node-version
 
     - name: Cache UI dependencies
       id: cache-ui
