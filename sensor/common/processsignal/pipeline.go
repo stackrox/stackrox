@@ -95,6 +95,7 @@ func (p *basePipeline) processEnrichedIndicator(event pubsub.Event) error {
 	}
 
 	if !p.processFilter.Add(indicator) {
+		metrics.IncrementProcessFilterRejected()
 		return nil
 	}
 

@@ -1,0 +1,22 @@
+{
+  "name": "process-execution-minimal-filtering",
+  "loadType": "fake",
+  "loadTemplate": "load-templates/process-execution.yaml.tmpl",
+  "rateField": "__RATE__",
+  "numSensors": 1,
+  "runTime": "10m",
+  "numDeployments": 1,
+  "resultsBaseDir": "perf",
+  "sensorNamespace": "stackrox",
+  "rates": [
+    { "value": "3s",    "rate": 100 },
+    { "value": "600ms", "rate": 500 },
+    { "value": "300ms", "rate": 1000 },
+    { "value": "120ms", "rate": 2500 },
+    { "value": "60ms",  "rate": 5000 }
+  ],
+  "policies": [
+    { "nickname": "nopolicy", "file": null },
+    { "nickname": "policy",   "file": "policies/process-exec.json" }
+  ]
+}

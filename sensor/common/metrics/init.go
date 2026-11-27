@@ -15,6 +15,7 @@ func init() {
 		processEnrichmentHits,
 		processEnrichmentDrops,
 		processEnrichmentLRUCacheSize,
+		processFilterRejected,
 		sensorIndicatorChannelFullCounter,
 		networkFlowBufferGauge,
 		entitiesNotFound,

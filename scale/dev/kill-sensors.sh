@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eoux pipefail
+set -eou pipefail
 
 
 echo "Killing sensors"
