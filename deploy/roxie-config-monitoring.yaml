@@ -1,0 +1,79 @@
+# roxie equivalent of the port exposure done by the (removed) deploy/common/monitoring.sh.
+# Makes Central, Scanner V4, Sensor and Compliance scrapeable by deploy/charts/monitoring.
+#
+# Central and Scanner V4 use first-class CR knobs, which also create the matching NetworkPolicies.
+# Sensor and Compliance have no SecuredCluster CR knob yet, so they are patched via overlays
+# that mimic what the Helm chart renders for `exposeMonitoring: true`.
+#
+# The monitoring chart's Prometheus only scrapes its own namespace, so Central, SecuredCluster
+# and the monitoring chart must all be in the same namespace.
+
+central:
+  namespace: stackrox
+  availableAddOns:
+    monitoring:
+      stackroxRepoHelmChart:
+        path: deploy/charts/monitoring
+        valuesFile: deploy/charts/monitoring/values.yaml
+        envSubst: true
+  addOns:
+    monitoring: true
+
+  spec:
+    central:
+      monitoring:
+        exposeEndpoint: Enabled
+    scannerV4:
+      monitoring:
+        exposeEndpoint: Enabled
+
+securedCluster:
+  namespace: stackrox
+  spec:
+    overlays:
+      - apiVersion: v1
+        kind: Service
+        name: sensor
+        patches:
+          - path: spec.ports[-1]
+            value: |
+              name: monitoring
+              port: 9090
+              targetPort: 9090
+              protocol: TCP
+      # Allow ingress to the metrics port exposed above; without this, the existing "sensor"
+      # policy drops scrape traffic. (With sensor.exposeMonitoring, the chart renders this rule
+      # as a separate "sensor-monitoring" policy; overlays cannot create objects, so we append
+      # the rule to the existing "sensor" policy instead.)
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: sensor
+        patches:
+          - path: spec.ingress[-1]
+            value: |
+              ports:
+                - port: 9090
+                  protocol: TCP
+      # Compliance: metrics are disabled unless enabled explicitly; enable and declare the port.
+      # The monitoring chart's "kubernetes-pods" scrape job picks up declared container ports.
+      - apiVersion: apps/v1
+        kind: DaemonSet
+        name: collector
+        patches:
+          - path: spec.template.spec.containers[name:compliance].env[name:ROX_METRICS_PORT].value
+            verbatim: ":9091"
+          - path: spec.template.spec.containers[name:compliance].ports[-1]
+            value: |
+              containerPort: 9091
+              name: monitoring
+              protocol: TCP
+      # Compliance: allow ingress to the metrics port (collector pods otherwise have no ingress).
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: collector-no-ingress
+        patches:
+          - path: spec.ingress[-1]
+            value: |
+              ports:
+                - port: 9091
+                  protocol: TCP
