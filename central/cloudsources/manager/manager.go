@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -52,11 +52,7 @@ var (
 )
 
 type managerImpl struct {
-	shortCircuitSignal concurrency.Signal
-	stopSignal         concurrency.Signal
-
-	loopInterval            time.Duration
-	loopTicker              *time.Ticker
+	worker                  *periodicworker.Worker
 	shortCircuitRateLimiter *rate.Limiter
 
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
@@ -67,31 +63,42 @@ type managerImpl struct {
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
 	discoveredClustersDS discoveredClustersDS.DataStore, clustersDS clusterDS.DataStore,
 ) *managerImpl {
-	return &managerImpl{
-		shortCircuitSignal:          concurrency.NewSignal(),
-		stopSignal:                  concurrency.NewSignal(),
-		loopInterval:                discoveredClustersLoopInterval,
+	m := &managerImpl{
 		shortCircuitRateLimiter:     rate.NewLimiter(rate.Every(time.Minute), 1),
 		cloudSourcesDataStore:       cloudSourcesDS,
 		discoveredClustersDataStore: discoveredClustersDS,
 		clusterDataStore:            clustersDS,
 	}
+
+	m.worker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "cloudsources_discover",
+		Interval:   discoveredClustersLoopInterval,
+		RunOnStart: false,
+		Task:       func(ctx context.Context) error { m.discoverClustersFromCloudSources(); return nil },
+		Logger:     log,
+	})
+
+	return m
 }
 
 // Start the collection of assets from cloud sources.
 func (m *managerImpl) Start() {
-	m.loopTicker = time.NewTicker(m.loopInterval)
-	go m.discoveredClustersLoop()
+	m.worker.Start()
 }
 
 // Stop the collection of assets from cloud sources.
 func (m *managerImpl) Stop() {
-	m.stopSignal.Signal()
+	m.worker.Stop()
 }
 
 // ShortCircuit the collection of assets from cloud sources.
+// NOTE: Semantic change from original: excess short-circuits beyond the 1/min rate limit are now
+// dropped (non-blocking) rather than waiting on the limiter. This prevents blocking in the caller
+// but means very rapid short-circuit calls will be coalesced more aggressively.
 func (m *managerImpl) ShortCircuit() {
-	m.shortCircuitSignal.Signal()
+	if m.shortCircuitRateLimiter.Allow() {
+		m.worker.Kick()
+	}
 }
 
 func (m *managerImpl) MarkClusterSecured(id string) {
@@ -102,32 +109,6 @@ func (m *managerImpl) MarkClusterSecured(id string) {
 func (m *managerImpl) MarkClusterUnsecured(id string) {
 	log.Infof("Marking discovered clusters matching cluster %q as unsecured", id)
 	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_UNSECURED)
-}
-
-func (m *managerImpl) discoveredClustersLoop() {
-	defer m.loopTicker.Stop()
-
-	for {
-		select {
-		case <-m.shortCircuitSignal.Done():
-			if err := m.shortCircuitRateLimiter.Wait(concurrency.AsContext(&m.stopSignal)); err != nil {
-				if errors.Is(err, context.Canceled) {
-					return
-				}
-				log.Errorw("Waiting for rate limiter entrance", logging.Err(err))
-			}
-			// Make sure to reset the signal again.
-			m.shortCircuitSignal.Reset()
-			// Make sure to reset the ticker, so we are not in the case where short-circuit is called and shortly after
-			// the interval is reached and discovered clusters are gathered again.
-			m.loopTicker.Reset(m.loopInterval)
-			m.discoverClustersFromCloudSources()
-		case <-m.loopTicker.C:
-			m.discoverClustersFromCloudSources()
-		case <-m.stopSignal.Done():
-			return
-		}
-	}
 }
 
 func (m *managerImpl) discoverClustersFromCloudSources() {

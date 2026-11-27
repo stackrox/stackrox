@@ -172,3 +172,15 @@ func (mr *MockManagerMockRecorder) ProcessPostClusterDelete(deploymentIDs any) *
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPostClusterDelete", reflect.TypeOf((*MockManager)(nil).ProcessPostClusterDelete), deploymentIDs)
 }
+
+// Stop mocks base method.
+func (m *MockManager) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockManagerMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockManager)(nil).Stop))
+}
