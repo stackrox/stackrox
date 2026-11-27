@@ -138,8 +138,15 @@ func defaultClientPolicy() clientPolicyDocument {
 	if env.OpenshiftAPI.BooleanSetting() {
 		clients = append(clients, clientPolicyEntry{
 			AuthType: clientAuthKubernetesBearer, Subject: "*",
-			Access: []clientPolicyAccess{{PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-				HTTPScopes: copyHTTPScopes(centralproxy.ConsoleHTTPScopes)}},
+			Access: []clientPolicyAccess{
+				{
+					PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+					HTTPScopes:      copyHTTPScopes(centralproxy.ConsoleDataHTTPScopes),
+				},
+				{
+					HTTPScopes: copyHTTPScopes(centralproxy.ConsoleAuthOnlyHTTPScopes),
+				},
+			},
 		})
 	}
 	return clientPolicyDocument{Version: clientPolicyVersion, Clients: clients}
@@ -174,9 +181,10 @@ func (p *ClientPolicy) configureTLS(config *tls.Config) {
 }
 
 // Authorize matches a certificate or TokenReview-validated user to one client.
-// The returned grant lists every configured access grant and, separately, only the
-// grants whose HTTP scope admits this request; tokens are requested for the allowed
-// grants alone. Namespace SubjectAccessReview remains the handler's responsibility.
+// The returned grant lists every configured permission-set grant and, separately,
+// only the grants whose HTTP scope admits this request; tokens are requested for
+// the allowed grants alone, and authentication-only grants contribute no permission
+// set. Namespace SubjectAccessReview remains the handler's responsibility.
 // A presented certificate always prevents fallback to bearer authentication.
 func (p *ClientPolicy) Authorize(_ context.Context, r *http.Request, user *authenticationv1.UserInfo) (*ClientPolicyGrant, error) {
 	if p == nil || !p.ready.Load() {
@@ -249,6 +257,11 @@ func (p *ClientPolicy) Authorize(_ context.Context, r *http.Request, user *authe
 func clientPolicyAccessToProto(access []clientPolicyAccess) []*centralv1.SelectedPermissionSet {
 	result := make([]*centralv1.SelectedPermissionSet, 0, len(access))
 	for _, grant := range access {
+		// Authentication-only grants select no permission set and contribute
+		// nothing to token requests.
+		if grant.PermissionSetID == "" && grant.PermissionSetName == "" {
+			continue
+		}
 		set := &centralv1.SelectedPermissionSet{}
 		if grant.PermissionSetID != "" {
 			set.Selector = &centralv1.SelectedPermissionSet_Id{Id: grant.PermissionSetID}
@@ -317,28 +330,35 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 		for j := range entry.Access {
 			grant := &entry.Access[j]
 			id, name := grant.PermissionSetID, grant.PermissionSetName
-			if (name == "") == (id == "") || strings.TrimSpace(name) != name || strings.TrimSpace(id) != id {
-				return nil, fmt.Errorf("invalid permission set selector at entry %d", i)
-			}
-			if id != "" {
-				parsedID, err := uuid.FromString(id)
-				if err != nil {
-					return nil, fmt.Errorf("invalid permission set ID at entry %d: %w", i, err)
+			if name == "" && id == "" {
+				// Authentication-only grant: its tokens carry no resource
+				// permissions, so the routes it admits must be explicit.
+				if grant.HTTPScopes == nil {
+					return nil, fmt.Errorf("authentication-only grant requires HTTP scopes at entry %d", i)
 				}
-				id = parsedID.String()
-				grant.PermissionSetID = id
+			} else {
+				if (name == "") == (id == "") || strings.TrimSpace(name) != name || strings.TrimSpace(id) != id {
+					return nil, fmt.Errorf("invalid permission set selector at entry %d", i)
+				}
+				if id != "" {
+					parsedID, err := uuid.FromString(id)
+					if err != nil {
+						return nil, fmt.Errorf("invalid permission set ID at entry %d: %w", i, err)
+					}
+					id = parsedID.String()
+					grant.PermissionSetID = id
+				}
+				key := "name:" + name
+				if id != "" {
+					key = "id:" + id
+				}
+				if _, exists := selectors[key]; exists {
+					return nil, fmt.Errorf("duplicate permission set at entry %d", i)
+				}
+				selectors[key] = struct{}{}
 			}
-			key := "name:" + name
-			if id != "" {
-				key = "id:" + id
-			}
-			if _, exists := selectors[key]; exists {
-				return nil, fmt.Errorf("duplicate permission set at entry %d", i)
-			}
-			selectors[key] = struct{}{}
-			if entry.Subject == "*" && (len(entry.Access) != 1 ||
-				(name != accesscontrol.ConsoleProxy && id != accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy])) {
-				return nil, errors.New("wildcard bearer clients may only use a single console permission set")
+			if entry.Subject == "*" && (name != "" || id != "") && !isConsoleSelector(id, name) {
+				return nil, errors.New("wildcard bearer clients may only use console and authentication-only grants")
 			}
 			claims.InternalRoles = append(claims.InternalRoles, &tokens.InternalRole{HTTPRequestScopes: grant.HTTPScopes})
 		}

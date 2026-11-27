@@ -130,7 +130,7 @@ func (h *Handler) validateRequest(request *http.Request) error {
 }
 
 func validateClientRequest(grant *ClientPolicyGrant, request *http.Request) error {
-	if grant.isConsole() && !features.OCPConsoleIntegration.Enabled() {
+	if grant.hasConsolePermissionSet() && !features.OCPConsoleIntegration.Enabled() {
 		return pkghttputil.NewError(http.StatusForbidden, "console proxy is disabled")
 	}
 	return nil
@@ -200,8 +200,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	permissionSetSupported := centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens)
-	legacyConsole := grant.isConsole() && grant.AuthType == clientAuthKubernetesBearer
-	if !permissionSetSupported && !legacyConsole {
+	legacy := grant.legacyEligible()
+	if !permissionSetSupported && !legacy {
 		result = requestResultNotImplemented
 		http.Error(writer, "Central does not support this proxy client", http.StatusNotImplemented)
 		return
@@ -209,15 +209,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	profile := &proxyTokenProfile{
 		identity:       grant.AuthType + ":" + grant.Subject,
 		permissionSets: grant.AllowedPermissionSets,
-		legacyConsole:  !permissionSetSupported && legacyConsole,
+		legacy:         !permissionSetSupported && legacy,
 	}
 	if userInfo == nil {
 		profile.clusterScope = FullClusterAccessScope
 	} else {
 		profile.clusterScope = request.Header.Get(stackroxNamespaceHeader)
-		if profile.clusterScope == "" && !grant.isConsole() {
+		if profile.clusterScope == "" && len(grant.AllowedPermissionSets) > 0 {
 			result = requestResultAuthzError
-			http.Error(writer, "namespace scope is required for custom bearer clients", http.StatusForbidden)
+			http.Error(writer, "namespace scope is required for requests with permission grants", http.StatusForbidden)
 			return
 		}
 		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {

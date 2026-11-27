@@ -201,7 +201,7 @@ func consoleTestProfile(scope string) *proxyTokenProfile {
 		identity:       clientAuthKubernetesBearer + ":test-user",
 		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[0].Access),
 		clusterScope:   scope,
-		legacyConsole:  !centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens),
+		legacy:         !centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens),
 	}
 }
 
@@ -220,7 +220,7 @@ func (p *tokenProvider) invalidateToken(scope string) {
 
 func (p *tokenProvider) tokenCacheKey(scope string, permissionSet bool) string {
 	profile := consoleTestProfile(scope)
-	profile.legacyConsole = !permissionSet
+	profile.legacy = !permissionSet
 	return p.profileCacheKey(profile)
 }
 
@@ -231,6 +231,9 @@ func roundTripConsole(transport *scopedTokenTransport, req *http.Request) (*http
 
 func testConsolePolicyDoc() clientPolicyDocument {
 	doc := defaultClientPolicy()
+	// The handler plumbing tests send headerless requests, so their broad
+	// routes are granted to an authentication-only client.
+	doc.Clients[0].Access[0].PermissionSetID = ""
 	doc.Clients[0].Access[0].HTTPScopes = tokens.HTTPRequestScopes{
 		"/v1/": {"GET", "POST", "HEAD", "OPTIONS"}, "/v2/": {"GET"},
 		"/api/graphql": {"GET", "POST"}, "/api/v1/": {"GET"},

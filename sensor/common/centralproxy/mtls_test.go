@@ -94,7 +94,8 @@ func TestProfileTokenIsolationAndHeaderReplacement(t *testing.T) {
 		"selector": func(p *proxyTokenProfile) {
 			p.permissionSets = []*centralv1.SelectedPermissionSet{{Selector: &centralv1.SelectedPermissionSet_Name{Name: "Reader"}}}
 		},
-		"legacy mode": func(p *proxyTokenProfile) { p.legacyConsole = true },
+		"authentication-only": func(p *proxyTokenProfile) { p.permissionSets = nil },
+		"legacy mode":         func(p *proxyTokenProfile) { p.legacy = true },
 	} {
 		t.Run(name, func(t *testing.T) {
 			other := *console
@@ -157,9 +158,9 @@ func TestProfileTokenIsolationAndHeaderReplacement(t *testing.T) {
 	assert.EqualValues(t, 2, calls.Load())
 	assert.Equal(t, "another-cluster", client.lastRequest.GetClusterScopes()[0].GetClusterId())
 	legacyMetrics := *metrics
-	legacyMetrics.legacyConsole = true
+	legacyMetrics.legacy = true
 	_, err = provider.getTokenForProfile(t.Context(), &legacyMetrics)
-	require.ErrorContains(t, err, "only available to console clients")
+	require.ErrorContains(t, err, "only available to console and authentication-only grants")
 }
 
 type tokenServiceFunc func(context.Context, *centralv1.GenerateTokenForPermissionsAndScopeRequest) (*centralv1.GenerateTokenForPermissionsAndScopeResponse, error)

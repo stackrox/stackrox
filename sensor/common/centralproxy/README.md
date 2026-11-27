@@ -37,19 +37,25 @@ policy is:
     {
       "authType": "kubernetesBearer",
       "subject": "*",
-      "access": [{
-        "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff2",
-        "httpRequestScopes": {
-          "/api/graphql": ["POST"],
-          "/static/ocp-plugin/": ["GET"],
-          "/v1/config/public": ["GET"],
-          "/v1/deployments": ["GET"],
-          "/v1/featureflags": ["GET"],
-          "/v1/metadata": ["GET"],
-          "/v1/mypermissions": ["GET"],
-          "/v1/telemetry/": ["GET"]
+      "access": [
+        {
+          "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff2",
+          "httpRequestScopes": {
+            "/api/graphql": ["POST"],
+            "/v1/deployments": ["GET"]
+          }
+        },
+        {
+          "httpRequestScopes": {
+            "/static/ocp-plugin/": ["GET"],
+            "/v1/config/public": ["GET"],
+            "/v1/featureflags": ["GET"],
+            "/v1/metadata": ["GET"],
+            "/v1/mypermissions": ["GET"],
+            "/v1/telemetry/": ["GET"]
+          }
         }
-      }]
+      ]
     }
   ]
 }
@@ -60,7 +66,10 @@ until one is configured.
 
 This policy shape uses a nonempty `access`
 array on each client. Each grant selects exactly one nonempty `permissionSetId`
-or `permissionSetName` and may specify `httpRequestScopes`. Names are portable but must
+or `permissionSetName`, or selects neither to become an authentication-only
+grant whose tokens carry no resource permissions; authentication-only grants
+must specify `httpRequestScopes`. Grants selecting a set may specify
+`httpRequestScopes`. Names are portable but must
 track permission-set renames; IDs bind to a specific set. Unknown or duplicate
 JSON fields, duplicate client identities, malformed selectors/CA references,
 unsupported versions, and more than 64 clients reject the entire policy.
@@ -68,8 +77,9 @@ Each client may have at most 32 grants and 32 HTTP paths and methods in total.
 Duplicate selectors are invalid; Central also rejects aliases that resolve
 multiple grants to the same permission set.
 
-Bearer subjects are exact TokenReview usernames or `*`. Only a single console
-grant may use the wildcard; exact entries override it regardless of order. Certificate
+Bearer subjects are exact TokenReview usernames or `*`. Wildcard entries may
+only combine authentication-only grants with grants selecting the console
+permission set; exact entries override the wildcard regardless of order. Certificate
 subjects are exact common names and require `caRef`. A presented certificate
 prevents bearer fallback. Each request verifies the certificate against **only
 its matched entry's current CA roots**, including on reused TLS connections.
@@ -78,19 +88,20 @@ Temporary watch failures retain the last observed snapshot. Policy and CA
 authorization uses watch snapshots without per-request ConfigMap API reads;
 bearer TokenReview and SubjectAccessReview retain their existing caching.
 
-The explicit HTTP maps define local route checks. The default console grant
-permits the routes and methods shown above. Administrators can configure
-different maps for any permission set. The console feature flag applies to
-clients with exactly one console grant, selected by the fixed ID or the name
-`OpenShift Secured Cluster Console Proxy`. Only these console bearer clients
-may omit the namespace header for bootstrap, producing an empty scope. A
-console grant combined with another permission set is a custom client
-regardless of grant order.
+The explicit HTTP maps define local route checks. The default console client
+permits the routes and methods shown above: data routes through the console
+grant and the remaining routes through an authentication-only grant.
+Administrators can configure different maps for any permission set. The console
+feature flag applies to clients whose grants include the console permission
+set, selected by the fixed ID or the name
+`OpenShift Secured Cluster Console Proxy`.
 
-Exact custom bearer clients require a namespace header and successful namespace
-SubjectAccessReview; `*` requires cluster-wide review. Certificate clients request
-full access to Sensor's cluster. Every grant in a client receives the same
-cluster/namespace scope.
+Bearer requests whose matched grants all carry permission sets, and every
+certificate client, require a namespace header and successful namespace
+SubjectAccessReview; `*` requires cluster-wide review. Requests matched only
+by authentication-only grants may omit the header: SubjectAccessReview is
+skipped and the minted token carries no permissions and no scope. Every grant
+in a client receives the same cluster/namespace scope.
 
 `httpRequestScopes` maps canonical paths to uppercase HTTP methods. A trailing
 slash matches descendants; other paths match exactly. An empty or null method
@@ -102,10 +113,11 @@ restriction on that grant. An explicitly empty map is invalid. Unrestricted
 grants remain available on every route, including routes denied by scoped grants.
 Canonical-path checks reject ambiguous/encoded paths for scoped grants.
 
-New mTLS and custom bearer clients require
-`CentralProxyPermissionSetTokens`. Only console bearer clients may use the legacy
-Deployment/Image token flow on older Central. Issuance errors never trigger a
-legacy fallback.
+Grants carrying permission sets require `CentralProxyPermissionSetTokens`.
+Older Centrals serve the two original grant forms of bearer clients instead:
+authentication-only grants request no permissions and console grants request
+the legacy Deployment/Image read permissions. Issuance errors never trigger a
+fallback.
 
 Central resolves each permission set separately, requires read-only and
 cluster/namespace constraints and matching grants, and limits requested scopes

@@ -127,20 +127,23 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 	} {
 		t.Run(selector, func(t *testing.T) {
 			for name, tc := range map[string]struct {
-				method         string
-				path           string
-				consoleEnabled bool
-				legacy         bool
-				want           int
+				method          string
+				path            string
+				namespace       string
+				consoleEnabled  bool
+				legacy          bool
+				want            int
+				wantSets        int
+				wantPermissions map[string]centralv1.Access
 			}{
-				"GET":              {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, want: http.StatusOK},
-				"POST":             {method: http.MethodPost, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
-				"HEAD":             {method: http.MethodHead, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
-				"OPTIONS":          {method: http.MethodOptions, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
-				"DELETE":           {method: http.MethodDelete, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
-				"unlisted route":   {method: http.MethodGet, path: "/custom", consoleEnabled: true, want: http.StatusForbidden},
-				"console disabled": {method: http.MethodGet, path: "/v1/metadata", want: http.StatusForbidden},
-				"legacy console":   {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, legacy: true, want: http.StatusOK},
+				"authentication-only route":               {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, want: http.StatusOK},
+				"authentication-only route method denied": {method: http.MethodPost, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
+				"unlisted route":                          {method: http.MethodGet, path: "/custom", consoleEnabled: true, want: http.StatusForbidden},
+				"data route requires namespace scope":     {method: http.MethodGet, path: "/v1/deployments", consoleEnabled: true, want: http.StatusForbidden},
+				"data route with scope":                   {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, want: http.StatusOK, wantSets: 1},
+				"console disabled":                        {method: http.MethodGet, path: "/v1/metadata", want: http.StatusForbidden},
+				"legacy authentication-only route":        {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, legacy: true, want: http.StatusOK},
+				"legacy data route":                       {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, legacy: true, want: http.StatusOK, wantPermissions: tokenPermissions},
 			} {
 				t.Run(name, func(t *testing.T) {
 					entry := clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "test-user",
@@ -152,25 +155,29 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 					policy := newStaticClientPolicy(t, clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{entry}})
 					fixture, client := policyHandlerFixture(t, newAllowingAuthorizer(t), policy)
 					t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", fmt.Sprint(tc.consoleEnabled))
-					allowedpaths.Set([]string{"/v1/metadata"})
+					allowedpaths.Set([]string{"/v1/metadata", "/v1/deployments"})
 					if tc.legacy {
 						centralcaps.Set([]centralsensor.CentralCapability{centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering})
 					}
-					response := fixture.serveHTTP(t, tc.method, tc.path, map[string]string{"Authorization": "Bearer kube-token"})
+					headers := map[string]string{"Authorization": "Bearer kube-token"}
+					if tc.namespace != "" {
+						headers[stackroxNamespaceHeader] = tc.namespace
+					}
+					response := fixture.serveHTTP(t, tc.method, tc.path, headers)
 					assert.Equal(t, tc.want, response.Code)
 					assert.Equal(t, tc.want == http.StatusOK, fixture.proxyCalled)
 					if tc.want == http.StatusOK {
 						require.NotNil(t, client.lastRequest)
-						assert.Empty(t, client.lastRequest.GetClusterScopes(), "console bootstrap must keep an empty scope")
-						if tc.legacy {
-							assert.Empty(t, client.lastRequest.GetPermissionSets())
-							assert.Equal(t, tokenPermissions, client.lastRequest.GetPermissions())
+						if tc.namespace == "" {
+							assert.Empty(t, client.lastRequest.GetClusterScopes(), "authentication-only bootstrap must keep an empty scope")
 						} else {
-							assert.Empty(t, client.lastRequest.GetPermissions())
-							if id != "" {
-								require.Len(t, client.lastRequest.GetPermissionSets(), 1)
-								assert.Equal(t, consoleID, client.lastRequest.GetPermissionSets()[0].GetId())
-							}
+							require.Len(t, client.lastRequest.GetClusterScopes(), 1)
+							assert.Equal(t, []string{tc.namespace}, client.lastRequest.GetClusterScopes()[0].GetNamespaces())
+						}
+						require.Len(t, client.lastRequest.GetPermissionSets(), tc.wantSets)
+						assert.Equal(t, tc.wantPermissions, client.lastRequest.GetPermissions())
+						if tc.wantSets > 0 && id != "" {
+							assert.Equal(t, consoleID, client.lastRequest.GetPermissionSets()[0].GetId())
 						}
 					}
 				})
@@ -189,7 +196,7 @@ func TestCustomMTLSRoutesAndConsoleClassification(t *testing.T) {
 	}{
 		"custom route": {selector: "Custom Reader", path: "/custom", want: http.StatusOK},
 		"console selector cannot use custom route": {selector: accesscontrol.ConsoleProxy, path: "/custom", want: http.StatusForbidden},
-		"console selector allowed route":           {selector: accesscontrol.ConsoleProxy, path: "/v1/metadata", want: http.StatusOK},
+		"console selector allowed route":           {selector: accesscontrol.ConsoleProxy, path: "/v1/deployments", want: http.StatusOK},
 	} {
 		t.Run(name, func(t *testing.T) {
 			entry := clientPolicyEntry{AuthType: clientAuthMTLS, Subject: "custom-client",

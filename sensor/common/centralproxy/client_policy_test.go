@@ -86,11 +86,13 @@ func TestClientPolicyBootstrapUpdatesAndDeletion(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(cm.Data[ClientPolicyDataKey]), &doc))
 	require.Len(t, doc.Clients, 1)
 	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], doc.Clients[0].Access[0].PermissionSetID)
+	assert.Empty(t, doc.Clients[0].Access[1].PermissionSetID, "the second default grant is authentication-only")
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"access"`)
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"httpRequestScopes"`)
 	grant, err := policy.Authorize(t.Context(), request, user)
 	require.NoError(t, err)
-	assert.True(t, grant.isConsole())
+	require.Len(t, grant.PermissionSets, 1)
+	assert.Empty(t, grant.AllowedPermissionSets, "metadata routes are served by the authentication-only grant")
 
 	doc.Clients = append(doc.Clients, clientPolicyEntry{
 		AuthType: clientAuthKubernetesBearer, Subject: "alice", Access: []clientPolicyAccess{{PermissionSetName: "Alice Reader"}},
@@ -102,7 +104,7 @@ func TestClientPolicyBootstrapUpdatesAndDeletion(t *testing.T) {
 	assert.Equal(t, "Alice Reader", grant.PermissionSets[0].GetName())
 	grant, err = policy.Authorize(t.Context(), request, &authenticationv1.UserInfo{Username: "bob"})
 	require.NoError(t, err)
-	assert.True(t, grant.isConsole())
+	assert.Empty(t, grant.AllowedPermissionSets, "metadata routes are served by the authentication-only grant")
 
 	doc.Version++
 	updateClientPolicy(t, client, doc)
@@ -168,20 +170,20 @@ func TestClientPolicyPreservesExistingConfig(t *testing.T) {
 
 func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 	for name, change := range map[string]func(*clientPolicyDocument){
-		"no selector":          func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = "" },
-		"both selectors":       func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetName = accesscontrol.ConsoleProxy },
-		"invalid ID":           func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetID = "invalid" },
-		"whitespace name":      func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = " Reader " },
-		"unsupported version":  func(p *clientPolicyDocument) { p.Version++ },
-		"duplicate identity":   func(p *clientPolicyDocument) { p.Clients = append(p.Clients, p.Clients[0]) },
-		"unknown auth":         func(p *clientPolicyDocument) { p.Clients[0].AuthType = "other" },
-		"missing CA":           func(p *clientPolicyDocument) { p.Clients[0].CARef = nil },
-		"null CA":              func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`null`) },
-		"incomplete CA":        func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`{"namespace":"ns"}`) },
-		"bearer CA":            func(p *clientPolicyDocument) { p.Clients[1].CARef = p.Clients[0].CARef },
-		"empty subject":        func(p *clientPolicyDocument) { p.Clients[0].Subject = "" },
-		"subject whitespace":   func(p *clientPolicyDocument) { p.Clients[0].Subject = " alice " },
-		"wildcard certificate": func(p *clientPolicyDocument) { p.Clients[0].Subject = "*" },
+		"auth-only without scopes": func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = "" },
+		"both selectors":           func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetName = accesscontrol.ConsoleProxy },
+		"invalid ID":               func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetID = "invalid" },
+		"whitespace name":          func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = " Reader " },
+		"unsupported version":      func(p *clientPolicyDocument) { p.Version++ },
+		"duplicate identity":       func(p *clientPolicyDocument) { p.Clients = append(p.Clients, p.Clients[0]) },
+		"unknown auth":             func(p *clientPolicyDocument) { p.Clients[0].AuthType = "other" },
+		"missing CA":               func(p *clientPolicyDocument) { p.Clients[0].CARef = nil },
+		"null CA":                  func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`null`) },
+		"incomplete CA":            func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`{"namespace":"ns"}`) },
+		"bearer CA":                func(p *clientPolicyDocument) { p.Clients[1].CARef = p.Clients[0].CARef },
+		"empty subject":            func(p *clientPolicyDocument) { p.Clients[0].Subject = "" },
+		"subject whitespace":       func(p *clientPolicyDocument) { p.Clients[0].Subject = " alice " },
+		"wildcard certificate":     func(p *clientPolicyDocument) { p.Clients[0].Subject = "*" },
 		"wildcard custom set": func(p *clientPolicyDocument) {
 			p.Clients[1].Access[0].PermissionSetID = accesscontrol.OpenShiftPrometheusMetricsReaderID
 		},
@@ -220,6 +222,45 @@ func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 	}
 }
 
+func TestClientPolicyAcceptsAuthOnlyGrants(t *testing.T) {
+	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	t.Run("wildcard bearer client", func(t *testing.T) {
+		policy := newStaticClientPolicy(t, clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{{
+			AuthType: clientAuthKubernetesBearer, Subject: "*",
+			Access: []clientPolicyAccess{
+				{PermissionSetID: consoleID, HTTPScopes: tokens.HTTPRequestScopes{"/api/graphql": {http.MethodPost}}},
+				{HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
+			},
+		}}})
+		request := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		request.Header.Set("Authorization", "Bearer reviewed")
+		grant, err := policy.Authorize(t.Context(), request, &authenticationv1.UserInfo{Username: "alice"})
+		require.NoError(t, err)
+		assert.Empty(t, grant.AllowedPermissionSets, "the authentication-only grant serves metadata routes")
+		require.Len(t, grant.PermissionSets, 1, "the console grant remains configured")
+		request = httptest.NewRequest(http.MethodPost, "/api/graphql", nil)
+		request.Header.Set("Authorization", "Bearer reviewed")
+		grant, err = policy.Authorize(t.Context(), request, &authenticationv1.UserInfo{Username: "bob"})
+		require.NoError(t, err)
+		require.Len(t, grant.AllowedPermissionSets, 1)
+		assert.Equal(t, consoleID, grant.AllowedPermissionSets[0].GetId())
+	})
+	t.Run("exact bearer client", func(t *testing.T) {
+		policy := newStaticClientPolicy(t, clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{{
+			AuthType: clientAuthKubernetesBearer, Subject: "alice",
+			Access: []clientPolicyAccess{
+				{PermissionSetName: "Cluster Reader", HTTPScopes: tokens.HTTPRequestScopes{"/v1/images": {http.MethodGet}}},
+				{HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
+			},
+		}}})
+		request := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		request.Header.Set("Authorization", "Bearer reviewed")
+		grant, err := policy.Authorize(t.Context(), request, &authenticationv1.UserInfo{Username: "alice"})
+		require.NoError(t, err)
+		assert.Empty(t, grant.AllowedPermissionSets)
+	})
+}
+
 func TestClientPolicyCanonicalizesWildcardPermissionSetIDs(t *testing.T) {
 	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
 	for name, id := range map[string]string{
@@ -237,7 +278,6 @@ func TestClientPolicyCanonicalizesWildcardPermissionSetIDs(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, grant.PermissionSets, 1)
 			assert.Equal(t, consoleID, grant.PermissionSets[0].GetId())
-			assert.True(t, grant.isConsole())
 		})
 	}
 }
@@ -279,7 +319,7 @@ func TestClientPolicyExactBearerOverridesWildcard(t *testing.T) {
 			req.URL.Path = "/v1/metadata"
 			grant, err = policy.Authorize(t.Context(), req, &authenticationv1.UserInfo{Username: "bob"})
 			require.NoError(t, err)
-			assert.True(t, grant.isConsole())
+			assert.Empty(t, grant.AllowedPermissionSets, "metadata routes are served by the authentication-only grant")
 			_, err = policy.Authorize(t.Context(), req, nil)
 			require.Error(t, err)
 			_, err = policy.Authorize(t.Context(), req, &authenticationv1.UserInfo{})
@@ -314,13 +354,21 @@ func TestClientPolicyAuthorizeSplitsConfiguredAndAllowedGrants(t *testing.T) {
 			method: http.MethodGet, path: "/v1/namespaces",
 			wantAllowed: []string{"Cluster Reader"},
 		},
-		"console classification stays client-level": {
+		"console grant is matched by its route alone": {
 			access: []clientPolicyAccess{
 				{PermissionSetName: accesscontrol.ConsoleProxy, HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
 				{PermissionSetName: "Image Reader", HTTPScopes: tokens.HTTPRequestScopes{"/v1/images": {http.MethodGet}}},
 			},
 			method: http.MethodGet, path: "/v1/metadata",
 			wantAllowed: []string{accesscontrol.ConsoleProxy},
+		},
+		"authentication-only grant carries no permission set": {
+			access: []clientPolicyAccess{
+				{HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
+				{PermissionSetName: "Image Reader", HTTPScopes: tokens.HTTPRequestScopes{"/v1/images": {http.MethodGet}}},
+			},
+			method: http.MethodGet, path: "/v1/metadata",
+			wantAllowed: []string{},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -331,13 +379,18 @@ func TestClientPolicyAuthorizeSplitsConfiguredAndAllowedGrants(t *testing.T) {
 			request.Header.Set("Authorization", "Bearer reviewed-token")
 			grant, err := policy.Authorize(t.Context(), request, &authenticationv1.UserInfo{Username: "alice"})
 			require.NoError(t, err)
-			require.Len(t, grant.PermissionSets, len(tc.access))
+			configured := 0
+			for _, access := range tc.access {
+				if access.PermissionSetID != "" || access.PermissionSetName != "" {
+					configured++
+				}
+			}
+			require.Len(t, grant.PermissionSets, configured, "authentication-only grants select no permission set")
 			allowed := make([]string, 0, len(grant.AllowedPermissionSets))
 			for _, set := range grant.AllowedPermissionSets {
 				allowed = append(allowed, set.GetName())
 			}
 			assert.Equal(t, tc.wantAllowed, allowed)
-			assert.False(t, grant.isConsole(), "clients with more than the console grant are custom clients")
 		})
 	}
 }

@@ -290,8 +290,8 @@ func (p *tokenProvider) profileCacheKey(profile *proxyTokenProfile) string {
 		Identity       string
 		PermissionSets []*centralv1.SelectedPermissionSet
 		ClusterScope   string
-		LegacyConsole  bool
-	}{profile.identity, profile.permissionSets, profile.clusterScope, profile.legacyConsole})
+		Legacy         bool
+	}{profile.identity, profile.permissionSets, profile.clusterScope, profile.legacy})
 	return fmt.Sprintf("%s:%x", p.clusterIDGetter.GetNoWait(), sha256.Sum256(data))
 }
 
@@ -307,14 +307,18 @@ func (p *tokenProvider) buildProfileTokenRequest(profile *proxyTokenProfile) (*c
 		Lifetime:  durationpb.New(tokenTTL),
 		Requester: profile.identity,
 	}
-	if len(profile.permissionSets) == 0 {
-		return nil, errors.New("proxy permission set grants are required")
-	}
-	if profile.legacyConsole {
-		if len(profile.permissionSets) != 1 || !isConsolePermissionSet(profile.permissionSets[0]) {
-			return nil, errors.New("legacy token flow is only available to console clients")
+	if profile.legacy {
+		// Older Centrals only know the original token forms: no permissions for
+		// authentication-only grants and the console grant's Deployment/Image
+		// read permissions otherwise.
+		for _, set := range profile.permissionSets {
+			if !isConsolePermissionSet(set) {
+				return nil, errors.New("legacy token flow is only available to console and authentication-only grants")
+			}
 		}
-		req.Permissions = tokenPermissions
+		if len(profile.permissionSets) > 0 {
+			req.Permissions = tokenPermissions
+		}
 	} else {
 		req.PermissionSets = profile.permissionSets
 	}

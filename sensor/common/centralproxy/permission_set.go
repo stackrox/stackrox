@@ -14,7 +14,7 @@ type proxyTokenProfile struct {
 	identity       string
 	permissionSets []*centralv1.SelectedPermissionSet
 	clusterScope   string
-	legacyConsole  bool
+	legacy         bool
 }
 
 func withProxyTokenProfile(ctx context.Context, profile *proxyTokenProfile) context.Context {
