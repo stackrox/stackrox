@@ -1,0 +1,22 @@
+[project]
+name = "stackrox-risk-summary-eval"
+version = "0.1.0"
+description = "Offline harness to evaluate and compare LLMs/prompts for the deployment risk AI-summary."
+# Upper-bounded: lightspeed-evaluation's deps (deepeval/langchain/pydantic-v1 shims)
+# are not yet compatible with Python 3.14+.
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    # lightspeed-evaluation is installed from git (pick a released tag). It pulls
+    # its own deps (incl. litellm, pyyaml); we also pin the ones we import directly.
+    "lightspeed-evaluation @ git+https://github.com/lightspeed-core/lightspeed-evaluation.git@v0.7.1",
+    "litellm>=1.0",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    # Required by LiteLLM's Vertex AI path (vertexai SDK) to reach Anthropic/Gemini
+    # models on GCP with ADC. Not needed for OpenAI/Anthropic-direct API keys.
+    "google-cloud-aiplatform>=1.38",
+]
+
+[tool.uv]
+# The harness runs as plain scripts from harness/; no build/install of this project.
+package = false

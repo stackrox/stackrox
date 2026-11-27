@@ -1,0 +1,14 @@
+# Compiled Go promptgen binary
+/bin/
+
+# Fetched / generated / output artifacts (may contain deployment data)
+/data/cache/
+/data/prompts/
+/data/responses/
+/output/
+/evaluations/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
