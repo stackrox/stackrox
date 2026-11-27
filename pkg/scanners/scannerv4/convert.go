@@ -654,6 +654,8 @@ func filterRedHatLayerVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
 // A package is covered if it was introduced at or below the AncestryPackage's layer
 // and shares a common alias with the not-affected vulnerability.
+// Version-bounded assertions derived from fixed OCI records cover OSV findings;
+// they must not suppress independent RPM assessments for the same CVE.
 func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
 	if len(report.GetPackageNotVulnerable()) == 0 {
 		return
@@ -662,6 +664,7 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 	// Find AncestryPackage entries. A package introduced at or before that
 	// layer is also not affected, so keep the highest layer index per alias.
 	aliasKeyToLayerIndex := make(map[string]int32)
+	fixedAliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageNotVulnerable() {
 		pkg := report.GetContents().GetPackages()[pkgID]
 		if pkg == nil || pkg.GetKind() != "ancestry" {
@@ -678,16 +681,20 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 			if vuln == nil {
 				continue
 			}
+			indices := aliasKeyToLayerIndex
+			if vuln.GetFixedInVersion() != "" {
+				indices = fixedAliasKeyToLayerIndex
+			}
 			for _, alias := range vuln.GetAliases() {
 				key := aliasKey(alias)
-				if cur, ok := aliasKeyToLayerIndex[key]; !ok || layerIdx > cur {
-					aliasKeyToLayerIndex[key] = layerIdx
+				if cur, ok := indices[key]; !ok || layerIdx > cur {
+					indices[key] = layerIdx
 				}
 			}
 		}
 	}
 
-	if len(aliasKeyToLayerIndex) == 0 {
+	if len(aliasKeyToLayerIndex) == 0 && len(fixedAliasKeyToLayerIndex) == 0 {
 		return
 	}
 
@@ -713,10 +720,16 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 					removed = true
 					break
 				}
+				if strings.HasPrefix(vuln.GetUpdater(), "osv/") {
+					if layerIdx, ok := fixedAliasKeyToLayerIndex[aliasKey(alias)]; ok && pkgLayerIdx <= layerIdx {
+						removed = true
+						break
+					}
+				}
 			}
 
 			if removed {
-				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+				log.Debugf("Suppressing vuln %q for package %q due to VEX non-vulnerable assessment", vuln.GetName(), pkgID)
 			} else {
 				filtered = append(filtered, vulnID)
 			}
