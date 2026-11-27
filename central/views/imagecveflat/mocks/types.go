@@ -129,6 +129,34 @@ func (mr *MockCveFlatMockRecorder) GetFirstImageOccurrence() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstImageOccurrence", reflect.TypeOf((*MockCveFlat)(nil).GetFirstImageOccurrence))
 }
 
+// GetKnownExploit mocks base method.
+func (m *MockCveFlat) GetKnownExploit() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKnownExploit")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetKnownExploit indicates an expected call of GetKnownExploit.
+func (mr *MockCveFlatMockRecorder) GetKnownExploit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKnownExploit", reflect.TypeOf((*MockCveFlat)(nil).GetKnownExploit))
+}
+
+// GetKnownRansomwareCampaignUse mocks base method.
+func (m *MockCveFlat) GetKnownRansomwareCampaignUse() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKnownRansomwareCampaignUse")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetKnownRansomwareCampaignUse indicates an expected call of GetKnownRansomwareCampaignUse.
+func (mr *MockCveFlatMockRecorder) GetKnownRansomwareCampaignUse() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKnownRansomwareCampaignUse", reflect.TypeOf((*MockCveFlat)(nil).GetKnownRansomwareCampaignUse))
+}
+
 // GetPublishDate mocks base method.
 func (m *MockCveFlat) GetPublishDate() *time.Time {
 	m.ctrl.T.Helper()
