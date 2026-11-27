@@ -8,9 +8,11 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -25,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -1346,6 +1349,280 @@ func TestImageCVEUnknownSeverity(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 3, counts.GetUnknownSeverityCount().GetTotal())
 	assert.Equal(t, 1, counts.GetUnknownSeverityCount().GetFixable())
+}
+
+type recordedQuery struct {
+	sql  string
+	args []any
+}
+
+type queryRecorder struct {
+	lock    sync.Mutex
+	queries []recordedQuery
+}
+
+func (r *queryRecorder) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.queries = append(r.queries, recordedQuery{
+		sql:  data.SQL,
+		args: append([]any(nil), data.Args...),
+	})
+	return ctx
+}
+
+func (r *queryRecorder) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
+
+func (r *queryRecorder) reset() {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.queries = nil
+}
+
+func (r *queryRecorder) recorded() []recordedQuery {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	return append([]recordedQuery(nil), r.queries...)
+}
+
+func sqlLiteral(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return "'" + strings.ReplaceAll(typed, "'", "''") + "'"
+	case []byte:
+		return "'" + strings.ReplaceAll(string(typed), "'", "''") + "'"
+	case nil:
+		return "null"
+	default:
+		return fmt.Sprint(typed)
+	}
+}
+
+func renderQuery(query recordedQuery) string {
+	rendered := query.sql
+	// Replace longer placeholders first so $1 does not partially replace $10.
+	for i := len(query.args); i > 0; i-- {
+		rendered = strings.ReplaceAll(rendered, fmt.Sprintf("$%d", i), sqlLiteral(query.args[i-1]))
+	}
+	return rendered
+}
+
+// TestImageCVEViewFilterSQL exercises the CVE view filters used by the Vulnerability
+// Management overview pages and logs the SQL emitted by the search framework.
+func TestImageCVEViewFilterSQL(t *testing.T) {
+	// This test only covers the flattened (V2) image data model.
+	t.Setenv(features.FlattenImageData.EnvVar(), "true")
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(t, testDB.DB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = imageComponentV2DS.GetTestPostgresDataStore(t, testDB)
+	_ = imageCVEV2DS.GetTestPostgresDataStore(t, testDB)
+
+	const (
+		platformObservedCVE = "CVE-2026-1001"
+		platformDeferredCVE = "CVE-2026-1002"
+		userObservedCVE     = "CVE-2026-1003"
+		userDeferredCVE     = "CVE-2026-1004"
+		inactiveObservedCVE = "CVE-2026-1005"
+		inactiveDeferredCVE = "CVE-2026-1006"
+		userObservedImage   = "example.com/user-observed:latest"
+	)
+
+	imageSpecs := []struct {
+		name  string
+		cve   string
+		state storage.VulnerabilityState
+	}{
+		{name: "example.com/platform-observed:latest", cve: platformObservedCVE, state: storage.VulnerabilityState_OBSERVED},
+		{name: "example.com/platform-deferred:latest", cve: platformDeferredCVE, state: storage.VulnerabilityState_DEFERRED},
+		{name: userObservedImage, cve: userObservedCVE, state: storage.VulnerabilityState_OBSERVED},
+		{name: "example.com/user-deferred:latest", cve: userDeferredCVE, state: storage.VulnerabilityState_DEFERRED},
+		{name: "example.com/inactive-observed:latest", cve: inactiveObservedCVE, state: storage.VulnerabilityState_OBSERVED},
+		{name: "example.com/inactive-deferred:latest", cve: inactiveDeferredCVE, state: storage.VulnerabilityState_DEFERRED},
+	}
+
+	images := make([]*storage.Image, 0, len(imageSpecs))
+	for i, spec := range imageSpecs {
+		images = append(images, &storage.Image{
+			Id:   fmt.Sprintf("sha256:filter-matrix-%d", i),
+			Name: &storage.ImageName{FullName: spec.name},
+			SetCves: &storage.Image_Cves{
+				Cves: 1,
+			},
+			Scan: &storage.ImageScan{
+				ScanTime:        protocompat.TimestampNow(),
+				OperatingSystem: "test:1",
+				Components: []*storage.EmbeddedImageScanComponent{{
+					Name:    "matrix-component",
+					Version: "1.0",
+					Vulns: []*storage.EmbeddedVulnerability{{
+						Cve:      spec.cve,
+						Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						State:    spec.state,
+					}},
+				}},
+			},
+		})
+	}
+
+	type deploymentSpec struct {
+		imageIndex        int
+		platformComponent bool
+	}
+	deploymentSpecs := []deploymentSpec{
+		{imageIndex: 0, platformComponent: true},
+		{imageIndex: 1, platformComponent: true},
+		{imageIndex: 2, platformComponent: false},
+		{imageIndex: 3, platformComponent: false},
+	}
+
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(t, testDB.DB)
+	for _, image := range images {
+		if err := imageV2Store.UpsertImage(ctx, imageUtils.ConvertToV2(image)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i, spec := range deploymentSpecs {
+		imageV2 := imageUtils.ConvertToV2(images[spec.imageIndex])
+		namespace := fmt.Sprintf("matrix-ns-%d", i)
+		if spec.platformComponent {
+			namespace = "kube-" + namespace
+		}
+		deployment := fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, namespace, imageV2)
+		deployment.PlatformComponent = spec.platformComponent
+		if err := deploymentStore.UpsertDeployment(ctx, deployment); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tracer := &queryRecorder{}
+	tracedConfig := testDB.Config().Copy()
+	tracedConfig.ConnConfig.Tracer = tracer
+	tracedDB, err := postgres.New(ctx, tracedConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(tracedDB.Close)
+	cveView := NewCVEView(tracedDB)
+
+	testCases := []struct {
+		name         string
+		query        string
+		q            *v1.Query
+		expectedCVEs []string
+	}{
+		{
+			name:  "user workload observed",
+			query: "Platform Component:false+Vulnerability State:OBSERVED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "false").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{userObservedCVE},
+		},
+		{
+			name:  "user workload deferred",
+			query: "Platform Component:false+Vulnerability State:DEFERRED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "false").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{userDeferredCVE},
+		},
+		{
+			name:  "platform observed",
+			query: "Platform Component:true+Vulnerability State:OBSERVED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "true").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{platformObservedCVE},
+		},
+		{
+			name:  "platform deferred",
+			query: "Platform Component:true+Vulnerability State:DEFERRED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "true").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{platformDeferredCVE},
+		},
+		{
+			name:  "inactive observed",
+			query: "Platform Component:-+Vulnerability State:OBSERVED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, search.NullString).
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{inactiveObservedCVE},
+		},
+		{
+			name:  "inactive deferred",
+			query: "Platform Component:-+Vulnerability State:DEFERRED",
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, search.NullString).
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{inactiveDeferredCVE},
+		},
+		{
+			name:  "user workload observed for one image",
+			query: "Platform Component:false+Vulnerability State:OBSERVED+Image:" + userObservedImage,
+			q: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "false").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddExactMatches(search.ImageName, userObservedImage).
+				ProtoQuery(),
+			expectedCVEs: []string{userObservedCVE},
+		},
+		{
+			name:  "vulnerability state observed",
+			query: "Vulnerability State:OBSERVED",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				ProtoQuery(),
+			expectedCVEs: []string{platformObservedCVE, userObservedCVE, inactiveObservedCVE},
+		},
+	}
+
+	severitySortPagination := search.NewPagination().
+		AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).
+		AddSortOption(search.NewSortOption(search.ImportantSeverityCount).Reversed(true)).
+		AddSortOption(search.NewSortOption(search.ModerateSeverityCount).Reversed(true)).
+		AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)).
+		AddSortOption(search.NewSortOption(search.UnknownSeverityCount).Reversed(true)).
+		Proto()
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			q := tc.q.CloneVT()
+			q.Pagination = severitySortPagination
+
+			tracer.reset()
+			actual, err := cveView.Get(ctx, q, views.ReadOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			actualCVEs := make([]string, 0, len(actual))
+			for _, cve := range actual {
+				actualCVEs = append(actualCVEs, cve.GetCVE())
+			}
+			slices.Sort(actualCVEs)
+			assert.Equal(t, tc.expectedCVEs, actualCVEs)
+
+			t.Logf("filters: %s", tc.query)
+			for _, query := range tracer.recorded() {
+				t.Logf("SQL: %s", query.sql)
+				t.Logf("args: %#v", query.args)
+				t.Logf("SQL with args: %s", renderQuery(query))
+			}
+		})
+	}
 }
 
 func testImages() []*storage.Image {
