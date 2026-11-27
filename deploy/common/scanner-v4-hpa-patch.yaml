@@ -1,3 +1,0 @@
-spec:
-  minReplicas: 1
-  maxReplicas: 1

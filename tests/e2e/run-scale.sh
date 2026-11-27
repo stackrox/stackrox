@@ -51,7 +51,7 @@ deploy_stackrox_in_scale_mode() {
     source "$roxie_envrc"
     rm -f "$roxie_envrc"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
+    DEPLOY_DIR="deploy" \
     export_central_basic_auth_creds
 
     "$ROOT/scale/launch_workload.sh" scale-test

@@ -36,8 +36,7 @@ test_byodb() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-
-    DEPLOY_DIR="deploy/k8s"
+    DEPLOY_DIR="deploy"
     QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
 

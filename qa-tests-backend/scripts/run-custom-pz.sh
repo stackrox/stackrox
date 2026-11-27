@@ -35,8 +35,7 @@ config_custom() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    DEPLOY_DIR="deploy"
     export_test_environment
 
     setup_gcp
@@ -45,7 +44,25 @@ config_custom() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    # roxie has no binary for ppc64le at all, and this repo is pinned to a roxie version
+    # (ROXIE_VERSION) that predates s390x support, so neither power nor s390x can use
+    # deploy_stackrox() here. Deploy via the operator instead, which has no architecture
+    # dependency on the deploy host. (roxie v0.4.18+ does ship an s390x binary now, so
+    # s390x could move back to deploy_stackrox() in the future if that's adopted here.)
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    deploy_stackrox_operator
+    deploy_central "stackrox"
+    export_central_basic_auth_creds
+    wait_for_api
+    setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    record_build_info
+    deploy_sensor "stackrox" "stackrox"
+    sensor_wait
+    wait_for_collectors_to_be_operational
+    if retrying_kubectl </dev/null -n "stackrox" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "stackrox"
+    fi
+    touch "${STATE_DEPLOYED}"
     deploy_optional_e2e_components
 
     deploy_default_psp
@@ -58,8 +75,7 @@ config_custom() {
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    DEPLOY_DIR="deploy"
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"

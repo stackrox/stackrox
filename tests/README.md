@@ -20,15 +20,19 @@ Alternatively, try the launcher script in [./e2e](./e2e/).
 
 ### From Command Line
 
-1. Add the following values to your ENV  
+1. Deploy using roxie (`./deploy/deploy.sh`), which sets up the roxie environment automatically
+1. Within the roxie subshell, add the following values to your ENV  
     export ROX_USERNAME=admin
-    export ROX_ADMIN_PASSWORD=$(cat ../deploy/k8s/central-deploy/password)
+    # ROX_ADMIN_PASSWORD is already set by roxie
     export API_ENDPOINT=localhost:8000
 1. Run `cd tests; go test -run <TestName>`
 
+Alternatively, if using `--envrc` mode: `source <envrc-file>` first to load the credentials.
+
 ### From Goland IDE 
 
-1. From the command line, run `cat ../deploy/k8s/central-deploy/password` and record this.
+1. Deploy using roxie with `--envrc`: `./deploy/deploy.sh --envrc /tmp/roxie.env`
+1. From the command line, run `source /tmp/roxie.env && echo $ROX_ADMIN_PASSWORD` and record this.
 1. Go to `Run > Edit Configurations`
 1. Set Environment Variables to the following:
     `ROX_USERNAME=admin;ROX_ADMIN_PASSWORD=<Value from the first step>;API_ENDPOINT=localhost:8000;<More Env Vars Here>`

@@ -20,7 +20,7 @@ test_compliance_e2e() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    export DEPLOY_DIR="deploy"
 
     export_test_environment
 

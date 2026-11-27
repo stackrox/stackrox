@@ -48,9 +48,8 @@ config_part_1() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
-    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
+    DEPLOY_DIR="deploy"
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-true}"
     export_test_environment
 
     setup_gcp
@@ -118,8 +117,7 @@ EOF
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    DEPLOY_DIR="deploy"
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
