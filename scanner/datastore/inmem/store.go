@@ -401,6 +401,10 @@ func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, f
 		abortErr error
 	)
 	concurrency.WithLock(&s.mu, func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			abortErr = ctxErr
+			return
+		}
 		if s.closed {
 			abortErr = errors.New("inmem: store is closed")
 			return
@@ -448,6 +452,9 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 // and releases the store's reference to any replaced fragment.
 func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp driver.Fingerprint, it datastore.EnrichmentIter) (uuid.UUID, error) {
 	start := time.Now()
+	if err := ctx.Err(); err != nil {
+		return uuid.Nil, err
+	}
 	eb, err := newEnrichBuilder(s.opts.BlobDir)
 	if err != nil {
 		return uuid.Nil, err
@@ -475,6 +482,10 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 		eb.abort()
 		return uuid.Nil, fmt.Errorf("inmem: iterating enrichments for %s: %w", kind, iterErr)
 	}
+	if err := ctx.Err(); err != nil {
+		eb.abort()
+		return uuid.Nil, err
+	}
 	frag, err := eb.finish()
 	if err != nil {
 		eb.abort()
@@ -488,6 +499,10 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 		abortErr error
 	)
 	concurrency.WithLock(&s.mu, func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			abortErr = ctxErr
+			return
+		}
 		if s.closed {
 			abortErr = errors.New("inmem: store is closed")
 			return

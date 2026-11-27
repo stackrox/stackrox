@@ -537,6 +537,12 @@ func TestConcurrentGetAndUpdateNoRaceOrMunmapCrash(t *testing.T) {
 			}
 		}(r)
 	}
+	// Ensure readers drain even if a writer assertion fails early.
+	t.Cleanup(func() {
+		s.Close()
+		stop.Store(true)
+		wg.Wait()
+	})
 
 	// Writer rapidly swaps fragments (unmapping old blobs once readers drain).
 	for gen := 1; gen <= 40; gen++ {
@@ -820,4 +826,60 @@ func TestUpdateAbortCancelAndCircuitBreakerAndPostClose(t *testing.T) {
 	leftover, err = filepath.Glob(filepath.Join(dir, "inmem-*"))
 	require.NoError(t, err)
 	assert.Empty(t, leftover)
+}
+
+func TestCanceledEmptyUpdatePreservesLiveData(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newTestStore(t, map[string][]*claircore.Vulnerability{
+		"u1": {makeVuln("CVE-KEEP", "openssl", types.BinaryPackage, nil)},
+	})
+	_, err := s.UpdateEnrichments(ctx, "epss", "fp-e1", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-KEEP"}, Enrichment: []byte(`{"score":0.9}`)},
+	})
+	require.NoError(t, err)
+
+	cctx, cancel := context.WithCancel(ctx)
+	cancel()
+
+	// Empty iterators with a canceled context must fail and preserve live fragments.
+	_, err = s.UpdateVulnerabilities(cctx, "u1", "fp-canceled", nil)
+	require.ErrorIs(t, err, context.Canceled)
+	_, err = s.UpdateEnrichments(cctx, "epss", "fp-canceled", nil)
+	require.ErrorIs(t, err, context.Canceled)
+
+	got, err := s.Get(ctx, []*claircore.IndexRecord{makeRec("p1", "openssl", types.BinaryPackage, nil)}, datastore.GetOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"CVE-KEEP"}, vulnNames(got["p1"]))
+	gotE, err := s.GetEnrichment(ctx, "epss", []string{"CVE-KEEP"})
+	require.NoError(t, err)
+	require.Len(t, gotE, 1)
+	assert.Equal(t, `{"score":0.9}`, string(gotE[0].Enrichment))
+}
+
+func TestEnrichmentTagSliceIsolation(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newTestStore(t, nil)
+
+	// Simulate an iterator that reuses the same backing slice for Tags.
+	tagsBuf := []string{"CVE-1"}
+	_, err := s.UpdateEnrichmentsIter(ctx, "epss", "fp-1", func(yield func(*driver.EnrichmentRecord, error) bool) {
+		if !yield(&driver.EnrichmentRecord{Tags: tagsBuf, Enrichment: []byte(`{"n":1}`)}, nil) {
+			return
+		}
+		tagsBuf[0] = "CVE-2"
+		yield(&driver.EnrichmentRecord{Tags: tagsBuf, Enrichment: []byte(`{"n":2}`)}, nil)
+	})
+	require.NoError(t, err)
+
+	got1, err := s.GetEnrichment(ctx, "epss", []string{"CVE-1"})
+	require.NoError(t, err)
+	require.Len(t, got1, 1)
+	assert.Equal(t, []string{"CVE-1"}, got1[0].Tags)
+
+	// Mutating the returned Tags slice must not corrupt subsequent lookups.
+	got1[0].Tags[0] = "MUTATED"
+	got1Again, err := s.GetEnrichment(ctx, "epss", []string{"CVE-1"})
+	require.NoError(t, err)
+	require.Len(t, got1Again, 1)
+	assert.Equal(t, []string{"CVE-1"}, got1Again[0].Tags)
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sync/atomic"
 
 	"github.com/klauspost/compress/zstd"
@@ -328,7 +329,7 @@ func decodeEnrichRecord(e *enrichStore, i int) (driver.EnrichmentRecord, error) 
 	if err != nil {
 		return driver.EnrichmentRecord{}, fmt.Errorf("inmem: decoding enrichment record %d: %w", i, err)
 	}
-	return driver.EnrichmentRecord{Tags: rec.tags, Enrichment: b}, nil
+	return driver.EnrichmentRecord{Tags: slices.Clone(rec.tags), Enrichment: b}, nil
 }
 
 func (e *enrichStore) offHeapBytes() int64 {
@@ -384,12 +385,13 @@ func (b *enrichBuilder) add(tags []string, payload []byte) error {
 	if _, err := b.bw.Write(enc); err != nil {
 		return fmt.Errorf("inmem: writing enrichment blob: %w", err)
 	}
-	rec := enrichRec{tags: tags, off: b.off, ln: int32(len(enc))}
+	clonedTags := slices.Clone(tags)
+	rec := enrichRec{tags: clonedTags, off: b.off, ln: int32(len(enc))}
 	b.off += int64(len(enc))
 
 	idx := int32(len(b.recs))
 	b.recs = append(b.recs, rec)
-	for _, tag := range tags {
+	for _, tag := range clonedTags {
 		if _, exists := b.tagIdx[tag]; !exists {
 			b.tagIdx[tag] = idx
 		}

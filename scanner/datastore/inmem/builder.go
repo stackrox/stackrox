@@ -311,6 +311,9 @@ func bindCols(s *snapshot, cols *colsStore) {
 }
 
 func buildFragment(ctx context.Context, dir, updater string, fragID uint32, maxRows int, it datastore.VulnerabilityIter) (*snapshot, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	b, err := newSnapshotBuilder(dir, fragID, maxRows)
 	if err != nil {
 		return nil, err
@@ -334,6 +337,10 @@ func buildFragment(ctx context.Context, dir, updater string, fragID uint32, maxR
 	if iterErr != nil {
 		b.abort()
 		return nil, fmt.Errorf("inmem: iterating vulnerabilities for %s: %w", updater, iterErr)
+	}
+	if err := ctx.Err(); err != nil {
+		b.abort()
+		return nil, err
 	}
 	snap, err := b.finish()
 	if err != nil {

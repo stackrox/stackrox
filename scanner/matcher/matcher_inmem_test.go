@@ -280,6 +280,10 @@ func TestConcurrentLibvulnScanDuringLiveRefresh(t *testing.T) {
 			}
 		})
 	}
+	t.Cleanup(func() {
+		stop.Store(true)
+		wg.Wait()
+	})
 
 	for gen := 1; gen <= 25; gen++ {
 		seed(gen)
