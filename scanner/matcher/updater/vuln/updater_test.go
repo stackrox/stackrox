@@ -517,6 +517,58 @@ func TestFetch(t *testing.T) {
 	assert.Equal(t, time.Time{}, timestamp)
 }
 
+func TestFetchLastModified(t *testing.T) {
+	const lastModified = "Wed, 07 Oct 2026 00:00:00 GMT"
+	for name, tc := range map[string]struct {
+		header  string
+		wantErr bool
+	}{
+		"missing":   {wantErr: true},
+		"valid":     {header: lastModified},
+		"malformed": {header: "invalid", wantErr: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tc.header != "" {
+					w.Header().Set(lastModifiedHeader, tc.header)
+				}
+				_, _ = io.WriteString(w, "bundle content")
+			}))
+			t.Cleanup(srv.Close)
+			u := &Updater{
+				client:   srv.Client(),
+				urls:     []string{srv.URL},
+				root:     t.TempDir(),
+				retryMax: 1,
+			}
+			f, timestamp, err := u.fetch(test.Logging(t), time.Time{})
+			if tc.wantErr {
+				require.ErrorContains(t, err, "parsing Last-Modified header")
+				require.Nil(t, f)
+				require.True(t, timestamp.IsZero())
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, f)
+				t.Cleanup(func() {
+					_ = f.Close()
+					_ = os.Remove(f.Name())
+				})
+				content, err := io.ReadAll(f)
+				require.NoError(t, err)
+				require.Equal(t, "bundle content", string(content))
+				want, err := http.ParseTime(lastModified)
+				require.NoError(t, err)
+				assert.Equal(t, want, timestamp)
+				require.NoError(t, f.Close())
+				require.NoError(t, os.Remove(f.Name()))
+			}
+			files, err := os.ReadDir(u.root)
+			require.NoError(t, err)
+			require.Empty(t, files, "fetch failures and caller cleanup must not leave temporary files")
+		})
+	}
+}
+
 func TestFetchRCBundle(t *testing.T) {
 	var paths []string
 	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))

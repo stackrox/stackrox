@@ -440,3 +440,13 @@ func TestNormalizeStringList(t *testing.T) {
 		})
 	}
 }
+
+func TestCIMinimalVersionKeepsCentralEndpoint(t *testing.T) {
+	const version = "ci-minimal-0123456789abcdef"
+	t.Setenv("SCANNER_V4_MATCHER_VULNERABILITY_VERSION", version)
+	cfg, err := Load(strings.NewReader(`matcher:
+  vulnerabilities_url: https://central.test-namespace.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION
+`))
+	require.NoError(t, err)
+	assert.Equal(t, []string{"https://central.test-namespace.svc/api/extensions/scannerdefinitions?version=" + version}, cfg.Matcher.VulnerabilitiesURLs)
+}
