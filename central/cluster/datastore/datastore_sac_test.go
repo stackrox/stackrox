@@ -349,7 +349,7 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 
-	clusters, err := s.datastore.GetClustersForSAC(s.T().Context())
+	clusters, err := s.datastore.GetClustersForSAC()
 	s.NoError(err)
 	clusterNames := make([]string, 0, len(clusters))
 	for _, cluster := range clusters {

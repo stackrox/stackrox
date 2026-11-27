@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
@@ -29,7 +30,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error)
+	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 
@@ -101,23 +102,9 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 	return allowedNamespaces, nil
 }
 
-// GetNamespacesForSAC retrieves the namespace inventory used to evaluate access scopes.
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error) {
-	var namespaces []effectiveaccessscope.Namespace
-	err := b.store.Walk(sac.WithAllAccess(ctx), func(namespace *storage.NamespaceMetadata) error {
-		namespaces = append(namespaces, &storage.NamespaceMetadata{
-			Id:          namespace.GetId(),
-			Name:        namespace.GetName(),
-			ClusterId:   namespace.GetClusterId(),
-			ClusterName: namespace.GetClusterName(),
-			Labels:      namespace.GetLabels(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return namespaces, nil
+// GetNamespacesForSAC retrieves namespaces matching the request
+func (b *datastoreImpl) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
+	return storagetoeffectiveaccessscope.Namespaces(b.store.GetAllFromCacheForSAC()), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
