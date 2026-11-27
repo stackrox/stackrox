@@ -32,9 +32,11 @@ import (
 )
 
 const (
-	backupRetryTries         = 5
-	backupRetryInterval      = 10 * time.Second
-	centralReadinessMaxTries = 10
+	backupRetryTries    = 5
+	backupRetryInterval = 10 * time.Second
+	// Tolerates Central startup lag and transient S3-endpoint outages (ROX-39650).
+	// Worst case ~10 min: 30 tries x (10s call timeout + 10s sleep between).
+	centralReadinessMaxTries = 30
 )
 
 type backupTestCase struct {
