@@ -16,6 +16,10 @@ jobs:
   - e2e-qa-tests-ocp-fips-konflux
   - e2e-ui-tests-gke
   - e2e-ui-tests-gke-konflux
+  - local-roxctl-tests
+  - golangci-lint
+  - check-generated-files
+  - check-crd-compatibility
 
 rules:
   # Go has no frontend/doc code, so only an entirely-ui-or-docs diff is safe.
@@ -70,6 +74,21 @@ rules:
       - '^scripts/go-files-to-packages\.sh$'
       - '^go\.(mod|sum)$'
 
+  # roxctl tests cover the CLI tool and its dependencies.
+  - name: roxctl
+    jobs: [local-roxctl-tests]
+    run_if_changed:
+      - '^roxctl/'
+      - '^pkg/'
+      - '^proto/'
+      - '^generated/'
+      - '^Makefile$'
+      - '^make/'
+      - '^scripts/ci/jobs/roxctl_tests\.sh$'
+      - '^tests/roxctl/'
+      - '^tests/e2e/run\.sh$'
+      - '^go\.(mod|sum)$'
+
   # Backend e2e drives APIs and clusters, not the browser: same ui-or-docs
   # safe set as go-unit.
   - name: backend-e2e
@@ -103,3 +122,29 @@ rules:
       - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
       - '!^\.openshift-ci/dev-requirements\.txt$'
       - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
+
+  - name: lint
+    jobs: [golangci-lint]
+    run_if_changed:
+      - '\.go$'
+      - '^go\.(mod|sum)$'
+
+  - name: generated-files
+    jobs: [check-generated-files]
+    run_if_changed:
+      - '\.proto$'
+      - '\.go$'
+      - '^go\.(mod|sum)$'
+      - '^\.containerignore$'
+      - '^\.dockerignore$'
+      - '^scripts/style/shellcheck_skip\.txt$'
+      - '^operator/'
+
+  - name: crd-compatibility
+    jobs: [check-crd-compatibility]
+    run_if_changed:
+      - '^operator/'
+      - '^config-controller/'
+      - '\.proto$'
+      - '^\.github/workflows/scripts/crdify\.sh$'
+      - '^\.github/workflows/check-crd-compatibility\.yaml$'

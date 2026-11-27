@@ -34,8 +34,12 @@ jobs:
         ^.github/workflows/unit-tests.yaml$
         ^.github/actions/job-preamble/
 
+  ci-select:
+    uses: ./.github/workflows/ci-select.yaml
+
   go:
-    needs: detect-changes
+    needs: ci-select
+    if: needs.ci-select.outputs.go == 'run'
     strategy:
       fail-fast: false
       matrix:
@@ -109,7 +113,8 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
-    needs: detect-changes
+    needs: ci-select
+    if: needs.ci-select.outputs.go-postgres == 'run'
     strategy:
       fail-fast: false
       matrix:
@@ -205,8 +210,8 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: ci-select
+    if: needs.ci-select.outputs.go-bench == 'run'
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -382,8 +387,8 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: ci-select
+    if: needs.ci-select.outputs.local-roxctl-tests == 'run'
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -488,8 +493,8 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: ci-select
+    if: needs.ci-select.outputs.sensor-integration-tests == 'run'
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-24.04

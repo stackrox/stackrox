@@ -1,11 +1,46 @@
-name: CI selection plan (preview)
-
-# Builds ci-select and prints the run/skip plan for the example rules file,
-# fed by the changed paths from the existing detect-changes workflow. This
-# is a preview only: it gates nothing yet. Wiring the plan into the test
-# workflows happens once a real rule engine replaces the placeholder.
+name: CI selection plan
 
 on:
+  workflow_call:
+    outputs:
+      go:
+        value: ${{ jobs.plan.outputs.go }}
+      go-postgres:
+        value: ${{ jobs.plan.outputs.go-postgres }}
+      go-bench:
+        value: ${{ jobs.plan.outputs.go-bench }}
+      sensor-integration-tests:
+        value: ${{ jobs.plan.outputs.sensor-integration-tests }}
+      e2e-byodb-tests:
+        value: ${{ jobs.plan.outputs.e2e-byodb-tests }}
+      e2e-db-backup-restore-tests-gke:
+        value: ${{ jobs.plan.outputs.e2e-db-backup-restore-tests-gke }}
+      e2e-db-backup-restore-tests-gke-konflux:
+        value: ${{ jobs.plan.outputs.e2e-db-backup-restore-tests-gke-konflux }}
+      e2e-gke-upgrade-tests:
+        value: ${{ jobs.plan.outputs.e2e-gke-upgrade-tests }}
+      e2e-nongroovy-tests-gke:
+        value: ${{ jobs.plan.outputs.e2e-nongroovy-tests-gke }}
+      e2e-nongroovy-tests-gke-konflux:
+        value: ${{ jobs.plan.outputs.e2e-nongroovy-tests-gke-konflux }}
+      e2e-qa-tests-gke:
+        value: ${{ jobs.plan.outputs.e2e-qa-tests-gke }}
+      e2e-qa-tests-gke-konflux:
+        value: ${{ jobs.plan.outputs.e2e-qa-tests-gke-konflux }}
+      e2e-qa-tests-ocp-fips-konflux:
+        value: ${{ jobs.plan.outputs.e2e-qa-tests-ocp-fips-konflux }}
+      e2e-ui-tests-gke:
+        value: ${{ jobs.plan.outputs.e2e-ui-tests-gke }}
+      e2e-ui-tests-gke-konflux:
+        value: ${{ jobs.plan.outputs.e2e-ui-tests-gke-konflux }}
+      local-roxctl-tests:
+        value: ${{ jobs.plan.outputs.local-roxctl-tests }}
+      golangci-lint:
+        value: ${{ jobs.plan.outputs.golangci-lint }}
+      check-generated-files:
+        value: ${{ jobs.plan.outputs.check-generated-files }}
+      check-crd-compatibility:
+        value: ${{ jobs.plan.outputs.check-crd-compatibility }}
   pull_request:
   workflow_dispatch:
 
@@ -19,6 +54,26 @@ jobs:
   plan:
     needs: detect-changes
     runs-on: ubuntu-24.04
+    outputs:
+      go: ${{ steps.plan.outputs.go }}
+      go-postgres: ${{ steps.plan.outputs.go-postgres }}
+      go-bench: ${{ steps.plan.outputs.go-bench }}
+      sensor-integration-tests: ${{ steps.plan.outputs.sensor-integration-tests }}
+      e2e-byodb-tests: ${{ steps.plan.outputs.e2e-byodb-tests }}
+      e2e-db-backup-restore-tests-gke: ${{ steps.plan.outputs.e2e-db-backup-restore-tests-gke }}
+      e2e-db-backup-restore-tests-gke-konflux: ${{ steps.plan.outputs.e2e-db-backup-restore-tests-gke-konflux }}
+      e2e-gke-upgrade-tests: ${{ steps.plan.outputs.e2e-gke-upgrade-tests }}
+      e2e-nongroovy-tests-gke: ${{ steps.plan.outputs.e2e-nongroovy-tests-gke }}
+      e2e-nongroovy-tests-gke-konflux: ${{ steps.plan.outputs.e2e-nongroovy-tests-gke-konflux }}
+      e2e-qa-tests-gke: ${{ steps.plan.outputs.e2e-qa-tests-gke }}
+      e2e-qa-tests-gke-konflux: ${{ steps.plan.outputs.e2e-qa-tests-gke-konflux }}
+      e2e-qa-tests-ocp-fips-konflux: ${{ steps.plan.outputs.e2e-qa-tests-ocp-fips-konflux }}
+      e2e-ui-tests-gke: ${{ steps.plan.outputs.e2e-ui-tests-gke }}
+      e2e-ui-tests-gke-konflux: ${{ steps.plan.outputs.e2e-ui-tests-gke-konflux }}
+      local-roxctl-tests: ${{ steps.plan.outputs.local-roxctl-tests }}
+      golangci-lint: ${{ steps.plan.outputs.golangci-lint }}
+      check-generated-files: ${{ steps.plan.outputs.check-generated-files }}
+      check-crd-compatibility: ${{ steps.plan.outputs.check-crd-compatibility }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       - name: Build ci-select
@@ -29,5 +84,6 @@ jobs:
           # API failure, or 3000+ files).
           FILES: ${{ needs.detect-changes.outputs.files }}
         run: sed -e 's/^\^//' -e 's/\$$//' <<<"$FILES" > changed.txt
-      - name: Print CI selection plan
+      - name: Plan CI selection
+        id: plan
         run: ci/select/bin/ci-select plan --rules ci/test-selection-rules.yaml --files-file changed.txt

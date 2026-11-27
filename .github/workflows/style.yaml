@@ -23,9 +23,12 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  ci-select:
+    uses: ./.github/workflows/ci-select.yaml
+
   check-generated-files:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: ci-select
+    if: needs.ci-select.outputs.check-generated-files == 'run'
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-24.04
@@ -157,8 +160,8 @@ jobs:
         run: make style-slim
 
   golangci-lint:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: ci-select
+    if: needs.ci-select.outputs.golangci-lint == 'run'
     timeout-minutes: 240
     runs-on: ubuntu-24.04
     steps:
