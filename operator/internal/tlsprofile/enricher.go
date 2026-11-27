@@ -35,6 +35,7 @@ func (e *enricher) Enrich(_ context.Context, _ k8sutil.Object, vals chartutil.Va
 				"ROX_TLS_CIPHER_SUITES":         profile.CipherSuites,
 				"ROX_OPENSSL_TLS_CIPHER_SUITES": profile.OpenSSLCiphers,
 				"ROX_TLS_GROUPS":                profile.Groups,
+				"ROX_OPENSSL_TLS_GROUPS":        profile.OpenSSLGroups,
 			},
 		},
 	}

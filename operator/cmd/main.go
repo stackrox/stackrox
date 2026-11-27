@@ -308,14 +308,9 @@ func buildMetricsServerTLSOpts(setupLog logr.Logger, enableHTTP2 bool) (*tlsprof
 
 	var tlsOpts []func(c *tls.Config)
 	if clusterTLSProfile != nil {
+		// Filter a copy: clusterTLSProfile must stay unfiltered for the TLS profile watcher.
 		profileSpec := clusterTLSProfile.ProfileSpec
-		if libgocrypto.IsFIPSEnabled() {
-			approved := libgocrypto.FIPSApprovedTLSGroups(profileSpec.Groups)
-			if dropped := len(profileSpec.Groups) - len(approved); dropped > 0 {
-				setupLog.Info("FIPS mode: dropping non-FIPS-approved TLS groups from cluster profile", "dropped", dropped)
-			}
-			profileSpec.Groups = approved
-		}
+		profileSpec.Groups = tlsprofile.FIPSApprovedGroups(profileSpec.Groups, libgocrypto.IsFIPSEnabled())
 		tlsConfigFn, unsupported, err := openshiftTLS.NewTLSConfigFromProfile(profileSpec)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to build TLS config from cluster TLS profile")
