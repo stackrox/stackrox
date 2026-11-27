@@ -2222,7 +2222,13 @@ slack_workflow_failure() {
     local attachments=""
     local job_name job_url
     IFS=$'\n'
-    for job in $(gh run view --jq '.jobs[] | select(.conclusion == "failure")' --json 'jobs' -R "${repo}" "${run_id}" | jq -sc '.[]')
+    local failed_jobs
+    if [[ -n "${1:-}" ]]; then
+        failed_jobs="$(jq -c . "$1")"
+    else
+        failed_jobs="$(gh run view --jq '.jobs[] | select(.conclusion == "failure")' --json 'jobs' -R "${repo}" "${run_id}" | jq -c '.')"
+    fi
+    for job in ${failed_jobs}
     do
         job_name=$(jq -r <<<"${job}" '.name')
         job_url=$(jq -r <<<"${job}" '.url')

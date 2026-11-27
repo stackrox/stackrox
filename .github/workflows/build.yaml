@@ -1297,6 +1297,11 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-24.04
     needs:
+      - define-job-matrix
+      - pre-build-oss-notice
+      - push-main-manifests
+      - push-operator-manifests
+      - push-scanner-manifests
       - build-and-push-db
       - build-and-push-main
       - build-and-push-operator
@@ -1309,14 +1314,36 @@ jobs:
       - push-matching-collector-scanner
       - scan-go-binaries
     permissions:
+      contents: read
       actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Collect failed jobs for this attempt
+        id: collect
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+            --jq '.jobs[] | select(.conclusion == "failure") | {name, url: .html_url, steps: [.steps[]? | select(.conclusion == "failure") | .name]}' \
+            > "$RUNNER_TEMP/failed-jobs.jsonl"
 
       - name: Slack message
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: |
           source scripts/ci/lib.sh
-          slack_workflow_failure
+          slack_workflow_failure "$RUNNER_TEMP/failed-jobs.jsonl"
+
+      - name: Generate build failure report
+        id: report
+        if: ${{ !cancelled() && steps.collect.outcome == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: python3 scripts/ci/build-failure-report.py "$RUNNER_TEMP/failed-jobs.jsonl" "$RUNNER_TEMP/build-junit"
+
+      - name: Report build failure to Jira
+        if: ${{ !cancelled() && steps.report.outcome == 'success' }}
+        uses: stackrox/actions/test/junit2jira@55ceecfe93bd353dbca4682b12842ceca6301fa2 # ratchet:stackrox/actions/test/junit2jira@v1.0.50
+        with:
+          directory: ${{ runner.temp }}/build-junit
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-metrics: 'false'
