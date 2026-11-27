@@ -24,12 +24,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/klauspost/compress/zstd"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -60,6 +63,13 @@ var (
 		15 * time.Minute,
 		20 * time.Minute,
 	}
+
+	bundleTimestampGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ScannerSubsystem.String(),
+		Name:      "matcher_bundle_timestamp_seconds",
+		Help:      "Unix timestamp of the most recently loaded vulnerability bundle.",
+	})
 )
 
 // Opts represents Updater options.
@@ -548,6 +558,9 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 
 	_ = u.Initialized(ctx)
+	if !zipTime.IsZero() {
+		bundleTimestampGauge.Set(float64(zipTime.Unix()))
+	}
 
 	return true, errors.Join(bundleErrs...)
 }

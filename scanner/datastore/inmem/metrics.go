@@ -35,25 +35,10 @@ var (
 )
 
 func recordLiveMetrics(ls *liveSet) {
-	if ls == nil {
-		inmemRowsGauge.Set(0)
-		inmemFragmentsGauge.Set(0)
-		inmemOffHeapBytesGauge.WithLabelValues("cols").Set(0)
-		inmemOffHeapBytesGauge.WithLabelValues("display").Set(0)
-		inmemOffHeapBytesGauge.WithLabelValues("enrich").Set(0)
-		return
-	}
-	var colsBytes, dispBytes, enrichBytes int64
-	for _, f := range ls.vuln {
-		colsBytes += f.cols.offHeapBytes()
-		dispBytes += f.display.offHeapBytes()
-	}
-	for _, e := range ls.enrich {
-		enrichBytes += e.offHeapBytes()
-	}
-	inmemRowsGauge.Set(float64(ls.rows))
-	inmemFragmentsGauge.Set(float64(len(ls.vuln)))
-	inmemOffHeapBytesGauge.WithLabelValues("cols").Set(float64(colsBytes))
-	inmemOffHeapBytesGauge.WithLabelValues("display").Set(float64(dispBytes))
-	inmemOffHeapBytesGauge.WithLabelValues("enrich").Set(float64(enrichBytes))
+	st := liveStats(ls)
+	inmemRowsGauge.Set(float64(st.Rows))
+	inmemFragmentsGauge.Set(float64(st.Fragments))
+	inmemOffHeapBytesGauge.WithLabelValues("cols").Set(float64(st.ColsOffHeap))
+	inmemOffHeapBytesGauge.WithLabelValues("display").Set(float64(st.DisplayOffHeap))
+	inmemOffHeapBytesGauge.WithLabelValues("enrich").Set(float64(st.EnrichOffHeap))
 }

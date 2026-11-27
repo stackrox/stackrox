@@ -38,8 +38,8 @@ type snapshotBuilder struct {
 	row int32
 }
 
-func newSnapshotBuilder(dir string, fragID uint32, maxRows int) (*snapshotBuilder, error) {
-	disp, err := newDisplayBuilder(dir)
+func newSnapshotBuilder(dir string, fragID uint32, maxRows int, maxOffHeapBytes int64) (*snapshotBuilder, error) {
+	disp, err := newDisplayBuilder(dir, maxOffHeapBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -175,13 +175,25 @@ func (b *snapshotBuilder) add(v *claircore.Vulnerability) error {
 
 	// Match Postgres updatevulnerabilities.go: skip invalid aliases.
 	for _, a := range v.Aliases {
-		if a.Valid() {
-			s.aliasPostings = append(s.aliasPostings, b.aliasID(a))
+		if !a.Valid() {
+			continue
 		}
+		if len(s.aliasPostings) >= math.MaxInt32 {
+			return fmt.Errorf("inmem: alias postings overflow (%d)", math.MaxInt32)
+		}
+		aid, err := b.aliasID(a)
+		if err != nil {
+			return err
+		}
+		s.aliasPostings = append(s.aliasPostings, aid)
 	}
 	s.aliasStart = append(s.aliasStart, int32(len(s.aliasPostings)))
 	if v.Self.Valid() {
-		s.selfID = append(s.selfID, b.aliasID(v.Self))
+		sid, err := b.aliasID(v.Self)
+		if err != nil {
+			return err
+		}
+		s.selfID = append(s.selfID, sid)
 	} else {
 		s.selfID = append(s.selfID, noMatch)
 	}
@@ -191,14 +203,17 @@ func (b *snapshotBuilder) add(v *claircore.Vulnerability) error {
 	return nil
 }
 
-func (b *snapshotBuilder) aliasID(a claircore.Alias) int32 {
+func (b *snapshotBuilder) aliasID(a claircore.Alias) (int32, error) {
 	if id, ok := b.aliasIx[a]; ok {
-		return id
+		return id, nil
+	}
+	if len(b.s.aliasDict) >= math.MaxInt32 {
+		return 0, fmt.Errorf("inmem: alias dictionary overflow (%d)", math.MaxInt32)
 	}
 	id := int32(len(b.s.aliasDict))
 	b.aliasIx[a] = id
 	b.s.aliasDict = append(b.s.aliasDict, a)
-	return id
+	return id, nil
 }
 
 func (b *snapshotBuilder) distID(d *claircore.Distribution) (int16, error) {
@@ -310,11 +325,11 @@ func bindCols(s *snapshot, cols *colsStore) {
 	s.byNamePostings = cols.byNamePostings
 }
 
-func buildFragment(ctx context.Context, dir, updater string, fragID uint32, maxRows int, it datastore.VulnerabilityIter) (*snapshot, error) {
+func buildFragment(ctx context.Context, dir, updater string, fragID uint32, maxRows int, maxOffHeapBytes int64, it datastore.VulnerabilityIter) (*snapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	b, err := newSnapshotBuilder(dir, fragID, maxRows)
+	b, err := newSnapshotBuilder(dir, fragID, maxRows, maxOffHeapBytes)
 	if err != nil {
 		return nil, err
 	}

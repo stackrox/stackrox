@@ -171,8 +171,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 			blobDir = filepath.Join(os.TempDir(), "scanner-v4-inmem")
 		}
 		inmemStore, initErr := inmem.NewMatcherStore(inmem.Options{
-			BlobDir:      blobDir,
-			CleanBlobDir: true,
+			BlobDir:         blobDir,
+			CleanBlobDir:    true,
+			MaxRows:         cfg.InMemMaxRows,
+			MaxOffHeapBytes: cfg.InMemMaxOffHeapBytes,
 		})
 		if initErr != nil {
 			return nil, fmt.Errorf("initializing in-memory matcher store: %w", initErr)

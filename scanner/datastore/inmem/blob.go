@@ -165,10 +165,11 @@ func (d *displayStore) release() {
 // displayBuilder deduplicates and compresses display strings into a buffered
 // file as a fragment is built.
 type displayBuilder struct {
-	f    *os.File
-	bw   *bufio.Writer
-	path string
-	off  int64
+	f        *os.File
+	bw       *bufio.Writer
+	path     string
+	off      int64
+	maxBytes int64
 
 	descIx *intern[string]
 	linkIx *intern[string]
@@ -178,18 +179,19 @@ type displayBuilder struct {
 	descLen, linkLen, sevLen []int32
 }
 
-func newDisplayBuilder(dir string) (*displayBuilder, error) {
+func newDisplayBuilder(dir string, maxBytes int64) (*displayBuilder, error) {
 	f, err := os.CreateTemp(dir, displayBlobPattern)
 	if err != nil {
 		return nil, fmt.Errorf("inmem: creating display blob: %w", err)
 	}
 	return &displayBuilder{
-		f:      f,
-		bw:     bufio.NewWriterSize(f, blobWriteBufSize),
-		path:   f.Name(),
-		descIx: newIntern[string](),
-		linkIx: newIntern[string](),
-		sevIx:  newIntern[string](),
+		f:        f,
+		bw:       bufio.NewWriterSize(f, blobWriteBufSize),
+		path:     f.Name(),
+		maxBytes: maxBytes,
+		descIx:   newIntern[string](),
+		linkIx:   newIntern[string](),
+		sevIx:    newIntern[string](),
 	}, nil
 }
 
@@ -227,6 +229,9 @@ func (b *displayBuilder) appendStr(ix *intern[string], offs *[]int64, lens *[]in
 	enc := blobEnc.EncodeAll([]byte(s), nil)
 	if len(enc) > math.MaxInt32 {
 		return 0, fmt.Errorf("inmem: compressed display string exceeds int32 (%d bytes)", len(enc))
+	}
+	if b.maxBytes > 0 && b.off+int64(len(enc)) > b.maxBytes {
+		return 0, fmt.Errorf("inmem: display blob exceeds max_offheap_bytes limit (%d)", b.maxBytes)
 	}
 	if _, err := b.bw.Write(enc); err != nil {
 		return 0, fmt.Errorf("inmem: writing display blob: %w", err)
@@ -340,25 +345,27 @@ func (e *enrichStore) offHeapBytes() int64 {
 }
 
 type enrichBuilder struct {
-	f    *os.File
-	bw   *bufio.Writer
-	path string
-	off  int64
+	f        *os.File
+	bw       *bufio.Writer
+	path     string
+	off      int64
+	maxBytes int64
 
 	recs   []enrichRec
 	tagIdx map[string]int32
 }
 
-func newEnrichBuilder(dir string) (*enrichBuilder, error) {
+func newEnrichBuilder(dir string, maxBytes int64) (*enrichBuilder, error) {
 	f, err := os.CreateTemp(dir, enrichBlobPattern)
 	if err != nil {
 		return nil, fmt.Errorf("inmem: creating enrichment blob: %w", err)
 	}
 	return &enrichBuilder{
-		f:      f,
-		bw:     bufio.NewWriterSize(f, blobWriteBufSize),
-		path:   f.Name(),
-		tagIdx: map[string]int32{},
+		f:        f,
+		bw:       bufio.NewWriterSize(f, blobWriteBufSize),
+		path:     f.Name(),
+		maxBytes: maxBytes,
+		tagIdx:   map[string]int32{},
 	}, nil
 }
 
@@ -381,6 +388,9 @@ func (b *enrichBuilder) add(tags []string, payload []byte) error {
 	enc := blobEnc.EncodeAll(payload, nil)
 	if len(enc) > math.MaxInt32 {
 		return fmt.Errorf("inmem: compressed enrichment payload exceeds int32 (%d bytes)", len(enc))
+	}
+	if b.maxBytes > 0 && b.off+int64(len(enc)) > b.maxBytes {
+		return fmt.Errorf("inmem: enrichment blob exceeds max_offheap_bytes limit (%d)", b.maxBytes)
 	}
 	if _, err := b.bw.Write(enc); err != nil {
 		return fmt.Errorf("inmem: writing enrichment blob: %w", err)

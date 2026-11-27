@@ -40,27 +40,28 @@ func TestLocker(t *testing.T) {
 
 	// Verify Lock waits for done1 deterministically using a channel handshake.
 	started := make(chan struct{})
-	acquired := make(chan struct{})
+	acquired := make(chan error, 1)
 	go func() {
 		close(started)
 		lCtx3, done3 := l.Lock(ctx, "bundle-a")
-		require.NoError(t, lCtx3.Err())
-		close(acquired)
+		err := lCtx3.Err()
 		done3()
 		// Calling done twice must be safe.
 		done3()
+		acquired <- err
 	}()
 
 	<-started
 	select {
-	case <-acquired:
-		t.Fatal("Lock acquired before previous holder released")
+	case err := <-acquired:
+		t.Fatalf("Lock acquired before previous holder released (err=%v)", err)
 	default:
 	}
 
 	done1()
 	select {
-	case <-acquired:
+	case err := <-acquired:
+		require.NoError(t, err)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for Lock to acquire after release")
 	}

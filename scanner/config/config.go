@@ -194,6 +194,12 @@ type MatcherConfig struct {
 	// off-heap mmap column and blob files. When empty, defaults to
 	// filepath.Join(os.TempDir(), "scanner-v4-inmem").
 	InMemBlobDir string `mapstructure:"inmem_blob_dir"`
+	// InMemMaxRows, when positive, caps the total live vulnerability row count
+	// accepted by the in-memory matcher store. Zero disables the cap.
+	InMemMaxRows int `mapstructure:"inmem_max_rows"`
+	// InMemMaxOffHeapBytes, when positive, caps the total off-heap mmap file
+	// bytes accepted by the in-memory matcher store. Zero disables the cap.
+	InMemMaxOffHeapBytes int64 `mapstructure:"inmem_max_offheap_bytes"`
 	// IndexerAddr forces the matcher to retrieve index reports from a remote indexer
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
@@ -265,6 +271,12 @@ func (c *MatcherConfig) validate() error {
 		if err := c.Database.validate(); err != nil {
 			return fmt.Errorf("database: %w", err)
 		}
+	}
+	if c.InMemMaxRows < 0 {
+		return fmt.Errorf("inmem_max_rows: must be non-negative (got %d)", c.InMemMaxRows)
+	}
+	if c.InMemMaxOffHeapBytes < 0 {
+		return fmt.Errorf("inmem_max_offheap_bytes: must be non-negative (got %d)", c.InMemMaxOffHeapBytes)
 	}
 
 	c.RemoteIndexerEnabled = c.IndexerAddr != ""

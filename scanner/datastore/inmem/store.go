@@ -128,15 +128,11 @@ type Stats struct {
 	EnrichOffHeap  int64
 }
 
-// Stats reports footprint information for observability.
-func (s *Store) Stats() Stats {
+func liveStats(ls *liveSet) Stats {
 	var st Stats
-	ls := s.acquireLive()
 	if ls == nil {
 		return st
 	}
-	defer ls.release()
-
 	st.Fragments = len(ls.vuln)
 	for _, f := range ls.vuln {
 		st.Rows += f.nrows
@@ -147,6 +143,16 @@ func (s *Store) Stats() Stats {
 		st.EnrichOffHeap += e.offHeapBytes()
 	}
 	return st
+}
+
+// Stats reports footprint information for observability.
+func (s *Store) Stats() Stats {
+	ls := s.acquireLive()
+	if ls == nil {
+		return Stats{}
+	}
+	defer ls.release()
+	return liveStats(ls)
 }
 
 // Close detaches the live fragment set and releases the store's owner
@@ -389,7 +395,7 @@ func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, fp dr
 func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.VulnerabilityIter) (uuid.UUID, error) {
 	start := time.Now()
 	fragID := s.nextFragID.Add(1)
-	frag, err := buildFragment(ctx, s.opts.BlobDir, updater, fragID, s.opts.MaxRows, it)
+	frag, err := buildFragment(ctx, s.opts.BlobDir, updater, fragID, s.opts.MaxRows, s.opts.MaxOffHeapBytes, it)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -455,7 +461,7 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 	if err := ctx.Err(); err != nil {
 		return uuid.Nil, err
 	}
-	eb, err := newEnrichBuilder(s.opts.BlobDir)
+	eb, err := newEnrichBuilder(s.opts.BlobDir, s.opts.MaxOffHeapBytes)
 	if err != nil {
 		return uuid.Nil, err
 	}

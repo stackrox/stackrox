@@ -883,3 +883,66 @@ func TestEnrichmentTagSliceIsolation(t *testing.T) {
 	require.Len(t, got1Again, 1)
 	assert.Equal(t, []string{"CVE-1"}, got1Again[0].Tags)
 }
+
+func TestMaxOffHeapBytesAndVerKindOverflowAndCorruptZstd(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("streaming and total MaxOffHeapBytes limits", func(t *testing.T) {
+		dir := t.TempDir()
+		s, err := NewMatcherStore(Options{BlobDir: dir, MaxOffHeapBytes: 64})
+		require.NoError(t, err)
+		defer s.Close()
+
+		// Large incompressible-ish display string trips streaming displayBuilder cap.
+		_, err = s.UpdateVulnerabilities(ctx, "u-big", "fp-1", []*claircore.Vulnerability{
+			makeVuln("CVE-BIG", "pkg", types.BinaryPackage, func(v *claircore.Vulnerability) {
+				v.Description = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{}|;:',.<>?/`~"
+			}),
+		})
+		require.ErrorContains(t, err, "max_offheap_bytes")
+
+		// Large enrichment payload trips streaming enrichBuilder cap.
+		_, err = s.UpdateEnrichments(ctx, "epss", "fp-2", []driver.EnrichmentRecord{
+			{Tags: []string{"CVE-BIG"}, Enrichment: []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{}|;:',.<>?/`~")},
+		})
+		require.ErrorContains(t, err, "max_offheap_bytes")
+
+		leftover, err := filepath.Glob(filepath.Join(dir, "inmem-*"))
+		require.NoError(t, err)
+		assert.Empty(t, leftover, "rejected updates must clean up temp files")
+	})
+
+	t.Run("verKind dictionary overflow", func(t *testing.T) {
+		s, _ := newTestStore(t, nil)
+		vs := make([]*claircore.Vulnerability, 0, 129)
+		for i := range 129 {
+			kind := fmt.Sprintf("kind-%03d", i)
+			vs = append(vs, makeVuln(fmt.Sprintf("CVE-%d", i), "pkg", types.BinaryPackage, func(v *claircore.Vulnerability) {
+				v.Range = &claircore.Range{
+					Lower: claircore.Version{Kind: kind, V: [10]int32{1}},
+					Upper: claircore.Version{Kind: kind, V: [10]int32{2}},
+				}
+			}))
+		}
+		_, err := s.UpdateVulnerabilities(ctx, "u-overflow", "fp", vs)
+		require.ErrorContains(t, err, "verKind dictionary overflow")
+	})
+
+	t.Run("corrupted zstd decode errors propagate", func(t *testing.T) {
+		corruptDisp := &displayStore{
+			region:  &mmapRegion{handle: &mmapHandle{data: []byte("not-valid-zstd-bytes")}},
+			descOff: []int64{0},
+			descLen: []int32{20},
+		}
+		_, err := corruptDisp.description(0)
+		require.ErrorContains(t, err, "decoding display blob")
+
+		corruptEnrich := &enrichStore{
+			region: &mmapRegion{handle: &mmapHandle{data: []byte("not-valid-zstd-bytes")}},
+			recs:   []enrichRec{{tags: []string{"CVE-1"}, off: 0, ln: 20}},
+			tagIdx: map[string]int32{"CVE-1": 0},
+		}
+		_, err = corruptEnrich.GetEnrichment([]string{"CVE-1"})
+		require.ErrorContains(t, err, "decoding enrichment record")
+	})
+}
