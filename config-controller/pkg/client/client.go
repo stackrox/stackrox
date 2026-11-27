@@ -342,6 +342,16 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 func (c *client) DeletePolicy(ctx context.Context, policyID string) error {
 	log.Infof("Deleting policy %q", policyID)
 	policy := c.policyObjectCache[policyID]
+	if policy == nil {
+		// The policy is not in the cache, which means it no longer exists in Central.
+		// This happens when multiple SecurityPolicy CRs share the same policyName and
+		// thus resolve to the same policyId: once the first CR's deletion removes the
+		// underlying policy, any remaining CR referencing that same id would otherwise
+		// get stuck in Terminating forever. Deletion is idempotent, so a policy that is
+		// already gone is treated as a successful delete, allowing the finalizer to clear.
+		log.Infof("Policy %q not found in cache, assuming it is already deleted from Central", policyID)
+		return nil
+	}
 	if policy.GetSource() != storage.PolicySource_DECLARATIVE {
 		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", policy.GetName()))
 	}
