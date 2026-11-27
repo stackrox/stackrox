@@ -1079,6 +1079,29 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
+        *vm-scanning*)
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-main ${tag}
+release-central-db ${tag}
+release-collector ${tag}
+release-fact ${tag}
+release-scanner-v4 ${tag}
+release-scanner-v4-db ${tag}
+release-roxctl ${tag}
+END
+            else
+                cat >> "${image_list}" << END
+main ${tag}
+central-db ${tag}
+collector ${tag}
+fact ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
+            fi
+            ;;
         *nongroovy-e2e-tests*|*qa-e2e-tests*|*ui-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
