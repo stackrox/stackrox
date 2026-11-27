@@ -133,6 +133,7 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 	testRole2 := getTestRole2(mockCtrl)
 
 	// Requests that yield neither identity nor error
+	// These allow for the next extractor to provide identity information.
 	for name, tc := range map[string]struct {
 		requestInfo requestinfo.RequestInfo
 	}{
