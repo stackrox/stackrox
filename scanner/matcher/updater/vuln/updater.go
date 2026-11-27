@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"math/rand"
+	randv2 "math/rand/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -52,6 +53,8 @@ const (
 
 	defaultRetryMax   = 12
 	defaultRetryDelay = 10 * time.Second
+
+	alignedMaxJitter = 30 * time.Second
 )
 
 var (
@@ -98,6 +101,11 @@ type Opts struct {
 	// ImportConcurrency sets the maximum number of bundles imported in parallel
 	// per update cycle. Defaults to 1 (serial).
 	ImportConcurrency int
+
+	// AlignedPolling aligns post-initialization update ticks to wall-clock
+	// multiples of UpdateInterval plus a small 0-30s jitter, shrinking
+	// cross-replica skew for independent in-memory matcher pods.
+	AlignedPolling bool
 }
 
 // Updater represents a vulnerability updater.
@@ -132,6 +140,7 @@ type Updater struct {
 
 	vulnBundleAllowlist set.FrozenSet[string]
 	importConcurrency   int
+	alignedPolling      bool
 
 	distManager *distManager
 }
@@ -164,6 +173,7 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		retryMax:   opts.RetryMax,
 
 		importConcurrency: opts.ImportConcurrency,
+		alignedPolling:    opts.AlignedPolling,
 		distManager:       newDistManager(opts.Store),
 	}
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
@@ -351,14 +361,7 @@ func (u *Updater) Start() error {
 			}
 			slog.InfoContext(ctx, "completed update")
 
-			// Skip jitter when vulns have never been loaded, so that
-			// failed initial attempts (e.g. Central not yet ready at startup)
-			// retry quicker to get the matcher into a functional state.
-			interval := u.updateInterval + jitter()
-			if !u.Initialized(ctx) {
-				interval = u.updateInterval
-			}
-			timer.Reset(interval)
+			timer.Reset(u.nextUpdateDelay(time.Now(), u.Initialized(ctx)))
 		}
 	}
 }
@@ -464,6 +467,20 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
+	type batchPublisher interface {
+		BeginBatch()
+		EndBatch()
+	}
+	var endBatchOnce sync.Once
+	endBatch := func() {}
+	if bp, ok := u.store.(batchPublisher); ok {
+		bp.BeginBatch()
+		endBatch = func() {
+			endBatchOnce.Do(bp.EndBatch)
+		}
+		defer endBatch()
+	}
+
 	// Process each vulnerability bundle in the .zip archive.
 	// Errors are collected so all bundles are attempted even when some fail.
 	//
@@ -530,6 +547,9 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 			bundleErrs = append(bundleErrs, err)
 		}
 	}
+	// Atomically publish staged fragments (if the store supports batching)
+	// before refreshing known distributions.
+	endBatch()
 
 	// Skip GC and distribution update only when every bundle that was
 	// attempted returned an error (i.e., no partial success to build on).
@@ -708,6 +728,19 @@ func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp ti
 
 func jitter() time.Duration {
 	return jitterMinutes[random.Intn(len(jitterMinutes))]
+}
+
+func (u *Updater) nextUpdateDelay(now time.Time, initialized bool) time.Duration {
+	if !initialized {
+		// Skip jitter when vulns have never been loaded, so failed initial
+		// attempts (e.g. Central not yet ready at startup) retry quicker.
+		return u.updateInterval
+	}
+	if u.alignedPolling {
+		nextBoundary := now.Truncate(u.updateInterval).Add(u.updateInterval)
+		return nextBoundary.Sub(now) + randv2.N(alignedMaxJitter)
+	}
+	return u.updateInterval + jitter()
 }
 
 func closeResponse(resp *http.Response) {

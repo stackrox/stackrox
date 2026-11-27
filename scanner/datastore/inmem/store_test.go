@@ -946,3 +946,82 @@ func TestMaxOffHeapBytesAndVerKindOverflowAndCorruptZstd(t *testing.T) {
 		require.ErrorContains(t, err, "decoding enrichment record")
 	})
 }
+
+func TestBatchPublishAtomicityAndRelease(t *testing.T) {
+	ctx := context.Background()
+	s, dir := newTestStore(t, map[string][]*claircore.Vulnerability{
+		"upd-a": {makeVuln("CVE-A1", "pkg", types.BinaryPackage, nil)},
+		"upd-b": {makeVuln("CVE-B1", "pkg", types.BinaryPackage, nil)},
+	})
+	_, err := s.UpdateEnrichments(ctx, "epss", "fp-e1", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-A1"}, Enrichment: []byte(`{"v":1}`)},
+	})
+	require.NoError(t, err)
+
+	rec := []*claircore.IndexRecord{makeRec("p1", "pkg", types.BinaryPackage, nil)}
+
+	s.BeginBatch()
+	_, err = s.UpdateVulnerabilities(ctx, "upd-a", "fp-a2", []*claircore.Vulnerability{
+		makeVuln("CVE-A2", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+	_, err = s.UpdateEnrichments(ctx, "epss", "fp-e2", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-A2"}, Enrichment: []byte(`{"v":2}`)},
+	})
+	require.NoError(t, err)
+
+	// Mid-batch reads must still see the consistent V1 snapshot (no mixed V2-epss + V1-upd-b).
+	midV, err := s.Get(ctx, rec, datastore.GetOpts{})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"CVE-A1", "CVE-B1"}, vulnNames(midV["p1"]))
+	midE, err := s.GetEnrichment(ctx, "epss", []string{"CVE-A2"})
+	require.NoError(t, err)
+	assert.Empty(t, midE)
+
+	_, err = s.UpdateVulnerabilities(ctx, "upd-b", "fp-b2", []*claircore.Vulnerability{
+		makeVuln("CVE-B2", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+
+	// EndBatch atomically publishes all staged fragments and unlinks replaced files.
+	s.EndBatch()
+
+	afterV, err := s.Get(ctx, rec, datastore.GetOpts{})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"CVE-A2", "CVE-B2"}, vulnNames(afterV["p1"]))
+	afterE, err := s.GetEnrichment(ctx, "epss", []string{"CVE-A2"})
+	require.NoError(t, err)
+	require.Len(t, afterE, 1)
+	assert.Equal(t, `{"v":2}`, string(afterE[0].Enrichment))
+
+	// Replaced upd-a, upd-b, and epss old files must be unlinked immediately.
+	cols, err := filepath.Glob(filepath.Join(dir, "inmem-cols-*.col"))
+	require.NoError(t, err)
+	assert.Len(t, cols, 2)
+	eBlobs, err := filepath.Glob(filepath.Join(dir, "inmem-enrich-*.blob"))
+	require.NoError(t, err)
+	assert.Len(t, eBlobs, 1)
+}
+
+func TestCheckLimitsEmptyUpdaterKeyDoesNotBypassLimit(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	s, err := NewMatcherStore(Options{BlobDir: dir, MaxOffHeapBytes: 2048})
+	require.NoError(t, err)
+	defer s.Close()
+
+	// Store a vulnerability fragment under the empty updater key "".
+	_, err = s.UpdateVulnerabilities(ctx, "", "fp-v1", []*claircore.Vulnerability{
+		makeVuln("CVE-EMPTY-KEY", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+	used := s.Stats().ColsOffHeap + s.Stats().DisplayOffHeap
+
+	// Tighten MaxOffHeapBytes to just above current vuln bytes, then attempt an
+	// enrichment update — it must NOT skip the "" vulnerability fragment!
+	s.opts.MaxOffHeapBytes = used + 5
+	_, err = s.UpdateEnrichments(ctx, "epss", "fp-e1", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-1"}, Enrichment: []byte("payload-exceeding-5-bytes-easily")},
+	})
+	require.ErrorContains(t, err, "max_offheap_bytes")
+}

@@ -92,6 +92,8 @@ type Store struct {
 	// mu serializes fragment updates, operation bookkeeping, and Close.
 	mu          sync.Mutex
 	closed      bool
+	batchDepth  int
+	batchDirty  bool
 	vulnFrags   map[string]*snapshot
 	enrichFrags map[string]*enrichStore
 	ops         map[driver.UpdateKind]map[string]driver.UpdateOperation
@@ -246,14 +248,54 @@ func (s *Store) publishLocked() *liveSet {
 	return old
 }
 
+// BeginBatch defers liveSet publication across subsequent Update* and
+// DeleteUpdateOperations calls until the matching EndBatch call completes.
+// Calls may be nested; the staged fragments are published atomically when the
+// outermost batch ends.
+func (s *Store) BeginBatch() {
+	concurrency.WithLock(&s.mu, func() {
+		s.batchDepth++
+	})
+}
+
+// EndBatch concludes a BeginBatch scope and, when the outermost batch finishes
+// with staged changes, atomically publishes a single new liveSet and releases
+// the previous one.
+func (s *Store) EndBatch() {
+	var oldLive *liveSet
+	concurrency.WithLock(&s.mu, func() {
+		if s.batchDepth == 0 {
+			return
+		}
+		s.batchDepth--
+		if s.batchDepth == 0 && s.batchDirty && !s.closed {
+			s.batchDirty = false
+			oldLive = s.publishLocked()
+		}
+	})
+	if oldLive != nil {
+		oldLive.release()
+	}
+}
+
+// maybePublishLocked publishes immediately when outside a batch, or marks the
+// batch dirty so EndBatch publishes once atomically. Caller must hold s.mu.
+func (s *Store) maybePublishLocked() *liveSet {
+	if s.batchDepth > 0 {
+		s.batchDirty = true
+		return nil
+	}
+	return s.publishLocked()
+}
+
 // checkLimitsLocked validates that replacing updater/kind with candidate rows
 // and off-heap bytes would not exceed configured circuit-breaker ceilings.
 // Caller must hold s.mu.
-func (s *Store) checkLimitsLocked(replaceVuln string, newRows int, replaceEnrich string, newOffHeap int64) error {
+func (s *Store) checkLimitsLocked(kind driver.UpdateKind, replaceKey string, newRows int, newOffHeap int64) error {
 	if s.opts.MaxRows > 0 {
 		totalRows := newRows
 		for u, f := range s.vulnFrags {
-			if u == replaceVuln {
+			if kind == driver.VulnerabilityKind && u == replaceKey {
 				continue
 			}
 			totalRows += f.nrows
@@ -265,13 +307,13 @@ func (s *Store) checkLimitsLocked(replaceVuln string, newRows int, replaceEnrich
 	if s.opts.MaxOffHeapBytes > 0 {
 		totalBytes := newOffHeap
 		for u, f := range s.vulnFrags {
-			if u == replaceVuln {
+			if kind == driver.VulnerabilityKind && u == replaceKey {
 				continue
 			}
 			totalBytes += f.cols.offHeapBytes() + f.display.offHeapBytes()
 		}
 		for k, e := range s.enrichFrags {
-			if k == replaceEnrich {
+			if kind == driver.EnrichmentKind && k == replaceKey {
 				continue
 			}
 			totalBytes += e.offHeapBytes()
@@ -416,7 +458,7 @@ func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, f
 			return
 		}
 		newOffHeap := frag.cols.offHeapBytes() + frag.display.offHeapBytes()
-		if err := s.checkLimitsLocked(updater, frag.nrows, "", newOffHeap); err != nil {
+		if err := s.checkLimitsLocked(driver.VulnerabilityKind, updater, frag.nrows, newOffHeap); err != nil {
 			abortErr = err
 			return
 		}
@@ -425,7 +467,7 @@ func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, f
 		s.ops[driver.VulnerabilityKind][updater] = driver.UpdateOperation{
 			Ref: ref, Updater: updater, Fingerprint: fp, Kind: driver.VulnerabilityKind, Date: time.Now(),
 		}
-		oldLive = s.publishLocked()
+		oldLive = s.maybePublishLocked()
 	})
 	if abortErr != nil {
 		frag.release()
@@ -513,7 +555,7 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 			abortErr = errors.New("inmem: store is closed")
 			return
 		}
-		if err := s.checkLimitsLocked("", 0, kind, frag.offHeapBytes()); err != nil {
+		if err := s.checkLimitsLocked(driver.EnrichmentKind, kind, 0, frag.offHeapBytes()); err != nil {
 			abortErr = err
 			return
 		}
@@ -522,7 +564,7 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 		s.ops[driver.EnrichmentKind][kind] = driver.UpdateOperation{
 			Ref: ref, Updater: kind, Fingerprint: fp, Kind: driver.EnrichmentKind, Date: time.Now(),
 		}
-		oldLive = s.publishLocked()
+		oldLive = s.maybePublishLocked()
 	})
 	if abortErr != nil {
 		frag.release()
@@ -638,7 +680,7 @@ func (s *Store) DeleteUpdateOperations(_ context.Context, refs ...uuid.UUID) (in
 			}
 		}
 		if n > 0 {
-			oldLive = s.publishLocked()
+			oldLive = s.maybePublishLocked()
 		}
 	})
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -271,8 +272,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		Transport: transport,
 	}
 	importConcurrency := 1
+	alignedPolling := false
 	if cfg.Store == config.MatcherStoreInMem {
-		importConcurrency = defaultInMemImportConcurrency
+		importConcurrency = min(defaultInMemImportConcurrency, max(1, runtime.GOMAXPROCS(0)))
+		alignedPolling = true
 	}
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:               store,
@@ -282,6 +285,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		URLs:                cfg.VulnerabilitiesURLs,
 		VulnBundleAllowlist: cfg.VulnBundleAllowlist,
 		ImportConcurrency:   importConcurrency,
+		AlignedPolling:      alignedPolling,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)

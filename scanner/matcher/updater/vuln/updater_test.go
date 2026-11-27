@@ -1249,3 +1249,27 @@ func TestRunMultiBundleUpdate_CancelStopsWorkers(t *testing.T) {
 	err := u.Update(ctx)
 	require.ErrorIs(t, err, context.Canceled)
 }
+
+func TestNextUpdateDelay_AlignedPolling(t *testing.T) {
+	u := &Updater{
+		updateInterval: 5 * time.Minute,
+		alignedPolling: true,
+	}
+
+	// Uninitialized retries immediately after updateInterval without jitter.
+	assert.Equal(t, 5*time.Minute, u.nextUpdateDelay(time.Date(2026, 11, 27, 12, 1, 15, 0, time.UTC), false))
+
+	// Two replicas finishing at different times inside the same 5-minute window
+	// both land in [12:05:00, 12:05:30).
+	t1 := time.Date(2026, 11, 27, 12, 1, 15, 0, time.UTC)
+	t2 := time.Date(2026, 11, 27, 12, 3, 45, 0, time.UTC)
+	boundary := time.Date(2026, 11, 27, 12, 5, 0, 0, time.UTC)
+	for range 20 {
+		target1 := t1.Add(u.nextUpdateDelay(t1, true))
+		target2 := t2.Add(u.nextUpdateDelay(t2, true))
+		assert.False(t, target1.Before(boundary))
+		assert.True(t, target1.Before(boundary.Add(alignedMaxJitter)))
+		assert.False(t, target2.Before(boundary))
+		assert.True(t, target2.Before(boundary.Add(alignedMaxJitter)))
+	}
+}
