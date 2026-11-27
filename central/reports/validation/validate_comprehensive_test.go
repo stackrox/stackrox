@@ -837,7 +837,7 @@ func TestValidateAndGenerateViewBasedReportRequest(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := validator.ValidateAndGenerateViewBasedReportRequest(tc.req, identity)
+			result, err := validator.ValidateAndGenerateViewBasedReportRequest(t.Context(), tc.req, identity)
 			if tc.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.errContains)
