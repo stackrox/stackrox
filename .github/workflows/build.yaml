@@ -1297,8 +1297,6 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-24.04
     needs:
-      - define-job-matrix
-      - pre-build-oss-notice
       - push-main-manifests
       - push-operator-manifests
       - push-scanner-manifests
