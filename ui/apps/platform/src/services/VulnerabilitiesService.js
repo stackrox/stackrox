@@ -14,17 +14,14 @@ function getBaseCveUrl(cveType) {
  *
  * @param {string} cveType The type of CVEs to suppress
  * @param {string[]} cveNames CVE names to suppress
- * @param {string} duration CVE suppress duration, as a protobuf duration, or "0" for an indefinite snooze
+ * @param {string} duration CVE suppress duration, as a protobuf duration, or "0s" for an indefinite snooze
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function suppressVulns(cveType, cveNames, duration = '0') {
+export function suppressVulns(cveType, cveNames, duration = '0s') {
     const baseUrl = getBaseCveUrl(cveType);
     return baseUrl
         ? axios
-              .patch(`${baseUrl}/suppress`, {
-                  cves: cveNames,
-                  duration: duration === '0' ? '0s' : duration,
-              })
+              .patch(`${baseUrl}/suppress`, { cves: cveNames, duration })
               .then((response) => response.data)
         : Promise.resolve({});
 }

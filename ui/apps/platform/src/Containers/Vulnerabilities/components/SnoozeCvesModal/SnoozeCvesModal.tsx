@@ -37,7 +37,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
     const { values, setFieldValue, submitForm, isSubmitting } = useFormik({
         initialValues: {
             cves: cves.map(({ cve }) => cve),
-            duration: '0',
+            duration: durations.UNSET,
         },
         onSubmit: (formValues: FormValues, helpers: FormikHelpers<FormValues>) => {
             const callbackOptions = {

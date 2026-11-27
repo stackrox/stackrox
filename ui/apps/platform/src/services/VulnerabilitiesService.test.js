@@ -1,4 +1,5 @@
 import entityTypes from 'constants/entityTypes';
+import { durations } from 'constants/timeWindows';
 import axios from './instance';
 import { suppressVulns } from './VulnerabilitiesService';
 
@@ -10,7 +11,7 @@ beforeEach(() => {
 
 it.each([
     ['default', [], '0s'],
-    ['indefinite', ['0'], '0s'],
+    ['indefinite', [durations.UNSET], '0s'],
     ['finite', ['86400s'], '86400s'],
 ])('sends the %s node snooze duration', async (_name, args, expected) => {
     const cves = ['CVE-2026-1234'];

@@ -21,5 +21,5 @@ export const durations = {
     DAY: '86400s', // 24 * 3600 seconds
     WEEK: '604800s', // 7 * 24 * 3600 seconds
     MONTH: '2592000s', // 30 * 24 * 3600 seconds
-    UNSET: '0',
+    UNSET: '0s',
 } as const;
