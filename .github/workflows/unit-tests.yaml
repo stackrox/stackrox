@@ -445,6 +445,15 @@ jobs:
     - name: Install Bats
       uses: ./.github/actions/setup-bats
 
+    # TODO(ROX-33131): Remove this guard with the scanner-v4-install tests.
+    - name: Check scanner-v4-install test case count
+      run: |
+        actual=$(bats --count tests/e2e/run-scanner-v4-install.bats)
+        if [[ "$actual" != 3 ]]; then
+          echo "Expected 3 scanner-v4-install tests, found $actual. Add new cases to operator e2e (ROX-33131)." >&2
+          exit 1
+        fi
+
     - name: Shell Unit Tests
       run: make shell-unit-tests
 
