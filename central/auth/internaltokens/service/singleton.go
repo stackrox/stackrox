@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/jwt"
+	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -36,11 +38,17 @@ func Singleton() Service {
 }
 
 func getTokenSource() tokens.Source {
+	options := []tokenbased.TokenAuthProviderOption{
+		tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
+	}
+	if features.ACMAccessControlDelegation.Enabled() {
+		options = append(options, tokenbased.WithRoleMapper(mapper.NewInternalRoleBasedMapper()))
+	}
 	return tokenbased.NewTokenAuthProvider(
 		internalTokenId,
 		internalToken,
 		internalToken,
-		tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
+		options...,
 	)
 }
 

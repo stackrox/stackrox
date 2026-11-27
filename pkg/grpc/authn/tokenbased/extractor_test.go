@@ -15,6 +15,7 @@ import (
 	permissionMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -365,12 +366,17 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 			fixtureconsts.Cluster2: []string{namespaceA},
 		},
 	}
+	// The JSON serialization of internalRole, as expected in the "internalRoles" attribute.
+	serializedInternalRole := `{"permissions":{"read":["Deployment"]},"name":"test internal role","clusters":{` +
+		`"` + fixtureconsts.Cluster1 + `":["*"],` +
+		`"` + fixtureconsts.Cluster2 + `":["` + namespaceA + `"]}}`
 
 	// Success paths
 	for name, tc := range map[string]struct {
-		request    requestinfo.RequestInfo
-		setupMocks func(*testExtractor)
-		identity   *testIdentity
+		request                          requestinfo.RequestInfo
+		setupMocks                       func(*testExtractor)
+		identity                         *testIdentity
+		enableACMAccessControlDelegation bool
 	}{
 		"Valid token with role names": {
 			request: makeRequestInfoWithBearerToken("valid-token-with-role-names"),
@@ -540,8 +546,41 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				authProvider: mockAuthProvider,
 			},
 		},
+		"Valid token with internal role and access control delegation enabled": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-internal-role-acm-delegation"),
+			setupMocks: func(te *testExtractor) {
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims:  buildInternalRoleClaims(testName, testSubject, testID, internalRole, testExpiresAt),
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-internal-role-acm-delegation").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			enableACMAccessControlDelegation: true,
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  map[string]storage.Access{deploymentResource: storage.Access_READ_ACCESS},
+				roles:        []permissions.ResolvedRole{internalRole},
+				user:         buildUserInfo(emptyUserName, testSubject, []permissions.ResolvedRole{internalRole}),
+				attributes: map[string][]string{
+					"role":          {"test internal role"},
+					"name":          {testName},
+					"internalRoles": {serializedInternalRole},
+				},
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
 	} {
 		t.Run(name, func(it *testing.T) {
+			if tc.enableACMAccessControlDelegation {
+				it.Setenv(features.ACMAccessControlDelegation.EnvVar(), "true")
+			}
 			te := getTestExtractor(it)
 			defer te.mockCtrl.Finish()
 			if tc.setupMocks != nil {
