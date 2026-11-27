@@ -3,6 +3,8 @@ FROM registry.redhat.io/rhel9/postgresql-${PG_VERSION}:latest@sha256:96c837685c0
 
 USER root
 
+RUN update-crypto-policies --set DEFAULT:PQ
+
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 

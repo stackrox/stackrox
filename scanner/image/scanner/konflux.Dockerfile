@@ -29,6 +29,7 @@ RUN dnf install -y \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
     ca-certificates \
+    crypto-policies-scripts \
     gzip \
     less \
     openssl \
@@ -85,6 +86,8 @@ RUN \
     chown -R 65534:65534 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source
 
 COPY LICENSE /licenses/LICENSE
+
+RUN update-crypto-policies --set DEFAULT:PQ
 
 # This is equivalent to nobody:nobody.
 USER 65534:65534
