@@ -163,89 +163,6 @@ func TestNewTokenExchanger(t *testing.T) {
 	oidcDiscoveryServer := newOIDCDiscoveryServer(t)
 
 	cases := map[string]struct {
-		config               *storage.AuthMachineToMachineConfig
-		prepareIssuerFactory func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory)
-		expectedError        error
-		expectedErrorText    string
-	}{
-		"Valid config (generic) successfully creates an exchanger": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, ""),
-			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
-			},
-		},
-		"Valid config (k8s service account) successfully creates an exchanger": {
-			config: newM2MConfig(
-				oidcDiscoveryServer.URL,
-				oneHour,
-				storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-				"",
-			),
-			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
-			},
-		},
-		"Invalid token expiration duration is rejected": {
-			config: newM2MConfig(
-				oidcDiscoveryServer.URL,
-				notADuration,
-				storage.AuthMachineToMachineConfig_GENERIC,
-				"",
-			),
-			expectedError:     errox.InvalidArgs,
-			expectedErrorText: "parsing token expiration duration",
-		},
-		"Issuer without valid OIDC discovery endpoint is rejected": {
-			config: newM2MConfig(
-				oidcDiscoveryServer.URL+"/nonexistent",
-				oneHour,
-				storage.AuthMachineToMachineConfig_GENERIC,
-				"",
-			),
-			expectedErrorText: "creating OIDC provider for issuer",
-		},
-		"Issuer factory failure is propagated": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, ""),
-			prepareIssuerFactory: func(_ *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
-					Return(nil, assert.AnError)
-			},
-			expectedErrorText: "creating token issuer",
-		},
-	}
-
-	for name, c := range cases {
-		t.Run(name, func(it *testing.T) {
-			ctrl := gomock.NewController(t)
-			issuerFactory := tokensMocks.NewMockIssuerFactory(ctrl)
-			if c.prepareIssuerFactory != nil {
-				c.prepareIssuerFactory(t, issuerFactory)
-			}
-			roleDS := roleMocks.NewMockDataStore(ctrl)
-
-			exchanger, err := newTokenExchanger(it.Context(), c.config, roleDS, issuerFactory)
-
-			expectError := c.expectedError != nil || c.expectedErrorText != ""
-			if c.expectedError != nil {
-				assert.ErrorIs(it, err, c.expectedError)
-			}
-			if c.expectedErrorText != "" {
-				assert.ErrorContains(it, err, c.expectedErrorText)
-			}
-			if !expectError {
-				assert.NoError(it, err)
-				assert.NotNil(it, exchanger)
-				protoassert.Equal(it, c.config, exchanger.Config())
-				assert.NotNil(it, exchanger.Provider())
-			}
-		})
-	}
-}
-
-func TestNewMultiConfigTokenExchanger(t *testing.T) {
-	oidcDiscoveryServer := newOIDCDiscoveryServer(t)
-
-	cases := map[string]struct {
 		configs              []*storage.AuthMachineToMachineConfig
 		prepareIssuerFactory func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory)
 		expectedTTL          time.Duration
@@ -312,7 +229,7 @@ func TestNewMultiConfigTokenExchanger(t *testing.T) {
 			}
 			roleDS := roleMocks.NewMockDataStore(ctrl)
 
-			exchanger, err := newMultiConfigTokenExchanger(it.Context(), c.configs, roleDS, issuerFactory)
+			exchanger, err := newTokenExchanger(it.Context(), c.configs, roleDS, issuerFactory)
 
 			expectError := c.expectedError != nil || len(c.expectedErrorTexts) > 0
 			if c.expectedError != nil {

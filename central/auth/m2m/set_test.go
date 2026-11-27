@@ -62,7 +62,7 @@ func (f *testExchangerFactory) SetOutputs(exchanger TokenExchanger, expectedErro
 
 func (f *testExchangerFactory) CreateExchanger(
 	_ context.Context,
-	_ *storage.AuthMachineToMachineConfig,
+	_ []*storage.AuthMachineToMachineConfig,
 	ds roleDataStore.DataStore,
 	_ tokens.IssuerFactory,
 ) (TokenExchanger, error) {
@@ -71,7 +71,7 @@ func (f *testExchangerFactory) CreateExchanger(
 	return f.exchanger, f.factoryError
 }
 
-func TestUpsertTokenExchanger(t *testing.T) {
+func TestUpsertConfigForIssuer(t *testing.T) {
 	const issuer = "https://issuer.stackrox.example.com"
 
 	newM2MConfig := func() *storage.AuthMachineToMachineConfig {
@@ -85,7 +85,11 @@ func TestUpsertTokenExchanger(t *testing.T) {
 
 	globalMockCtrl := gomock.NewController(t)
 	authProvider := authProviderMocks.NewMockProvider(globalMockCtrl)
+	authProvider.EXPECT().ID().AnyTimes().Return("previous")
 	preExistingExchanger := &fakeTokenExchanger{provider: authProvider}
+
+	newAuthProvider := authProviderMocks.NewMockProvider(globalMockCtrl)
+	newAuthProvider.EXPECT().ID().AnyTimes().Return("current")
 
 	cases := map[string]struct {
 		previousExchanger       TokenExchanger
@@ -95,20 +99,35 @@ func TestUpsertTokenExchanger(t *testing.T) {
 		expectedErrorText       string
 		expectExistingRetained  bool
 		expectNewExchanger      bool
+		setupIssuerFactory      func(factory *tokensMocks.MockIssuerFactory)
 	}{
 		"Exchanger for a new config is added to the set": {
 			previousExchanger:  nil,
 			expectNewExchanger: true,
+			setupIssuerFactory: func(factory *tokensMocks.MockIssuerFactory) {
+				// new provider
+				factory.EXPECT().RegisterSource(gomock.Any()).Return(nil)
+			},
 		},
 		"Exchanger for an existing config is replaced": {
 			previousExchanger:  preExistingExchanger,
 			expectNewExchanger: true,
+			setupIssuerFactory: func(factory *tokensMocks.MockIssuerFactory) {
+				// old provider
+				factory.EXPECT().RegisterSource(gomock.Any()).Return(nil)
+				// new provider
+				factory.EXPECT().RegisterSource(gomock.Any()).Return(nil)
+			},
 		},
 		"Failure to unregister the existing exchanger is propagated": {
 			previousExchanger:       preExistingExchanger,
 			unregisterExistingError: assert.AnError,
 			expectedErrorText:       "unregistering source for issuer",
 			expectExistingRetained:  true,
+			setupIssuerFactory: func(factory *tokensMocks.MockIssuerFactory) {
+				// old provider
+				factory.EXPECT().RegisterSource(gomock.Any()).Return(nil)
+			},
 		},
 		"Failure to create the token exchanger is propagated": {
 			previousExchanger: nil,
@@ -129,19 +148,23 @@ func TestUpsertTokenExchanger(t *testing.T) {
 			}
 			set := TokenExchangerSetForTesting(it, roleDS, issuerFactory, exchangerFactory.CreateExchanger)
 
+			if c.setupIssuerFactory != nil {
+				c.setupIssuerFactory(issuerFactory)
+			}
+
 			if c.previousExchanger != nil {
 				exchangerFactory.SetOutputs(c.previousExchanger, nil)
-				require.NoError(it, set.UpsertTokenExchanger(context.Background(), newM2MConfig()))
+				require.NoError(it, set.UpsertConfigForIssuer(it.Context(), issuer, newM2MConfig()))
 
 				// Replacing the exchanger first unregisters the source of the existing one.
 				issuerFactory.EXPECT().UnregisterSource(c.previousExchanger.Provider()).
 					Return(c.unregisterExistingError)
 			}
 
-			newExchanger := &fakeTokenExchanger{provider: authProviderMocks.NewMockProvider(ctrl)}
+			newExchanger := &fakeTokenExchanger{provider: newAuthProvider}
 			exchangerFactory.SetOutputs(newExchanger, c.factoryError)
 
-			err := set.UpsertTokenExchanger(context.Background(), newM2MConfig())
+			err := set.UpsertConfigForIssuer(it.Context(), issuer, newM2MConfig())
 
 			if c.expectedErrorText != "" {
 				assert.ErrorContains(it, err, c.expectedErrorText)

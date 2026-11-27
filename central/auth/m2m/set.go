@@ -153,7 +153,7 @@ func (t *tokenExchangerSet) UpsertConfigForIssuer(
 	newExchangerConfigs = append(newExchangerConfigs, config)
 	updatedExchanger, err := t.tokenExchangerFactory(ctx, newExchangerConfigs, t.roleDS, t.issuerFactory)
 	if err != nil {
-		return err
+		return pkgErrors.Wrapf(err, "creating token exchanger for issuer %s", config.GetIssuer())
 	}
 	fmt.Println(issuer)
 	fmt.Printf("Updated exchanger %p\n", updatedExchanger)
