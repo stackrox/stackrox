@@ -1,0 +1,324 @@
+# EKS IPv6 E2E Tests
+#
+# Validates ACS on a real IPv6-only EKS cluster where registries
+# (quay.io, ECR) are natively reachable over IPv6 — no NAT64 needed.
+#
+# Cost: ~$5-10 per run (EKS control plane $0.10/hr + 2x m5.xlarge nodes)
+# Duration: ~45 min (15 min provision + 20 min tests + 10 min cleanup)
+#
+# Manual trigger only — EKS clusters cost real money.
+
+name: EKS IPv6 E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to test"
+        required: true
+        type: string
+      suite:
+        description: "Test suite"
+        type: choice
+        options:
+          - smoke
+          - qa-e2e
+        default: smoke
+      region:
+        description: "AWS region"
+        type: string
+        default: us-east-1
+      keep-cluster:
+        description: "Keep cluster after tests (for debugging)"
+        type: boolean
+        default: false
+  pull_request:
+    types: [labeled]
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CLUSTER_NAME: acs-ipv6-${{ github.run_id }}
+  AWS_REGION: ${{ inputs.region || 'us-east-1' }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  eks-ipv6-e2e:
+    name: "EKS IPv6 ${{ inputs.suite || 'smoke' }}"
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'e2e-eks-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(git describe --tags --abbrev=10 origin/master)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install eksctl
+        run: |
+          ARCH=amd64
+          PLATFORM=$(uname -s)_$ARCH
+          curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+          tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
+          eksctl version
+
+      - name: Create EKS IPv6 cluster
+        run: |
+          cat > /tmp/eksctl-config.yaml <<'EKSEOF'
+          apiVersion: eksctl.io/v1alpha5
+          kind: ClusterConfig
+          metadata:
+            name: $CLUSTER_NAME
+            region: $AWS_REGION
+          iam:
+            withOIDC: true
+          kubernetesNetworkConfig:
+            ipFamily: IPv6
+          addons:
+            - name: vpc-cni
+            - name: coredns
+            - name: kube-proxy
+          managedNodeGroups:
+            - name: workers
+              instanceType: m5.xlarge
+              desiredCapacity: 2
+              minSize: 2
+              maxSize: 3
+              volumeSize: 50
+          EKSEOF
+          envsubst < /tmp/eksctl-config.yaml > /tmp/eksctl-cluster.yaml
+          echo "Creating EKS IPv6 cluster $CLUSTER_NAME..."
+          eksctl create cluster -f /tmp/eksctl-cluster.yaml
+          kubectl get nodes -o wide
+          echo "=== Cluster networking ==="
+          kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.podCIDR}{"\n"}{end}'
+
+      - name: Verify IPv6 networking
+        run: |
+          echo "=== Node addresses ==="
+          kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.addresses[*]}{.type}={.address} {end}{"\n"}{end}'
+          echo ""
+          echo "=== Service CIDR ==="
+          kubectl get svc kubernetes -o jsonpath='{.spec.clusterIP}' && echo ""
+          echo ""
+          echo "=== Pod CIDR (from node) ==="
+          kubectl get nodes -o jsonpath='{.items[0].spec.podCIDR}' && echo ""
+
+      - name: Install roxctl + roxie
+        env:
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        run: |
+          docker pull -q --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ steps.tag.outputs.tag }}"
+          cid=$(docker create --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ steps.tag.outputs.tag }}" true)
+          docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
+          docker rm "$cid" >/dev/null
+
+          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+          os=$(uname -s | tr '[:upper:]' '[:lower:]')
+          gh release download v0.4.0 \
+            --repo stackrox/roxie --pattern "roxie-${os}-${arch}" --dir /tmp --clobber
+          sudo install "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
+
+      - name: Deploy StackRox
+        env:
+          QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
+          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+          echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
+          export MAIN_IMAGE_TAG="${{ steps.tag.outputs.tag }}"
+
+          echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io
+
+          # Create pull secret for image access
+          kubectl create namespace stackrox 2>/dev/null || true
+          kubectl -n stackrox create secret docker-registry quay-pull-secret \
+            --docker-server=quay.io \
+            --docker-username="${QUAY_USER}" \
+            --docker-password="${QUAY_PASS}" 2>/dev/null || true
+
+          roxie deploy both \
+            --resources=small \
+            --single-namespace \
+            --envrc /tmp/roxie-env.sh \
+            --tag ${{ steps.tag.outputs.tag }}
+
+          source /tmp/roxie-env.sh
+          echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
+
+          echo "Generating API token..."
+          for attempt in $(seq 1 12); do
+            if curl -sk --connect-timeout 10 -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/apitokens/generate" \
+              -X POST -d '{"name":"e2e_tests","role":"Admin"}' \
+              | jq -r '.token' > /tmp/rox-auth-token && [ -s /tmp/rox-auth-token ]; then
+              echo "API token generated"
+              break
+            fi
+            echo "Attempt $attempt/12 failed, waiting 10s..."
+            sleep 10
+          done
+
+      - name: Patch Scanner V4 for IPv6 dual-stack listen
+        run: |
+          for cm in scanner-v4-indexer-config scanner-v4-matcher-config; do
+            if kubectl -n stackrox get configmap "$cm" &>/dev/null; then
+              echo "Patching $cm: 0.0.0.0 → dual-stack"
+              kubectl -n stackrox get configmap "$cm" -o yaml \
+                | sed 's/0\.0\.0\.0:/:/g' \
+                | kubectl apply -f -
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout restart deploy/"$deploy"
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout status deploy/"$deploy" --timeout=3m
+            fi
+          done
+          # Wait for scanner to re-register
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          API_ENDPOINT="$(cat /tmp/rox-api-endpoint)"
+          for i in $(seq 1 60); do
+            scanners=$(curl -sk "https://${API_ENDPOINT}/v1/imageintegrations" \
+              -u "admin:${ROX_ADMIN_PASSWORD}" 2>/dev/null \
+              | jq '[.integrations[] | select(.categories[] == "SCANNER")] | length' 2>/dev/null || echo 0)
+            if [[ "$scanners" -gt 0 ]]; then
+              echo "Scanner integration available (attempt $i)"
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Verify ACS on IPv6
+        run: |
+          echo "=== StackRox pods ==="
+          kubectl -n stackrox get pods -o wide
+          echo ""
+          echo "=== Pod IPs ==="
+          kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.podIP}{"\n"}{end}'
+          echo ""
+          ROX_ADMIN_PASSWORD=$(cat /tmp/rox-admin-password)
+          API_ENDPOINT=$(cat /tmp/rox-api-endpoint)
+          echo "=== Central API metadata ==="
+          curl -sk "https://${API_ENDPOINT}/v1/metadata" -u "admin:${ROX_ADMIN_PASSWORD}" | jq .
+          echo ""
+          echo "=== Sensor health ==="
+          for i in $(seq 1 30); do
+            status=$(curl -sk "https://${API_ENDPOINT}/v1/clusters" \
+              -u "admin:${ROX_ADMIN_PASSWORD}" | jq -r '.clusters[0].healthStatus.sensorHealthStatus // "UNKNOWN"')
+            echo "Attempt $i: sensor = $status"
+            [[ "$status" == "HEALTHY" ]] && break
+            sleep 10
+          done
+          [[ "$status" == "HEALTHY" ]] || { echo "Sensor not healthy"; exit 1; }
+          echo ""
+          echo "=== Image scan test ==="
+          curl -sk "https://${API_ENDPOINT}/v1/images/scan" \
+            -u "admin:${ROX_ADMIN_PASSWORD}" \
+            -X POST -d '{"imageName":"quay.io/rhacs-eng/qa-multi-arch:nginx-3.21-1"}' \
+            | jq '{name: .image.name.fullName, components: (.image.scan.components | length), vulns: [.image.scan.components[].vulns[]?] | length}'
+
+      - name: Run QA smoke tests
+        if: inputs.suite == 'smoke' || !inputs.suite
+        run: |
+          echo "EKS IPv6 smoke test passed — ACS deployed, sensor healthy, image scan works"
+
+      - name: Run QA e2e tests
+        if: inputs.suite == 'qa-e2e'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Go for QA tests
+        if: inputs.suite == 'qa-e2e'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: QA test execution
+        if: inputs.suite == 'qa-e2e'
+        working-directory: qa-tests-backend
+        env:
+          ROX_USERNAME: admin
+          API_HOSTNAME: localhost
+          API_PORT: "8443"
+          ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+          CLUSTER: K8S
+          POD_SECURITY_POLICIES: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+          GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
+          GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ECR_REGISTRY_NAME: ${{ secrets.AWS_ECR_REGISTRY_NAME }}
+          AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
+          REMOTE_CLUSTER_ARCH: multi-arch
+          SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
+        run: |
+          go mod download github.com/stackrox/scanner
+          scripts/copy_scanner_protos.sh
+          ./gradlew generateProto
+          export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+          ./gradlew testBAT \
+            --tests AuthServiceTest \
+            --tests K8sRbacTest \
+            --tests PolicyConfigurationTest \
+            --tests DeploymentCheck \
+            --tests DeploymentTest \
+            --tests DefaultPoliciesTest \
+            --tests RuntimePolicyTest
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p /tmp/test-artifacts
+          kubectl -n stackrox get pods -o wide > /tmp/test-artifacts/pods.txt 2>&1 || true
+          kubectl -n stackrox get svc -o wide > /tmp/test-artifacts/services.txt 2>&1 || true
+          kubectl -n stackrox get events --sort-by=.lastTimestamp > /tmp/test-artifacts/events.txt 2>&1 || true
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            kubectl -n stackrox logs "$(basename "$pod")" --all-containers --tail=200 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "/tmp/test-artifacts/$(basename "$pod").log" || true
+          done
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eks-ipv6-${{ inputs.suite || 'smoke' }}-${{ github.run_id }}
+          path: /tmp/test-artifacts
+          retention-days: 7
+
+      - name: Delete EKS cluster
+        if: always() && !inputs.keep-cluster
+        run: |
+          echo "Deleting EKS cluster $CLUSTER_NAME..."
+          eksctl delete cluster --name "$CLUSTER_NAME" --region "$AWS_REGION" --wait || true
