@@ -3,6 +3,7 @@ import { Label, LabelGroup } from '@patternfly/react-core';
 import type { LabelProps } from '@patternfly/react-core';
 
 import type { EvaluationFilter } from 'types/policy.proto';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 type PolicyEvaluationFilterLabelsProps = {
     evaluationFilter: EvaluationFilter | null;
@@ -11,6 +12,8 @@ type PolicyEvaluationFilterLabelsProps = {
 function PolicyEvaluationFilterLabels({
     evaluationFilter,
 }: PolicyEvaluationFilterLabelsProps): ReactElement | null {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
     if (!evaluationFilter) {
         return null;
     }
@@ -22,6 +25,19 @@ function PolicyEvaluationFilterLabels({
 
     if (evaluationFilter.skipContainerTypes?.includes('INIT')) {
         labels.push({ text: 'Skips init', color: 'blue' });
+    }
+
+    if (isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER')) {
+        switch (evaluationFilter.skipImageLayers) {
+            case 'SKIP_BASE':
+                labels.push({ text: 'App layers only', color: 'orange' });
+                break;
+            case 'SKIP_APP':
+                labels.push({ text: 'Base layers only', color: 'orange' });
+                break;
+            default:
+                break;
+        }
     }
 
     if (labels.length === 0) {
