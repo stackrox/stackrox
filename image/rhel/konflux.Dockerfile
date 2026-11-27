@@ -91,6 +91,7 @@ RUN dnf module enable -y \
         --setopt=install_weak_deps=0 \
         --nodocs \
         ca-certificates \
+        crypto-policies-scripts \
         findutils \
         gzip \
         less \
@@ -161,5 +162,7 @@ RUN chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
+
+RUN update-crypto-policies --set DEFAULT:PQ
 
 USER 4000:4000

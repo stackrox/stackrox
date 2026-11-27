@@ -35,6 +35,7 @@ RUN dnf install -y \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
     ca-certificates \
+    crypto-policies-scripts \
     gzip \
     less \
     openssl \
@@ -73,6 +74,8 @@ COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/
 COPY LICENSE /licenses/LICENSE
 
 ENV ROX_IMAGE_FLAVOR="rhacs"
+
+RUN update-crypto-policies --set DEFAULT:PQ
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

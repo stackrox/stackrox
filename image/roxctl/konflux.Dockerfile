@@ -42,6 +42,7 @@ RUN dnf install -y \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
     ca-certificates \
+    crypto-policies-scripts \
     gzip \
     less \
     openssl \
@@ -78,6 +79,8 @@ LABEL \
     release="1"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
+
+RUN update-crypto-policies --set DEFAULT:PQ
 
 USER 65534:65534
 
