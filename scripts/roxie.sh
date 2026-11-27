@@ -65,6 +65,11 @@ ensure_roxie_installed() {
     fi
     mkdir -p "$(dirname "$install_path")"
 
+    if [[ -n "${ROXIE_PR:-}" ]]; then
+        install_roxie_from_pr "$install_path"
+        return 0
+    fi
+
     if ! exists_with_correct_version "$install_path" "$expected_version"; then
         echo "File $install_path is missing or has an incorrect version."
         echo "Downloading the correct version..."
@@ -75,6 +80,54 @@ ensure_roxie_installed() {
         chmod +x "$install_path"
         echo "roxie ${expected_version} has been installed to $install_path"
     fi
+}
+
+# Build roxie from the head of the pull request in ROXIE_PR instead of
+# installing the release pinned in ROXIE_VERSION. Lets CI jobs exercise a
+# roxie PR before it is merged and released.
+install_roxie_from_pr() {
+    local install_path="$1"
+    local stamp_path="${install_path}.pr-stamp"
+
+    local head_sha
+    if ! head_sha="$(curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused \
+        "https://api.github.com/repos/${GITHUB_ROXIE_REPO}/pulls/${ROXIE_PR}" \
+        | jq -r '.head.sha')"; then
+        echo >&2 "Error: Failed to look up PR #${ROXIE_PR} of ${GITHUB_ROXIE_REPO}"
+        return 1
+    fi
+    if [[ -z "$head_sha" || "$head_sha" == "null" ]]; then
+        echo >&2 "Error: No head SHA found for PR #${ROXIE_PR} of ${GITHUB_ROXIE_REPO}"
+        return 1
+    fi
+
+    if [[ -x "$install_path" && "$(cat "$stamp_path" 2>/dev/null || true)" == "$head_sha" ]]; then
+        echo "roxie from PR #${ROXIE_PR} (commit ${head_sha:0:12}) is already installed."
+        return 0
+    fi
+
+    echo "Building roxie from PR #${ROXIE_PR} (commit ${head_sha:0:12})..."
+    local tmpdir
+    tmpdir="$(mktemp -d)"
+    if ! git clone --quiet "https://github.com/${GITHUB_ROXIE_REPO}.git" "${tmpdir}/roxie"; then
+        echo >&2 "Error: Failed to clone ${GITHUB_ROXIE_REPO}"
+        rm -rf "$tmpdir"
+        return 1
+    fi
+    if ! git -C "${tmpdir}/roxie" fetch --quiet --depth 1 origin "$head_sha" \
+        || ! git -C "${tmpdir}/roxie" checkout --quiet --detach "$head_sha"; then
+        echo >&2 "Error: Failed to check out ${head_sha} of ${GITHUB_ROXIE_REPO}"
+        rm -rf "$tmpdir"
+        return 1
+    fi
+    if ! (cd "${tmpdir}/roxie" && go build -o "$install_path" ./cmd); then
+        echo >&2 "Error: Failed to build roxie from PR #${ROXIE_PR}"
+        rm -rf "$tmpdir"
+        return 1
+    fi
+    rm -rf "$tmpdir"
+    echo "$head_sha" > "$stamp_path"
+    echo "roxie from PR #${ROXIE_PR} built and installed to $install_path"
 }
 
 exists_with_correct_version() {
