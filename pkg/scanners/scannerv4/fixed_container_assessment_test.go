@@ -27,11 +27,11 @@ func TestFixedContainerAssessmentScope(t *testing.T) {
 		},
 		PackageNotVulnerable: map[string]*v4.StringList{"image": {Values: []string{"fixed"}}},
 	}
-	for id := range r.Contents.Packages {
+	for id := range r.GetContents().GetPackages() {
 		r.Contents.Environments[id] = &v4.Environment_List{Environments: []*v4.Environment{{IntroducedIn: "layer"}}}
 	}
 	filterNotAffectedVulnerabilities(r, map[string]int32{"layer": 0})
-	assert.Empty(t, r.PackageVulnerabilities["go"].GetValues(), "covered upstream finding remains")
-	assert.Equal(t, []string{"rpm"}, r.PackageVulnerabilities["rpm"].GetValues(), "fixed container assessment masked an independent RPM finding")
-	assert.Equal(t, []string{"other"}, r.PackageVulnerabilities["other"].GetValues(), "fixed container assessment masked an unrelated CVE")
+	assert.Empty(t, r.GetPackageVulnerabilities()["go"].GetValues(), "covered upstream finding remains")
+	assert.Equal(t, []string{"rpm"}, r.GetPackageVulnerabilities()["rpm"].GetValues(), "fixed container assessment masked an independent RPM finding")
+	assert.Equal(t, []string{"other"}, r.GetPackageVulnerabilities()["other"].GetValues(), "fixed container assessment masked an unrelated CVE")
 }
