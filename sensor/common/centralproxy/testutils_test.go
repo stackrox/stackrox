@@ -188,6 +188,7 @@ func setupCentralCapsForTest(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported,
 		centralsensor.CentralProxyPathFiltering,
+		centralsensor.CentralProxyPerAccessTokens,
 	})
 	allowedpaths.Set([]string{"/v1/", "/v2/", "/api/graphql", "/api/v1/"})
 	t.Cleanup(func() {
@@ -197,11 +198,14 @@ func setupCentralCapsForTest(t *testing.T) {
 }
 
 func consoleTestProfile(scope string) *proxyTokenProfile {
+	perAccess := centralcaps.Has(centralsensor.CentralProxyPerAccessTokens)
+	single := !perAccess && centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens)
 	return &proxyTokenProfile{
-		identity:       clientAuthKubernetesBearer + ":test-user",
-		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access),
-		clusterScope:   scope,
-		legacy:         !centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens),
+		identity:            clientAuthKubernetesBearer + ":test-user",
+		permissionSets:      clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access),
+		clusterScope:        scope,
+		legacy:              !perAccess && !single,
+		singlePermissionSet: single,
 	}
 }
 
@@ -221,6 +225,7 @@ func (p *tokenProvider) invalidateToken(scope string) {
 func (p *tokenProvider) tokenCacheKey(scope string, permissionSet bool) string {
 	profile := consoleTestProfile(scope)
 	profile.legacy = !permissionSet
+	profile.singlePermissionSet = permissionSet
 	return p.profileCacheKey(profile)
 }
 

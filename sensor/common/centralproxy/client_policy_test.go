@@ -160,7 +160,7 @@ func TestClientPolicyPreservesExistingConfig(t *testing.T) {
 
 func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 	for name, change := range map[string]func(*clientPolicyDocument){
-		"auth-only without scopes": func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = "" },
+		"auth-only without scopes": func(p *clientPolicyDocument) { p.Clients[1].Access[1].HTTPScopes = nil },
 		"both selectors":           func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetName = accesscontrol.ConsoleProxy },
 		"invalid ID":               func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetID = "invalid" },
 		"whitespace name":          func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = " Reader " },

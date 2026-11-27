@@ -44,7 +44,8 @@ var (
 )
 
 type serviceImpl struct {
-	issuer tokens.Issuer
+	issuer       tokens.Issuer
+	scopedIssuer tokens.Issuer
 
 	roleManager *roleManager
 
@@ -102,7 +103,17 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		Name:          claimName,
 		Requester:     req.GetRequester(),
 	}
-	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
+	issuer := s.issuer
+	for _, role := range tokenRoles {
+		if role.HTTPRequestScopes != nil {
+			issuer = s.scopedIssuer
+			break
+		}
+	}
+	if issuer == nil {
+		return nil, errox.ServerError.New("internal token issuer unavailable")
+	}
+	tokenInfo, err := issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
 		observeTokenGeneration(tokenGenResultIssuanceError, time.Since(start))
 		return nil, err

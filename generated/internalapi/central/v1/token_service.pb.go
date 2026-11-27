@@ -7,6 +7,7 @@
 package v1
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -172,7 +173,8 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSets() []*Sele
 	return nil
 }
 
-// SelectedPermissionSet selects one permission set by id or name.
+// SelectedPermissionSet selects one permission set by id or name and
+// optionally restricts its HTTP access.
 type SelectedPermissionSet struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Exactly one nonempty selector is required.
@@ -181,9 +183,11 @@ type SelectedPermissionSet struct {
 	//
 	//	*SelectedPermissionSet_Id
 	//	*SelectedPermissionSet_Name
-	Selector      isSelectedPermissionSet_Selector `protobuf_oneof:"selector"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Selector isSelectedPermissionSet_Selector `protobuf_oneof:"selector"`
+	// Omission imposes no HTTP restriction; resource and cluster scopes still apply.
+	HttpRequestScopes []*v1.HTTPRequestScope `protobuf:"bytes,3,rep,name=http_request_scopes,json=httpRequestScopes,proto3" json:"http_request_scopes,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SelectedPermissionSet) Reset() {
@@ -239,6 +243,13 @@ func (x *SelectedPermissionSet) GetName() string {
 		}
 	}
 	return ""
+}
+
+func (x *SelectedPermissionSet) GetHttpRequestScopes() []*v1.HTTPRequestScope {
+	if x != nil {
+		return x.HttpRequestScopes
+	}
+	return nil
 }
 
 type isSelectedPermissionSet_Selector interface {
@@ -374,7 +385,7 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xcd\x03\n" +
+	"central.v1\x1a\x13api/v1/common.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xcd\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
@@ -383,10 +394,11 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\x0fpermission_sets\x18\x05 \x03(\v2!.central.v1.SelectedPermissionSetR\x0epermissionSets\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"K\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"\x91\x01\n" +
 	"\x15SelectedPermissionSet\x12\x10\n" +
 	"\x02id\x18\x01 \x01(\tH\x00R\x02id\x12\x14\n" +
-	"\x04name\x18\x02 \x01(\tH\x00R\x04nameB\n" +
+	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x12D\n" +
+	"\x13http_request_scopes\x18\x03 \x03(\v2\x14.v1.HTTPRequestScopeR\x11httpRequestScopesB\n" +
 	"\n" +
 	"\bselector\"}\n" +
 	"\fClusterScope\x12\x1d\n" +
@@ -403,7 +415,7 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\vREAD_ACCESS\x10\x01\x12\x15\n" +
 	"\x11READ_WRITE_ACCESS\x10\x022\xc3\x01\n" +
 	"\fTokenService\x12\xb2\x01\n" +
-	"#GenerateTokenForPermissionsAndScope\x126.central.v1.GenerateTokenForPermissionsAndScopeRequest\x1a7.central.v1.GenerateTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1dZ\x1b./internalapi/central/v1;v1X\x00b\x06proto3"
+	"#GenerateTokenForPermissionsAndScope\x126.central.v1.GenerateTokenForPermissionsAndScopeRequest\x1a7.central.v1.GenerateTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1dZ\x1b./internalapi/central/v1;v1X\x01b\x06proto3"
 
 var (
 	file_internalapi_central_v1_token_service_proto_rawDescOnce sync.Once
@@ -427,20 +439,22 @@ var file_internalapi_central_v1_token_service_proto_goTypes = []any{
 	(*GenerateTokenForPermissionsAndScopeResponse)(nil), // 4: central.v1.GenerateTokenForPermissionsAndScopeResponse
 	nil,                         // 5: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
 	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
+	(*v1.HTTPRequestScope)(nil), // 7: v1.HTTPRequestScope
 }
 var file_internalapi_central_v1_token_service_proto_depIdxs = []int32{
 	5, // 0: central.v1.GenerateTokenForPermissionsAndScopeRequest.permissions:type_name -> central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
 	3, // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.v1.ClusterScope
 	6, // 2: central.v1.GenerateTokenForPermissionsAndScopeRequest.lifetime:type_name -> google.protobuf.Duration
 	2, // 3: central.v1.GenerateTokenForPermissionsAndScopeRequest.permission_sets:type_name -> central.v1.SelectedPermissionSet
-	0, // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
-	1, // 5: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
-	4, // 6: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	7, // 4: central.v1.SelectedPermissionSet.http_request_scopes:type_name -> v1.HTTPRequestScope
+	0, // 5: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
+	1, // 6: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
+	4, // 7: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
+	7, // [7:8] is the sub-list for method output_type
+	6, // [6:7] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_v1_token_service_proto_init() }

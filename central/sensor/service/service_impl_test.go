@@ -179,6 +179,7 @@ func (s *sensorServiceTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
 	centralHello := retrieveCentralHello(s, mockServer)
 	s.Contains(centralHello.GetCapabilities(), centralsensor.InternalTokenAPISupported.String())
 	s.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyPermissionSetTokens.String())
+	s.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyPerAccessTokens.String())
 
 	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }

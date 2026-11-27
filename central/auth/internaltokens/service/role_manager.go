@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 
+	roleValidation "github.com/stackrox/rox/central/role"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,13 +32,23 @@ func validatePermissionSetConstrains(ps *storage.PermissionSet) error {
 	return nil
 }
 
+// validateScopedReadOnlyPermissionSet ensures a permission set selected for a
+// Sensor proxy token constrains access to read, resources to cluster/namespace,
+// and holds only grants compatible with those constraints.
+func validateScopedReadOnlyPermissionSet(ps *storage.PermissionSet) error {
+	if err := validatePermissionSetConstrains(ps); err != nil {
+		return err
+	}
+	return roleValidation.ValidatePermissionSet(ps)
+}
+
 type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-// createRolesForRoxClaims builds one internal role per selected permission set.
-// Legacy permission requests and authentication-only requests yield a single
-// role.
+// createRolesForRoxClaims builds one internal role per selected permission set,
+// carrying each selection's HTTP request restrictions. Legacy permission
+// requests and authentication-only requests yield a single role.
 func (rm *roleManager) createRolesForRoxClaims(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
@@ -61,7 +72,11 @@ func (rm *roleManager) createRolesForRoxClaims(
 			return nil, errox.InvalidArgs.Newf("permission set %q is selected more than once", permissionSet.GetName())
 		}
 		seen[permissionSet.GetId()] = struct{}{}
-		if err := validatePermissionSetConstrains(permissionSet); err != nil {
+		if err := validateScopedReadOnlyPermissionSet(permissionSet); err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
+		}
+		scopes, err := tokens.HTTPRequestScopesFromProto(selected.GetHttpRequestScopes())
+		if err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 		role := newInternalRole(req.GetClusterScopes())
@@ -70,6 +85,7 @@ func (rm *roleManager) createRolesForRoxClaims(
 			role.Permissions[access] = append(role.Permissions[access], resource)
 		}
 		sortPermissions(role.Permissions)
+		role.HTTPRequestScopes = scopes
 		roles = append(roles, role)
 	}
 	return roles, nil

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
@@ -130,10 +131,20 @@ func (h *Handler) validateRequest(request *http.Request) error {
 }
 
 func validateClientRequest(grant *ClientPolicyGrant, request *http.Request) error {
-	if grant.hasConsolePermissionSet() && !features.OCPConsoleIntegration.Enabled() {
+	if grant.isConsoleClient() && !features.OCPConsoleIntegration.Enabled() {
 		return pkghttputil.NewError(http.StatusForbidden, "console proxy is disabled")
 	}
+	if !centralcaps.Has(centralsensor.CentralProxyPerAccessTokens) && !legacyProxyGrantAllowed(grant, request) {
+		return pkghttputil.NewError(http.StatusNotImplemented, "Central does not support this proxy client")
+	}
 	return nil
+}
+
+func legacyProxyGrantAllowed(grant *ClientPolicyGrant, request *http.Request) bool {
+	if !grant.legacyEligible() {
+		return false
+	}
+	return !centralcaps.Has(centralsensor.CentralProxyPathFiltering) || allowedpaths.IsAllowed(request.URL.EscapedPath())
 }
 
 // checkInternalTokenAPISupport checks if Central supports the internal token API capability.
@@ -199,17 +210,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
-	permissionSetSupported := centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens)
-	legacy := grant.legacyEligible()
-	if !permissionSetSupported && !legacy {
-		result = requestResultNotImplemented
-		http.Error(writer, "Central does not support this proxy client", http.StatusNotImplemented)
-		return
-	}
+	perAccess := centralcaps.Has(centralsensor.CentralProxyPerAccessTokens)
+	singlePermissionSet := !perAccess && centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens)
 	profile := &proxyTokenProfile{
-		identity:       grant.AuthType + ":" + grant.Subject,
-		permissionSets: grant.AllowedPermissionSets,
-		legacy:         !permissionSetSupported && legacy,
+		identity:            grant.AuthType + ":" + grant.Subject,
+		permissionSets:      grant.AllowedPermissionSets,
+		singlePermissionSet: singlePermissionSet,
+		legacy:              !perAccess && !singlePermissionSet,
 	}
 	if userInfo == nil {
 		profile.clusterScope = FullClusterAccessScope

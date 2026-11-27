@@ -287,11 +287,12 @@ func (p *tokenProvider) invalidateProfile(profile *proxyTokenProfile) {
 func (p *tokenProvider) profileCacheKey(profile *proxyTokenProfile) string {
 	// Include identity and all signed claims so different clients never share tokens.
 	data, _ := json.Marshal(struct {
-		Identity       string
-		PermissionSets []*centralv1.SelectedPermissionSet
-		ClusterScope   string
-		Legacy         bool
-	}{profile.identity, profile.permissionSets, profile.clusterScope, profile.legacy})
+		Identity            string
+		PermissionSets      []*centralv1.SelectedPermissionSet
+		SinglePermissionSet bool
+		ClusterScope        string
+		Legacy              bool
+	}{profile.identity, profile.permissionSets, profile.singlePermissionSet, profile.clusterScope, profile.legacy})
 	return fmt.Sprintf("%s:%x", p.clusterIDGetter.GetNoWait(), sha256.Sum256(data))
 }
 
@@ -307,17 +308,31 @@ func (p *tokenProvider) buildProfileTokenRequest(profile *proxyTokenProfile) (*c
 		Lifetime:  durationpb.New(tokenTTL),
 		Requester: profile.identity,
 	}
+	if profile.legacy || profile.singlePermissionSet {
+		if len(profile.permissionSets) > 0 &&
+			(!safeConsoleFallback(profile.permissionSets) || (profile.legacy && profile.singlePermissionSet)) {
+			return nil, errors.New("fallback token flow is only available to safely scoped console clients")
+		}
+	}
 	if profile.legacy {
 		// Older Centrals only know the original token forms: no permissions for
 		// authentication-only grants and the console grant's Deployment/Image
 		// read permissions otherwise.
-		for _, set := range profile.permissionSets {
-			if !isConsolePermissionSet(set) {
-				return nil, errors.New("legacy token flow is only available to console and authentication-only grants")
-			}
-		}
 		if len(profile.permissionSets) > 0 {
 			req.Permissions = tokenPermissions
+		}
+	} else if profile.singlePermissionSet {
+		if len(profile.permissionSets) > 0 {
+			grant := profile.permissionSets[0]
+			if grant.GetId() != "" {
+				req.PermissionSets = []*centralv1.SelectedPermissionSet{{
+					Selector: &centralv1.SelectedPermissionSet_Id{Id: grant.GetId()},
+				}}
+			} else {
+				req.PermissionSets = []*centralv1.SelectedPermissionSet{{
+					Selector: &centralv1.SelectedPermissionSet_Name{Name: grant.GetName()},
+				}}
+			}
 		}
 	} else {
 		req.PermissionSets = profile.permissionSets

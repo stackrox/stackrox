@@ -28,6 +28,9 @@ func TestValidatePerAccessHTTPScopes(t *testing.T) {
 	for name, change := range map[string]func(*RoxClaims){
 		"empty methods deny": func(c *RoxClaims) { c.InternalRoles[1].HTTPRequestScopes["/v1/images"] = []string{} },
 		"nil methods deny":   func(c *RoxClaims) { c.InternalRoles[1].HTTPRequestScopes["/v1/images"] = nil },
+		"global HTTP scope": func(c *RoxClaims) {
+			c.HTTPRequestScopes = HTTPRequestScopes{"/v1/": {"GET"}}
+		},
 		"same route across roles": func(c *RoxClaims) {
 			c.InternalRoles[1].HTTPRequestScopes["/v1/"] = []string{"GET"}
 		},

@@ -265,7 +265,7 @@ func TestMetricsHandlerProfileAndDenials(t *testing.T) {
 			t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
 			caps := []centralsensor.CentralCapability{centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering}
 			if tc.capable {
-				caps = append(caps, centralsensor.CentralProxyPermissionSetTokens)
+				caps = append(caps, centralsensor.CentralProxyPermissionSetTokens, centralsensor.CentralProxyPerAccessTokens)
 			}
 			centralcaps.Set(caps)
 			policy := newStaticClientPolicy(t, defaultClientPolicy(), clientCAConfigMap(ca))
@@ -281,7 +281,7 @@ func TestMetricsHandlerProfileAndDenials(t *testing.T) {
 					assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, profile.permissionSets[0].GetName())
 					assert.Equal(t, clientAuthMTLS+":"+cert.Leaf.Subject.CommonName, profile.identity)
 					assert.Equal(t, FullClusterAccessScope, profile.clusterScope)
-					assert.False(t, profile.legacyConsole)
+					assert.False(t, profile.legacy)
 					return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(""))}, nil
 				})),
 			}
@@ -298,7 +298,7 @@ func TestMetricsHandlerProfileAndDenials(t *testing.T) {
 }
 
 func TestProfileTokenIsolationAndHeaderReplacement(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPermissionSetTokens})
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPermissionSetTokens, centralsensor.CentralProxyPerAccessTokens})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	var calls atomic.Int32
 	client := &fakeTokenServiceClient{response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "central-token"}, callCount: &calls}
@@ -335,9 +335,8 @@ func TestProfileTokenIsolationAndHeaderReplacement(t *testing.T) {
 		})
 	}
 	metrics := &proxyTokenProfile{
-		identity:       clientAuthMTLS + ":prometheus",
-		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[0].Access),
-		clusterScope:   FullClusterAccessScope,
+		identity: clientAuthMTLS + ":prometheus", permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[0].Access),
+		clusterScope: FullClusterAccessScope,
 	}
 	transport := &scopedTokenTransport{tokenProvider: provider, base: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		assert.Equal(t, "Bearer central-token", r.Header.Get("Authorization"))
@@ -374,7 +373,7 @@ func TestProfileTokenIsolationAndHeaderReplacement(t *testing.T) {
 	legacyMetrics := *metrics
 	legacyMetrics.legacy = true
 	_, err = provider.getTokenForProfile(t.Context(), &legacyMetrics)
-	require.ErrorContains(t, err, "only available to console and authentication-only grants")
+	require.ErrorContains(t, err, "only available to safely scoped console clients")
 }
 
 type tokenServiceFunc func(context.Context, *centralv1.GenerateTokenForPermissionsAndScopeRequest) (*centralv1.GenerateTokenForPermissionsAndScopeResponse, error)

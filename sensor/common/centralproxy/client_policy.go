@@ -136,7 +136,6 @@ func defaultClientPolicy() clientPolicyDocument {
 	// The built-in clients are OpenShift integrations; other clusters admit no client until configured.
 	clients := []clientPolicyEntry{}
 	if env.OpenshiftAPI.BooleanSetting() {
-	if env.OpenshiftAPI.BooleanSetting() {
 		caRef, _ := json.Marshal(clientPolicyCARef{
 			Namespace: env.SecureMetricsClientCANamespace.Setting(),
 			ConfigMap: env.SecureMetricsClientCAConfigMap.Setting(),
@@ -271,7 +270,7 @@ func clientPolicyAccessToProto(access []clientPolicyAccess) []*centralv1.Selecte
 		if grant.PermissionSetID == "" && grant.PermissionSetName == "" {
 			continue
 		}
-		set := &centralv1.SelectedPermissionSet{}
+		set := &centralv1.SelectedPermissionSet{HttpRequestScopes: clientPolicyScopesToProto(grant.HTTPScopes)}
 		if grant.PermissionSetID != "" {
 			set.Selector = &centralv1.SelectedPermissionSet_Id{Id: grant.PermissionSetID}
 		} else {
