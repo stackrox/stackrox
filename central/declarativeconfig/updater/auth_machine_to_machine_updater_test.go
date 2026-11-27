@@ -59,10 +59,7 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	setupSetExpectations(mockSet)
 
 	s.db = pgtest.ForT(s.T())
 	s.roleDS = roleDataStore.GetTestPostgresDataStore(s.T(), s.db)
@@ -70,6 +67,15 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 	s.m2mConfigDS = m2mDataStore.New(m2mStorage, s.roleDS, mockSet)
 	healthDS := healthDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	s.updater = newAuthM2MConfigUpdater(s.m2mConfigDS, healthDS)
+}
+
+func setupSetExpectations(set *mocks.MockTokenExchangerSet) {
+	set.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	set.EXPECT().RemoveTokenExchanger(gomock.Any()).AnyTimes().Return(nil)
+	set.EXPECT().GetTokenExchanger(gomock.Any()).AnyTimes().Return(nil, true)
+	set.EXPECT().RemoveConfigForIssuer(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	set.EXPECT().UpsertConfigForIssuer(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
 }
 
 func (s *authMachineToMachineTestSuite) TearDownTest() {
@@ -260,11 +266,6 @@ func (s *authMachineToMachineMockedTestSuite) SetupTest() {
 	s.ctx = declarativeconfig.WithModifyDeclarativeOrImperative(s.ctx)
 
 	s.mockCtrl = gomock.NewController(s.T())
-	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	s.roleDS = roleDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.m2mConfigDS = m2mDataStoreMocks.NewMockDataStore(s.mockCtrl)

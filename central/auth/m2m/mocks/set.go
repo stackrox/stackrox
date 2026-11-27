@@ -71,6 +71,20 @@ func (mr *MockTokenExchangerSetMockRecorder) HasExchangersConfigured() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasExchangersConfigured", reflect.TypeOf((*MockTokenExchangerSet)(nil).HasExchangersConfigured))
 }
 
+// RemoveConfigForIssuer mocks base method.
+func (m *MockTokenExchangerSet) RemoveConfigForIssuer(ctx context.Context, issuer, configID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveConfigForIssuer", ctx, issuer, configID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveConfigForIssuer indicates an expected call of RemoveConfigForIssuer.
+func (mr *MockTokenExchangerSetMockRecorder) RemoveConfigForIssuer(ctx, issuer, configID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveConfigForIssuer", reflect.TypeOf((*MockTokenExchangerSet)(nil).RemoveConfigForIssuer), ctx, issuer, configID)
+}
+
 // RemoveTokenExchanger mocks base method.
 func (m *MockTokenExchangerSet) RemoveTokenExchanger(issuer string) error {
 	m.ctrl.T.Helper()
@@ -85,30 +99,30 @@ func (mr *MockTokenExchangerSetMockRecorder) RemoveTokenExchanger(issuer any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RemoveTokenExchanger), issuer)
 }
 
-// RollbackExchanger mocks base method.
-func (m *MockTokenExchangerSet) RollbackExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+// UpsertConfigForIssuer mocks base method.
+func (m *MockTokenExchangerSet) UpsertConfigForIssuer(ctx context.Context, issuer string, config *storage.AuthMachineToMachineConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RollbackExchanger", ctx, config)
+	ret := m.ctrl.Call(m, "UpsertConfigForIssuer", ctx, issuer, config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RollbackExchanger indicates an expected call of RollbackExchanger.
-func (mr *MockTokenExchangerSetMockRecorder) RollbackExchanger(ctx, config any) *gomock.Call {
+// UpsertConfigForIssuer indicates an expected call of UpsertConfigForIssuer.
+func (mr *MockTokenExchangerSetMockRecorder) UpsertConfigForIssuer(ctx, issuer, config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RollbackExchanger), ctx, config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfigForIssuer", reflect.TypeOf((*MockTokenExchangerSet)(nil).UpsertConfigForIssuer), ctx, issuer, config)
 }
 
 // UpsertTokenExchanger mocks base method.
-func (m *MockTokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+func (m *MockTokenExchangerSet) UpsertTokenExchanger(issuer string, exchanger m2m.TokenExchanger) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertTokenExchanger", ctx, config)
+	ret := m.ctrl.Call(m, "UpsertTokenExchanger", issuer, exchanger)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertTokenExchanger indicates an expected call of UpsertTokenExchanger.
-func (mr *MockTokenExchangerSetMockRecorder) UpsertTokenExchanger(ctx, config any) *gomock.Call {
+func (mr *MockTokenExchangerSetMockRecorder) UpsertTokenExchanger(issuer, exchanger any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).UpsertTokenExchanger), ctx, config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).UpsertTokenExchanger), issuer, exchanger)
 }

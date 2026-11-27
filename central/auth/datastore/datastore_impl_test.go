@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -80,10 +82,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 
 	controller := gomock.NewController(s.T())
 	s.mockSet = mocks.NewMockTokenExchangerSet(controller)
-	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
-	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet)
 }
@@ -94,8 +92,7 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	authStore := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).Times(1)
+	expectConfigUpsert(false, "", testIssuer, mockSet)
 
 	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
@@ -103,6 +100,7 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 
 type authDataStoreMutatorFunc func(authDataStore DataStore)
 type authDataStoreValidatorFunc func(kubeSAConfig *storage.AuthMachineToMachineConfig)
+type configureExchangerSetFunc func(set *mocks.MockTokenExchangerSet)
 
 type kubeSAMatcher struct{}
 
@@ -115,15 +113,18 @@ func (m kubeSAMatcher) String() string {
 	return "Matches M2M config for the Kube SA issuer of the current cluster"
 }
 
-func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDataStoreMutatorFunc, authDataStoreValidator authDataStoreValidatorFunc) {
+func (s *datastorePostgresTestSuite) kubeSAM2MConfig(
+	authDataStoreMutator authDataStoreMutatorFunc,
+	authDataStoreValidator authDataStoreValidatorFunc,
+	configureSetForAction configureExchangerSetFunc,
+	configureSetForRestart configureExchangerSetFunc,
+) {
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 	store := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
+	configureSetForAction(mockSet)
 
 	authDataStore := New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
@@ -131,8 +132,7 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 
 	// Emulate restarting Central by creating a new data store and token exchanger set
 	mockSet = mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	configureSetForRestart(mockSet)
 
 	authDataStore = New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
@@ -169,8 +169,16 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
 		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
+	configureSetForAction := func(set *mocks.MockTokenExchangerSet) {
+		expectConfigUpsert(false, "", testIssuer, set)
+		set.EXPECT().GetTokenExchanger(testIssuer).Return(nil, true)
+		set.EXPECT().RemoveConfigForIssuer(gomock.Any(), testIssuer, gomock.Any()).Return(nil)
+	}
+	configureSetForRestart := func(set *mocks.MockTokenExchangerSet) {
+		expectConfigUpsert(false, "", testIssuer, set)
+	}
 
-	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator, configureSetForAction, configureSetForRestart)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
@@ -183,8 +191,11 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
 		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
 		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
+	configureSet := func(set *mocks.MockTokenExchangerSet) {
+		expectConfigUpsert(false, "", testIssuer, set)
+	}
 
-	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator, configureSet, configureSet)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModification() {
@@ -231,8 +242,15 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 		}
 		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
+	configureSetForAction := func(set *mocks.MockTokenExchangerSet) {
+		expectConfigUpsert(false, "", testIssuer, set)
+		expectConfigUpsert(true, testIssuer, testIssuer, set)
+	}
+	configureSetForRestart := func(set *mocks.MockTokenExchangerSet) {
+		expectConfigUpsert(false, "", testIssuer, set)
+	}
 
-	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator, configureSetForAction, configureSetForRestart)
 }
 
 // TestKubeSAM2MConfigAudienceSetOnUpgradeWithSingleMapping simulates upgrading
@@ -262,8 +280,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigAudienceSetOnUpgradeWith
 
 	// Simulate Central restart with InitializeTokenExchangers.
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	expectConfigUpsert(false, "", testIssuer, mockSet)
 
 	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
@@ -313,8 +330,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigAudienceNotSetOnUpgradeW
 
 	// Simulate Central restart with InitializeTokenExchangers.
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	expectConfigUpsert(false, "", testIssuer, mockSet)
 
 	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
@@ -333,8 +349,14 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigAudienceNotSetOnUpgradeW
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
+	const issuer = "TestAddFKConstraint"
+	expectConfigUpsert(false, "", issuer, s.mockSet)
+	// Set expectations for set exchanger rollback
+	s.mockSet.EXPECT().RemoveTokenExchanger(issuer).Return(nil)
+	s.mockSet.EXPECT().RemoveTokenExchanger("").Return(nil)
 	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
+		Issuer:                  issuer,
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
@@ -350,10 +372,13 @@ func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
 }
 
 func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
+	const issuer = "TestDeleteFKConstraint"
+	expectConfigUpsert(false, "", issuer, s.mockSet)
 	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
+		Issuer:                  issuer,
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
 				Key:             "sub",
@@ -366,12 +391,16 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 
 	s.ErrorIs(s.roleDataStore.RemoveRole(s.ctx, testRole1), errox.ReferencedByAnotherObject)
 
+	s.mockSet.EXPECT().GetTokenExchanger(issuer).Return(nil, false)
+	s.mockSet.EXPECT().RemoveConfigForIssuer(gomock.Any(), issuer, config.GetId()).Return(nil)
 	s.NoError(s.authDataStore.RemoveAuthM2MConfig(s.ctx, config.GetId()))
 
 	s.NoError(s.roleDataStore.RemoveRole(s.ctx, testRole1))
 }
 
 func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
+	const issuer = "https://stackrox.io"
+	expectConfigUpsert(false, "", issuer, s.mockSet)
 	_, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
@@ -383,11 +412,15 @@ func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 				Role:            testRole1,
 			},
 		},
-		Issuer: "https://stackrox.io",
+		Issuer: issuer,
 	})
 
 	s.NoError(err)
 
+	expectConfigUpsert(false, "", issuer, s.mockSet)
+	// Set expectations for set exchanger rollback
+	s.mockSet.EXPECT().RemoveTokenExchanger(issuer).Return(nil)
+	s.mockSet.EXPECT().RemoveTokenExchanger("").Return(nil)
 	_, err = s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "12c153c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
@@ -399,7 +432,7 @@ func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 				Role:            testRole2,
 			},
 		},
-		Issuer: "https://stackrox.io",
+		Issuer: issuer,
 	})
 
 	s.Error(err)
@@ -450,12 +483,25 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 	declarativeCtx := declarativeconfig.WithModifyDeclarativeResource(s.ctx)
 
 	const declarativeRoleNameFmt = "declarative %s"
+	const issuerFormat = "https://kubernetes-%d.default.svc"
+
+	expectSingleSuccessfulUpsert := func(set *mocks.MockTokenExchangerSet, objCount int) {
+		expectConfigUpsert(false, "", fmt.Sprintf(issuerFormat, objCount), set)
+	}
+	expectSingleRolledBackUpsert := func(set *mocks.MockTokenExchangerSet, objCount int) {
+		issuer := fmt.Sprintf(issuerFormat, objCount)
+		expectConfigUpsert(false, "", issuer, set)
+		// Expect rollback after failure
+		set.EXPECT().RemoveTokenExchanger(issuer).Return(nil)
+		set.EXPECT().RemoveTokenExchanger("").Return(nil)
+	}
 
 	for name, tc := range map[string]struct {
 		ctx             context.Context
 		targetRoleName  string
 		targetRoleNames []string
 		m2mConfigTraits *storage.Traits
+		configureSet    func(*mocks.MockTokenExchangerSet, int)
 		expectedError   error
 	}{
 		// Calling upsert with a ModifyDeclarativeConfig context will:
@@ -490,6 +536,7 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 			ctx:             declarativeCtx,
 			targetRoleNames: []string{fmt.Sprintf(declarativeRoleNameFmt, testRole1)},
 			m2mConfigTraits: declarativeTraits.CloneVT(),
+			configureSet:    expectSingleSuccessfulUpsert,
 		},
 		// Calling upsert with a normal context granted the required permissions will:
 		// - fail for any declarative input object
@@ -499,16 +546,19 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 			ctx:             apiCtx,
 			targetRoleNames: []string{testRole1},
 			m2mConfigTraits: imperativeTraits.CloneVT(),
+			configureSet:    expectSingleSuccessfulUpsert,
 		},
 		"Upserting imperative m2m config referencing declarative role with API context succeeds": {
 			ctx:             apiCtx,
 			targetRoleNames: []string{fmt.Sprintf(declarativeRoleNameFmt, testRole1)},
 			m2mConfigTraits: imperativeTraits.CloneVT(),
+			configureSet:    expectSingleSuccessfulUpsert,
 		},
 		"Upserting imperative m2m config referencing missing role with API context fails": {
 			ctx:             apiCtx,
 			targetRoleNames: []string{missingRoleName},
 			m2mConfigTraits: imperativeTraits.CloneVT(),
+			configureSet:    expectSingleRolledBackUpsert,
 			expectedError:   errox.ReferencedObjectNotFound,
 		},
 		"Upserting imperative m2m config referencing a role mix including a missing one with API context fails": {
@@ -519,6 +569,7 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 				missingRoleName,
 			},
 			m2mConfigTraits: imperativeTraits.CloneVT(),
+			configureSet:    expectSingleRolledBackUpsert,
 			expectedError:   errox.ReferencedObjectNotFound,
 		},
 		"Upserting declarative m2m config referencing imperative role with API context fails": {
@@ -544,9 +595,12 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 			m2mConfig := getBasicM2mConfig(
 				tc.m2mConfigTraits,
 				uuid.NewTestUUID(insertedObjectCount).String(),
-				fmt.Sprintf("https://kubernetes-%d.default.svc", insertedObjectCount),
+				fmt.Sprintf(issuerFormat, insertedObjectCount),
 				tc.targetRoleNames...,
 			)
+			if tc.configureSet != nil {
+				tc.configureSet(s.mockSet, insertedObjectCount)
+			}
 			insertedObjectCount++
 			_, err := s.authDataStore.UpsertAuthM2MConfig(tc.ctx, m2mConfig)
 			s.ErrorIs(err, tc.expectedError)
@@ -559,6 +613,9 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 // This test was added to prevent connection leaks where the transaction was not being
 // rolled back when the token exchanger creation failed (e.g., OIDC provider errors).
 func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTransaction() {
+	testConfigID := uuid.NewV4().String()
+	const testIssuerURL = "https://storage.googleapis.com/test-bucket"
+
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 
@@ -567,15 +624,15 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 	// Mock UpsertTokenExchanger to return an error (simulating OIDC provider failure)
 	tokenExchangerError := errors.New("creating OIDC provider: 404 Not Found: NoSuchBucket")
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(tokenExchangerError).Times(1)
-	// Expect rollback operations to be called
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).Times(1)
+	mockSet.EXPECT().GetTokenExchanger(testIssuerURL).Return(nil, false)
+	// Trigger rollback through Set insertion failure
+	mockSet.EXPECT().
+		UpsertConfigForIssuer(gomock.Any(), testIssuerURL, gomock.Any()).
+		Return(tokenExchangerError)
+	mockSet.EXPECT().RemoveTokenExchanger(testIssuerURL).Return(nil)
+	mockSet.EXPECT().RemoveTokenExchanger("").Return(nil)
 
 	authDataStore := New(authStore, s.roleDataStore, mockSet)
-
-	testConfigID := uuid.NewV4().String()
-	testIssuerURL := "https://storage.googleapis.com/test-bucket"
 
 	config := &storage.AuthMachineToMachineConfig{
 		Id:                      testConfigID,
@@ -600,8 +657,7 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 	// Verify NO config was persisted (transaction was rolled back)
 	// Use a fresh datastore with a permissive mock to read from the database
 	readMockSet := mocks.NewMockTokenExchangerSet(controller)
-	readMockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
-	readMockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	readMockSet.EXPECT().GetTokenExchanger(gomock.Any()).AnyTimes().Return(nil, true)
 
 	readDataStore := New(authStore, s.roleDataStore, readMockSet)
 
@@ -622,14 +678,19 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 func (s *datastorePostgresTestSuite) TestGetTokenExchangerReturnsUpsertedConfig() {
 	authStore := store.New(s.pool.DB)
 
+	mockCtrl := gomock.NewController(s.T())
+	issuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
+	issuerFactory.EXPECT().RegisterSource(gomock.Any()).Return(nil)
+
 	// Use the real token exchanger set, but with a factory creating stub exchangers
 	// that simply wrap the given config, to avoid external OIDC calls.
-	tokenExchangerSet := m2m.TokenExchangerSetForTesting(s.T(), s.roleDataStore, nil,
-		func(_ context.Context, config *storage.AuthMachineToMachineConfig,
+	tokenExchangerSet := m2m.TokenExchangerSetForTesting(s.T(), s.roleDataStore, issuerFactory,
+		func(_ context.Context, configs []*storage.AuthMachineToMachineConfig,
 			_ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
 			// Clone the config, so the comparison below does not trivially compare
 			// the injected object with itself.
-			return &stubTokenExchanger{config: config.CloneVT()}, nil
+			require.NotEmpty(s.T(), configs)
+			return &stubTokenExchanger{config: configs[0].CloneVT()}, nil
 		})
 
 	authDataStore := New(authStore, s.roleDataStore, tokenExchangerSet)
@@ -650,7 +711,8 @@ func (s *datastorePostgresTestSuite) TestGetTokenExchangerReturnsUpsertedConfig(
 // stubTokenExchanger is a minimal TokenExchanger implementation for testing,
 // which only exposes the config it was created with.
 type stubTokenExchanger struct {
-	config *storage.AuthMachineToMachineConfig
+	config        *storage.AuthMachineToMachineConfig
+	issuerFactory tokens.IssuerFactory
 }
 
 func (s *stubTokenExchanger) ExchangeToken(_ context.Context, _ string) (string, error) {
@@ -675,4 +737,15 @@ func (s *stubTokenExchanger) GetTokenExpirationDuration() time.Duration {
 
 func (s *stubTokenExchanger) GetType() storage.AuthMachineToMachineConfig_Type {
 	return storage.AuthMachineToMachineConfig_GENERIC
+}
+
+func expectConfigUpsert(oldConfigExists bool, oldIssuer string, issuer string, mockSet *mocks.MockTokenExchangerSet) {
+	if oldConfigExists {
+		mockSet.EXPECT().GetTokenExchanger(oldIssuer)
+		if oldIssuer != issuer {
+			mockSet.EXPECT().RemoveConfigForIssuer(gomock.Any(), oldIssuer, gomock.Any()).Return(nil)
+		}
+	}
+	mockSet.EXPECT().GetTokenExchanger(issuer)
+	mockSet.EXPECT().UpsertConfigForIssuer(gomock.Any(), issuer, gomock.Any()).Return(nil)
 }

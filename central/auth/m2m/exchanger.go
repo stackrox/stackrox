@@ -49,16 +49,6 @@ type machineToMachineTokenExchanger struct {
 // newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
 func newTokenExchanger(
 	ctx context.Context,
-	config *storage.AuthMachineToMachineConfig,
-	roleDS roleDataStore.DataStore,
-	issuerFactory tokens.IssuerFactory,
-) (TokenExchanger, error) {
-	configs := []*storage.AuthMachineToMachineConfig{config}
-	return newMultiConfigTokenExchanger(ctx, configs, roleDS, issuerFactory)
-}
-
-func newMultiConfigTokenExchanger(
-	ctx context.Context,
 	configs []*storage.AuthMachineToMachineConfig,
 	roleDS roleDataStore.DataStore,
 	issuerFactory tokens.IssuerFactory,
@@ -66,7 +56,7 @@ func newMultiConfigTokenExchanger(
 	if err := validateConfigConsistency(configs); err != nil {
 		return nil, errors.Wrap(err, "creating token exchanger")
 	}
-	// The step above should ensure that there is at least one config in input,
+	// The step above should ensure that there is at least one config in the input,
 	// and that all configs share the same issuer and type.
 	exchangerType := configs[0].GetType()
 	exchangerIssuer := configs[0].GetIssuer()
@@ -139,7 +129,6 @@ func validateConfigConsistency(configs []*storage.AuthMachineToMachineConfig) er
 			)
 		}
 	}
-
 	if multiErr != nil {
 		return multiErr
 	}
