@@ -7,9 +7,12 @@ import (
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 )
+
+var log = logging.LoggerForModule()
 
 var _ vmscraper.ProtocolClient = (*Client)(nil)
 
@@ -31,7 +34,13 @@ func NewClient(numPackages int, enabled bool) *Client {
 	if !enabled {
 		return c
 	}
-	c.gen = vmindexreport.NewGeneratorWithSeed(numPackages, reportGeneratorSeed)
+	gen, err := vmindexreport.NewGeneratorWithSeed(numPackages, reportGeneratorSeed)
+	if err != nil {
+		log.Warnf("fake VM reports disabled: failed to create generator: %v", err)
+		c.enabled = false
+		return c
+	}
+	c.gen = gen
 	c.token = fmt.Sprintf("fake-%d", numPackages)
 	return c
 }
