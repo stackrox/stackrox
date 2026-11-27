@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	pkgErrors "github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -26,12 +27,15 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -112,6 +116,493 @@ func makeError(errorID, errorString string) *v1.PolicyOperationError {
 			Error: errorString,
 		},
 	}
+}
+
+func newUpsertTestPolicy() *storage.Policy {
+	return &storage.Policy{
+		Id:              "policy-id",
+		Name:            "Test policy",
+		Categories:      []string{"Test"},
+		Severity:        storage.Severity_LOW_SEVERITY,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageRegistry,
+						Values:    []*storage.PolicyValue{{Value: "docker.io"}},
+					},
+				},
+			},
+		},
+	}
+}
+
+func waitForPolicyUpdate(done <-chan error) error {
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(5 * time.Second):
+		return errors.New("timed out waiting for policy update")
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicySkipsEquivalentPolicy() {
+	for name, modify := range map[string]func(*storage.Policy){
+		"identical": func(*storage.Policy) {},
+		"missing timestamp": func(p *storage.Policy) {
+			p.LastUpdated = nil
+		},
+		"different timestamp": func(p *storage.Policy) {
+			p.LastUpdated = &timestamppb.Timestamp{Seconds: 2}
+		},
+		"missing sort fields": func(p *storage.Policy) {
+			removeInternal(p)
+		},
+		"different sort fields": func(p *storage.Policy) {
+			p.SORTName = "different"
+			p.SORTLifecycleStage = "different"
+			p.SORTEnforcement = true
+		},
+		"normalized name": func(p *storage.Policy) {
+			p.Name = " " + p.GetName() + " "
+		},
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			policyutils.FillSortHelperFields(existing)
+			original := existing.CloneVT()
+			request := existing.CloneVT()
+			modify(request)
+			lastUpdated := request.GetLastUpdated()
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+
+			resp, err := s.tested.PutPolicy(ctx, request)
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			s.Equal(lastUpdated, request.GetLastUpdated())
+			protoassert.Equal(s.T(), original, existing)
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyComparesEvaluationFilters() {
+	empty := &storage.EvaluationFilter{}
+	emptyList := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{}}
+	skipInit := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT}}
+	skipRegular := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR}}
+	for name, tc := range map[string]struct {
+		existing  *storage.EvaluationFilter
+		requested *storage.EvaluationFilter
+		changed   bool
+	}{
+		"nil to empty":           {requested: empty},
+		"empty to nil":           {existing: empty},
+		"nil to empty list":      {requested: emptyList},
+		"empty list to nil":      {existing: emptyList},
+		"same nonempty filter":   {existing: skipInit, requested: skipInit},
+		"nil to nonempty":        {requested: skipInit, changed: true},
+		"empty to nonempty":      {existing: empty, requested: skipInit, changed: true},
+		"nonempty to nil":        {existing: skipInit, changed: true},
+		"nonempty to empty":      {existing: skipInit, requested: empty, changed: true},
+		"different filter types": {existing: skipInit, requested: skipRegular, changed: true},
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+			existing.EvaluationFilter = tc.existing
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			original := existing.CloneVT()
+			request := existing.CloneVT()
+			request.EvaluationFilter = tc.requested
+			originalRequest := request.CloneVT()
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+			if tc.changed {
+				s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(nil)
+				s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{request}, nil)
+				s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{request})
+			}
+
+			resp, err := s.tested.PutPolicy(ctx, request)
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			protoassert.Equal(s.T(), original, existing)
+			protoassert.Equal(s.T(), tc.requested, request.GetEvaluationFilter())
+			if !tc.changed {
+				protoassert.Equal(s.T(), originalRequest, request)
+			}
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyUpdatesChangedPolicy() {
+	for name, modify := range map[string]func(*storage.Policy){
+		"description": func(p *storage.Policy) {
+			p.Description = "Updated description"
+		},
+		"disabled": func(p *storage.Policy) {
+			p.Disabled = !p.GetDisabled()
+		},
+		"severity": func(p *storage.Policy) {
+			p.Severity = storage.Severity_HIGH_SEVERITY
+		},
+		"criteria": func(p *storage.Policy) {
+			p.PolicySections[0].PolicyGroups[0].Values[0].Value = "quay.io"
+		},
+		"source": func(p *storage.Policy) {
+			p.Source = storage.PolicySource_DECLARATIVE
+		},
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			request := existing.CloneVT()
+			modify(request)
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(nil)
+			s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{request}, nil)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{request})
+
+			resp, err := s.tested.PutPolicy(ctx, request)
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			s.Greater(request.GetLastUpdated().GetSeconds(), existing.GetLastUpdated().GetSeconds())
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyRetriesIncompleteUpdates() {
+	for name, failActivePolicy := range map[string]bool{
+		"active policy update": true,
+		"sensor policy sync":   false,
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			request := existing.CloneVT()
+			request.Description = "Updated description"
+			request.LastUpdated = nil
+			failure := errors.New("downstream update failed")
+			var persisted *storage.Policy
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, p *storage.Policy) error {
+				persisted = p.CloneVT()
+				return nil
+			})
+
+			for attempt := range 2 {
+				if attempt > 0 {
+					s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+				}
+				if failActivePolicy {
+					s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(failure)
+				} else {
+					s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
+					s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, failure)
+				}
+
+				resp, err := s.tested.PutPolicy(ctx, request.CloneVT())
+				s.ErrorIs(err, failure)
+				s.Nil(resp)
+				s.Require().NotNil(persisted)
+			}
+
+			original := persisted.CloneVT()
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).DoAndReturn(func(p *storage.Policy) error {
+				protoassert.Equal(s.T(), original, p)
+				return nil
+			})
+			s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{persisted}, nil)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{persisted})
+
+			resp, err := s.tested.PutPolicy(ctx, request.CloneVT())
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			protoassert.Equal(s.T(), original, persisted)
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+			resp, err = s.tested.PutPolicy(ctx, request.CloneVT())
+			s.Require().NoError(err)
+			s.NotNil(resp)
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyWriteErrorPreservesPendingState() {
+	for name, pending := range map[string]bool{"no prior failure": false, "prior propagation failure": true} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			if pending {
+				request := existing.CloneVT()
+				request.Description = "Persisted update"
+				failure := errors.New("propagation failed")
+				s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing.CloneVT(), true, nil)
+				s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(failure)
+				_, err := s.tested.PutPolicy(ctx, request)
+				s.Require().ErrorIs(err, failure)
+				existing = request.CloneVT()
+			}
+			request := existing.CloneVT()
+			request.Description = "Failed write"
+			writeErr := errors.New("policy write failed")
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing.CloneVT(), true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, request).Return(writeErr)
+			_, err := s.tested.PutPolicy(ctx, request)
+			s.Require().ErrorIs(err, writeErr)
+
+			s.policies.EXPECT().GetPolicy(ctx, existing.GetId()).Return(existing.CloneVT(), true, nil)
+			if pending {
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
+				s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{existing}, nil)
+				s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{existing})
+			}
+			_, err = s.tested.PutPolicy(ctx, existing.CloneVT())
+			s.NoError(err)
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyDoesNotBlockOtherPolicies() {
+	for name, changed := range map[string]bool{"changed": true, "unchanged": false} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			blockedPolicy := newUpsertTestPolicy()
+			blockedPolicy.Description = "Blocked update"
+			otherPolicy := newUpsertTestPolicy()
+			otherPolicy.Id = "other-policy"
+			otherRequest := otherPolicy.CloneVT()
+			if changed {
+				otherRequest.Description = "Independent update"
+			}
+			blocked := make(chan struct{})
+			release := make(chan struct{})
+			var releaseOnce sync.Once
+			unblock := func() { releaseOnce.Do(func() { close(release) }) }
+			defer unblock()
+
+			s.policies.EXPECT().GetPolicy(ctx, blockedPolicy.GetId()).Return(newUpsertTestPolicy(), true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, blockedPolicy).Return(nil)
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(blockedPolicy).Return(nil)
+			s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any()).Do(func([]*storage.Policy) {
+				close(blocked)
+				<-release
+			})
+			s.policies.EXPECT().GetPolicy(ctx, otherPolicy.GetId()).Return(otherPolicy, true, nil)
+			if changed {
+				s.policies.EXPECT().UpdatePolicy(ctx, otherRequest).Return(nil)
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(otherRequest).Return(nil)
+				s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
+				s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())
+			}
+
+			blockedDone := make(chan error, 1)
+			go func() {
+				_, err := s.tested.PutPolicy(ctx, blockedPolicy)
+				blockedDone <- err
+			}()
+			select {
+			case <-blocked:
+			case <-time.After(5 * time.Second):
+				s.FailNow("policy update did not reach Sensor broadcast")
+			}
+			otherDone := make(chan error, 1)
+			go func() {
+				_, err := s.tested.PutPolicy(ctx, otherRequest)
+				otherDone <- err
+			}()
+			s.NoError(waitForPolicyUpdate(otherDone), "another policy must proceed while this broadcast is blocked")
+			unblock()
+			s.NoError(waitForPolicyUpdate(blockedDone))
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPolicyRetriesDoNotWaitForPropagation() {
+	for name, tc := range map[string]struct {
+		create    bool
+		failFirst bool
+	}{
+		"existing policy, original fails": {failFirst: true},
+		"new policy, original fails":      {create: true, failFirst: true},
+		"existing policy, retry fails":    {},
+		"new policy, retry fails":         {create: true},
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			request := newUpsertTestPolicy()
+			stored := request.CloneVT()
+			request.Description = "Updated description"
+			var storeMutex sync.Mutex
+			persist := func(_ context.Context, p *storage.Policy) error {
+				storeMutex.Lock()
+				defer storeMutex.Unlock()
+				stored = p.CloneVT()
+				return nil
+			}
+			getStored := func() *storage.Policy {
+				storeMutex.Lock()
+				defer storeMutex.Unlock()
+				return stored.CloneVT()
+			}
+			lookups := 4
+			if tc.create {
+				request.Id = ""
+				lookups = 3
+				s.policies.EXPECT().AddPolicy(ctx, request).DoAndReturn(func(ctx context.Context, p *storage.Policy) (string, error) {
+					if p.GetId() == "" {
+						p.Id = "created-policy-id"
+					}
+					return p.GetId(), persist(ctx, p)
+				})
+			} else {
+				s.policies.EXPECT().UpdatePolicy(ctx, request).DoAndReturn(persist)
+			}
+			s.policies.EXPECT().GetPolicy(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, id string) (*storage.Policy, bool, error) {
+				p := getStored()
+				return p, p.GetId() == id, nil
+			}).Times(lookups)
+
+			blocked := make(chan struct{})
+			release := make(chan struct{})
+			var releaseOnce sync.Once
+			unblock := func() { releaseOnce.Do(func() { close(release) }) }
+			defer unblock()
+			failure := errors.New("active policy update failed")
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).DoAndReturn(func(*storage.Policy) error {
+				close(blocked)
+				<-release
+				if tc.failFirst {
+					return failure
+				}
+				return nil
+			})
+			var retryErr error
+			if !tc.failFirst {
+				retryErr = failure
+			}
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(retryErr)
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
+			s.policies.EXPECT().GetAllPolicies(gomock.Any()).DoAndReturn(func(context.Context) ([]*storage.Policy, error) {
+				return []*storage.Policy{getStored()}, nil
+			}).Times(2)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any()).Times(2)
+
+			firstDone := make(chan error, 1)
+			go func() {
+				var err error
+				if tc.create {
+					_, err = s.tested.PostPolicy(ctx, &v1.PostPolicyRequest{Policy: request})
+				} else {
+					_, err = s.tested.PutPolicy(ctx, request)
+				}
+				firstDone <- err
+			}()
+			select {
+			case <-blocked:
+			case <-time.After(5 * time.Second):
+				s.FailNow("policy update did not reach active-policy registration")
+			}
+			original := getStored()
+			retry := original.CloneVT()
+			retry.LastUpdated = nil
+			retryDone := make(chan error, 1)
+			go func() {
+				_, err := s.tested.PutPolicy(ctx, retry)
+				retryDone <- err
+			}()
+			if tc.failFirst {
+				s.NoError(waitForPolicyUpdate(retryDone), "identical retry must not wait for the original attempt")
+			} else {
+				s.ErrorIs(waitForPolicyUpdate(retryDone), failure)
+			}
+			unblock()
+			if tc.failFirst {
+				s.ErrorIs(waitForPolicyUpdate(firstDone), failure)
+			} else {
+				s.NoError(waitForPolicyUpdate(firstDone))
+			}
+			protoassert.Equal(s.T(), original, getStored())
+			_, err := s.tested.PutPolicy(ctx, retry.CloneVT())
+			s.NoError(err)
+			_, err = s.tested.PutPolicy(ctx, retry.CloneVT())
+			s.NoError(err)
+		})
+	}
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyUpsertsMissingPolicy() {
+	ctx := context.Background()
+	request := newUpsertTestPolicy()
+
+	s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(nil, false, nil)
+	s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+	s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(nil)
+	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{request}, nil)
+	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{request})
+
+	resp, err := s.tested.PutPolicy(ctx, request)
+	s.Require().NoError(err)
+	s.NotNil(resp)
+	s.NotNil(request.GetLastUpdated())
+}
+
+func (s *PolicyServiceTestSuite) TestPostPolicyCreatesPolicy() {
+	ctx := context.Background()
+	request := newUpsertTestPolicy()
+	var id string
+	request.Id = ""
+
+	s.policies.EXPECT().AddPolicy(ctx, request).DoAndReturn(func(_ context.Context, p *storage.Policy) (string, error) {
+		id = p.GetId()
+		return id, nil
+	})
+	s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(nil)
+	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{request}, nil)
+	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{request})
+
+	resp, err := s.tested.PostPolicy(ctx, &v1.PostPolicyRequest{Policy: request})
+	s.Require().NoError(err)
+	s.NotEmpty(id)
+	s.Equal(id, resp.GetId())
+	s.NotNil(resp.GetLastUpdated())
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyLookupError() {
+	ctx := context.Background()
+	request := newUpsertTestPolicy()
+	lookupErr := errors.New("policy lookup failed")
+
+	s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(nil, false, lookupErr)
+
+	resp, err := s.tested.PutPolicy(ctx, request)
+	s.ErrorIs(err, lookupErr)
+	s.Nil(resp)
+	s.Nil(request.GetLastUpdated())
+}
+
+func (s *PolicyServiceTestSuite) TestPutPolicyValidatesPolicy() {
+	request := newUpsertTestPolicy()
+	request.Name = ""
+
+	resp, err := s.tested.PutPolicy(context.Background(), request)
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(resp)
 }
 
 func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
