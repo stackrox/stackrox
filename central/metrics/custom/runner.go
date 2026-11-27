@@ -35,12 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
-type trackerRunner []struct {
-	tracker.Tracker
-	// getGroupConfig returns the storage configuration associated to the
-	// tracker.
-	getGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
-}
+type trackerRunner []tracker.Registration
 
 // prefixFilteringGatherer exposes only metric families whose names match a
 // caller's permitted prefixes without modifying the shared registry.
@@ -170,7 +165,7 @@ func (tr trackerRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics) (R
 	}
 	var runnerConfig RunnerConfiguration
 	for _, tracker := range tr {
-		trackerConfig, err := tracker.NewConfiguration(tracker.getGroupConfig(cfg))
+		trackerConfig, err := tracker.NewConfiguration(tracker.GetGroupConfig(cfg))
 		if err != nil {
 			return nil, err
 		}
