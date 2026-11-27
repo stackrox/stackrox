@@ -5,6 +5,7 @@ import {
     clickOnCountWidget,
     hasCountWidgetsFor,
     hasTabsFor,
+    interactAndWaitForConfigurationManagementSecondaryEntities,
     navigateToSingleEntityPage,
     verifyTableLinkToSidePanelTable,
     verifyWidgetLinkToTableFromSidePanel,
@@ -65,7 +66,15 @@ describe('Configuration Management Images', () => {
     // regression test for ROX-4543-crash-when-drilling-down-to-image-deployments
     it('should allow user to drill down from cluster to image to image-deployments', () => {
         visitConfigurationManagementEntityInSidePanel('clusters');
-        clickOnCountWidget(entitiesKey, 'side-panel');
+        // Side panel rows render only after the cluster images query responds,
+        // which can take longer than the default command timeout.
+        interactAndWaitForConfigurationManagementSecondaryEntities(
+            () => {
+                clickOnCountWidget(entitiesKey, 'side-panel');
+            },
+            'clusters',
+            entitiesKey
+        );
         cy.get(`[data-testid="side-panel"] .rt-tbody .rt-tr:last`).click({
             force: true,
         });
