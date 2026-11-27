@@ -17,11 +17,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Measure the cost of encoding one result envelope as its scan grows.
 func BenchmarkImageExportMarshaler(b *testing.B) {
 	variants := exportVariants()
 	for _, n := range []int{0, 32, 256} {
 		image := exportFixture(n)
 		env := map[string]any{"result": image}
+		// Give both encoders the same image at each size.
 		for name, m := range variants {
 			b.Run(fmt.Sprintf("components=%d/encoder=%s", n, name), func(b *testing.B) {
 				buf, err := m.Marshal(env)
@@ -38,8 +40,10 @@ func BenchmarkImageExportMarshaler(b *testing.B) {
 	}
 }
 
+// Measure the cost of forwarding a complete stream at several record counts.
 func BenchmarkExportStream(b *testing.B) {
 	for _, size := range []int{10, 100, 1000} {
+		// Build each set of records once and reuse it across encoders.
 		run := func(name string, build func(int) proto.Message) {
 			b.Run(fmt.Sprintf("stream=%d/%s", size, name), func(b *testing.B) {
 				records := make([]proto.Message, size)
@@ -51,6 +55,7 @@ func BenchmarkExportStream(b *testing.B) {
 				mux := runtime.NewServeMux()
 				for name, m := range exportVariants() {
 					b.Run("encoder="+name, func(b *testing.B) {
+						// Validate every flushed record before timing so a truncated stream cannot appear faster.
 						preflight := &exportPreflightWriter{ResponseWriter: httptest.NewRecorder()}
 						forwardExport(ctx, mux, m, preflight, req, records, io.EOF)
 						require.NoError(b, preflight.err)
@@ -60,6 +65,7 @@ func BenchmarkExportStream(b *testing.B) {
 						b.ReportAllocs()
 						sample, err := m.Marshal(map[string]any{"result": records[0]})
 						require.NoError(b, err)
+						// Time gateway forwarding with response buffering and validation excluded.
 						for b.Loop() {
 							forwardExport(ctx, mux, m, w, req, records, io.EOF)
 						}
@@ -69,9 +75,11 @@ func BenchmarkExportStream(b *testing.B) {
 			})
 		}
 		for _, n := range []int{0, 32, 256} {
+			// Use the same scan size for standalone images and images nested in workloads.
 			scan := exportFixture(n).GetImage().GetScan()
 			image := func(i int) *storage.Image { return &storage.Image{Id: fmt.Sprintf("sha256:%064x", i), Scan: scan} }
 			run(fmt.Sprintf("image/components=%d", n), func(i int) proto.Message { return &v1.ExportImageResponse{Image: image(i)} })
+			// Vary the number of images in each workload independently of scan size.
 			for _, count := range []int{1, 4} {
 				run(fmt.Sprintf("workload/images=%d/components=%d", count, n), func(i int) proto.Message {
 					response := &v1.VulnMgmtExportWorkloadsResponse{Deployment: &storage.Deployment{Id: fmt.Sprintf("%08d", i)}, LivePods: 2}
@@ -82,6 +90,7 @@ func BenchmarkExportStream(b *testing.B) {
 				})
 			}
 		}
+		// Scale repeated fields in deployment and pod records.
 		for _, n := range []int{1, 4, 16} {
 			run(fmt.Sprintf("deployment/containers=%d", n), func(i int) proto.Message {
 				d := &storage.Deployment{Id: fmt.Sprintf("%08d", i), Namespace: "production"}
@@ -98,6 +107,7 @@ func BenchmarkExportStream(b *testing.B) {
 				return &v1.ExportPodResponse{Pod: p}
 			})
 		}
+		// Scale the label map in each node record.
 		for _, n := range []int{0, 16, 64} {
 			run(fmt.Sprintf("node/labels=%d", n), func(i int) proto.Message {
 				node := &storage.Node{Id: fmt.Sprintf("%08d", i), ClusterName: "production", ContainerRuntimeVersion: "containerd://2.0", Labels: map[string]string{}}
@@ -110,6 +120,7 @@ func BenchmarkExportStream(b *testing.B) {
 	}
 }
 
+// Discard timed output so allocations reflect stream encoding.
 type exportWriter struct{ http.ResponseWriter }
 
 func (exportWriter) Write(p []byte) (int, error) { return len(p), nil }

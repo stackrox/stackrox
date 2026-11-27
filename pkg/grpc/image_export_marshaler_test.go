@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Compare result envelopes for empty scans and scans with nested vulnerabilities.
 func TestImageExportMarshaler(t *testing.T) {
 	variants := exportVariants()
 	for _, n := range []int{0, 32, 256} {
@@ -30,6 +31,7 @@ func TestImageExportMarshaler(t *testing.T) {
 	}
 }
 
+// An invalid protobuf string must fail with either encoder.
 func TestImageExportMarshalerRejectsInvalidUTF8(t *testing.T) {
 	image := &v1.ExportImageResponse{Image: &storage.Image{Id: "\xff"}}
 	for name, marshaler := range exportVariants() {
@@ -40,6 +42,7 @@ func TestImageExportMarshalerRejectsInvalidUTF8(t *testing.T) {
 	}
 }
 
+// Each export endpoint must preserve record order and the final stream error.
 func TestExportStreamMatchesBaseline(t *testing.T) {
 	variants := exportVariants()
 	for name, records := range map[string][]proto.Message{
@@ -50,6 +53,7 @@ func TestExportStreamMatchesBaseline(t *testing.T) {
 		"workload":   {&v1.VulnMgmtExportWorkloadsResponse{}, &v1.VulnMgmtExportWorkloadsResponse{Images: []*storage.Image{exportFixture(1).GetImage()}}},
 	} {
 		t.Run(name, func(t *testing.T) {
+			// Capture the newline-delimited response as the HTTP client receives it.
 			stream := func(m runtime.Marshaler) [][]byte {
 				t.Helper()
 				w := httptest.NewRecorder()
@@ -63,6 +67,7 @@ func TestExportStreamMatchesBaseline(t *testing.T) {
 			}
 			want := stream(variants["baseline"])
 			got := stream(variants["direct"])
+			// Compare JSON values so equivalent string escapes are accepted.
 			for i := range want {
 				require.JSONEq(t, string(want[i]), string(got[i]))
 			}
@@ -70,6 +75,7 @@ func TestExportStreamMatchesBaseline(t *testing.T) {
 	}
 }
 
+// Inputs outside the compact export format must retain the gateway's exact output.
 func TestImageExportMarshalerFallback(t *testing.T) {
 	for name, tc := range map[string]struct {
 		indent string
@@ -91,15 +97,18 @@ func TestImageExportMarshalerFallback(t *testing.T) {
 	}
 }
 
+// Use the same protobuf options so only envelope encoding varies.
 func exportVariants() map[string]runtime.Marshaler {
 	base := &runtime.JSONPb{MarshalOptions: protojson.MarshalOptions{EmitUnpopulated: true}}
 	return map[string]runtime.Marshaler{"baseline": base, "direct": exportMarshaler{base}}
 }
 
+// Keep three vulnerabilities per component so scan size scales with the component count.
 func exportFixture(n int) *v1.ExportImageResponse {
 	scan := &storage.ImageScan{OperatingSystem: "rhel:9"}
 	for i := range n {
 		c := &storage.EmbeddedImageScanComponent{Name: fmt.Sprintf("package-%d", i), Version: "1.2.3"}
+		// Include characters with multiple valid JSON escape forms.
 		for j := range 3 {
 			c.Vulns = append(c.Vulns, &storage.EmbeddedVulnerability{Cve: fmt.Sprintf("CVE-2026-%04d", 1000+j), Summary: "issue <tag> & > \u2028\u2029 \"quoted\" \\ path", Cvss: 7.5})
 		}
@@ -108,6 +117,7 @@ func exportFixture(n int) *v1.ExportImageResponse {
 	return &v1.ExportImageResponse{Image: &storage.Image{Scan: scan}}
 }
 
+// Replay records through the gateway, then end the stream with EOF or a service error.
 func forwardExport(ctx context.Context, mux *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, req *http.Request, images []proto.Message, end error) {
 	count := 0
 	runtime.ForwardResponseStream(ctx, mux, m, w, req, func() (proto.Message, error) {
