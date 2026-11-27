@@ -8,18 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_newClaimExtractorFromConfig(t *testing.T) {
+func Test_newClaimExtractorFromConfigType(t *testing.T) {
 	testNotImplementedErr := errox.NotImplemented
 
-	t.Run("GitHub Actions", func(t *testing.T) {
+	t.Run("GitHub Actions", func(it *testing.T) {
 		e := newClaimExtractorForConfigType(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
 				return testNotImplementedErr
 			},
 		})
-		assert.ErrorIs(t, err, errox.NotImplemented)
-		assert.Contains(t, err.Error(), "extracting GitHub Actions claims")
+		assert.ErrorIs(it, err, errox.NotImplemented)
+		assert.Contains(it, err.Error(), "extracting GitHub Actions claims")
 
 		claims, err := e.ExtractClaims(&IDToken{
 			Subject:  "subject",
@@ -31,21 +31,21 @@ func Test_newClaimExtractorFromConfig(t *testing.T) {
 				return nil
 			},
 		})
-		assert.NoError(t, err)
-		roxclaims, err := e.ExtractRoxClaims(claims)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"test"}, roxclaims.ExternalUser.Attributes["actor"])
+		assert.NoError(it, err)
+		roxClaims, err := e.ExtractRoxClaims(claims)
+		assert.NoError(it, err)
+		assert.Equal(it, []string{"test"}, roxClaims.ExternalUser.Attributes["actor"])
 	})
 
-	t.Run("Generic", func(t *testing.T) {
+	t.Run("Generic", func(it *testing.T) {
 		e := newClaimExtractorForConfigType(storage.AuthMachineToMachineConfig_GENERIC)
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
 				return testNotImplementedErr
 			},
 		})
-		assert.ErrorIs(t, err, errox.NotImplemented)
-		assert.Contains(t, err.Error(), "extracting claims")
+		assert.ErrorIs(it, err, errox.NotImplemented)
+		assert.Contains(it, err.Error(), "extracting claims")
 
 		claims, err := e.ExtractClaims(&IDToken{
 			Subject:  "subject",
@@ -58,9 +58,9 @@ func Test_newClaimExtractorFromConfig(t *testing.T) {
 				return nil
 			},
 		})
-		assert.NoError(t, err)
-		roxclaims, err := e.ExtractRoxClaims(claims)
-		assert.NoError(t, err)
-		assert.Equal(t, "some@ema.il", roxclaims.ExternalUser.FullName)
+		assert.NoError(it, err)
+		roxClaims, err := e.ExtractRoxClaims(claims)
+		assert.NoError(it, err)
+		assert.Equal(it, "some@ema.il", roxClaims.ExternalUser.FullName)
 	})
 }

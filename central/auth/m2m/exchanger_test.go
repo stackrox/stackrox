@@ -19,84 +19,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetTTLFromConfigs(t *testing.T) {
-	newConfig := func(tokenExpirationDuration string) *storage.AuthMachineToMachineConfig {
-		return &storage.AuthMachineToMachineConfig{
-			TokenExpirationDuration: tokenExpirationDuration,
-		}
-	}
+const (
+	oneMinute            = "1m"
+	thirtyMinutes        = "30m"
+	oneHour              = "1h"
+	oneHourThirtyMinutes = "1h30m"
+	twoHours             = "2h"
+	notADuration         = "60"
 
-	cases := map[string]struct {
-		configs       []*storage.AuthMachineToMachineConfig
-		expectedTTL   time.Duration
-		expectedError error
-	}{
-		"No config is rejected": {
-			configs:       nil,
-			expectedError: errox.InvalidArgs,
-		},
-		"Valid single config with minutes": {
-			configs:     []*storage.AuthMachineToMachineConfig{newConfig("1m")},
-			expectedTTL: 1 * time.Minute,
-		},
-		"Valid single config with hours": {
-			configs:     []*storage.AuthMachineToMachineConfig{newConfig("1h")},
-			expectedTTL: 1 * time.Hour,
-		},
-		"Valid single config with compound duration": {
-			configs:     []*storage.AuthMachineToMachineConfig{newConfig("1h30m")},
-			expectedTTL: 90 * time.Minute,
-		},
-		"Invalid single config with raw integer value": {
-			configs:       []*storage.AuthMachineToMachineConfig{newConfig("60")},
-			expectedError: errox.InvalidArgs,
-		},
-		"Invalid single config with empty duration": {
-			configs:       []*storage.AuthMachineToMachineConfig{newConfig("")},
-			expectedError: errox.InvalidArgs,
-		},
-		"Invalid single config with unknown unit": {
-			configs:       []*storage.AuthMachineToMachineConfig{newConfig("1w")},
-			expectedError: errox.InvalidArgs,
-		},
-		"Multiple valid configs return the smallest TTL": {
-			configs: []*storage.AuthMachineToMachineConfig{
-				newConfig("2h"),
-				newConfig("30m"),
-				newConfig("1h"),
-			},
-			expectedTTL: 30 * time.Minute,
-		},
-		"Multiple valid configs with a repeated TTL": {
-			configs: []*storage.AuthMachineToMachineConfig{
-				newConfig("1h"),
-				newConfig("1h"),
-			},
-			expectedTTL: 1 * time.Hour,
-		},
-		"Multiple configs with an invalid later config are rejected": {
-			configs: []*storage.AuthMachineToMachineConfig{
-				newConfig("1h"),
-				newConfig("60"),
-			},
-			expectedError: errox.InvalidArgs,
-		},
-	}
-
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			ttl, err := getTTLFromConfigs(c.configs)
-			assert.ErrorIs(t, err, c.expectedError)
-			// In error cases, expectedTTL is unset and thus holds the zero value,
-			// which is what the function returns alongside the error.
-			assert.Equal(t, c.expectedTTL, ttl)
-		})
-	}
-}
+	configID = "test-config-id"
+)
 
 func TestNewTokenExchanger(t *testing.T) {
-	const configID = "test-config-id"
-
 	// Serve a minimal OIDC discovery document, so that creating the OIDC provider within
 	// tokenVerifierFromConfigData succeeds without reaching out to a real issuer.
 	var oidcDiscoveryServer *httptest.Server
@@ -217,9 +151,83 @@ func TestNewTokenExchanger(t *testing.T) {
 	}
 }
 
-func TestExchangeToken(t *testing.T) {
-	const configID = "test-config-id"
+func TestGetTTLFromConfigs(t *testing.T) {
+	newConfig := func(tokenExpirationDuration string) *storage.AuthMachineToMachineConfig {
+		return &storage.AuthMachineToMachineConfig{
+			TokenExpirationDuration: tokenExpirationDuration,
+		}
+	}
 
+	cases := map[string]struct {
+		configs       []*storage.AuthMachineToMachineConfig
+		expectedTTL   time.Duration
+		expectedError error
+	}{
+		"No config is rejected": {
+			configs:       nil,
+			expectedError: errox.InvalidArgs,
+		},
+		"Valid single config with minutes": {
+			configs:     []*storage.AuthMachineToMachineConfig{newConfig(oneMinute)},
+			expectedTTL: 1 * time.Minute,
+		},
+		"Valid single config with hours": {
+			configs:     []*storage.AuthMachineToMachineConfig{newConfig(oneHour)},
+			expectedTTL: 1 * time.Hour,
+		},
+		"Valid single config with compound duration": {
+			configs:     []*storage.AuthMachineToMachineConfig{newConfig(oneHourThirtyMinutes)},
+			expectedTTL: 90 * time.Minute,
+		},
+		"Invalid single config with raw integer value": {
+			// notADuration = "60"
+			configs:       []*storage.AuthMachineToMachineConfig{newConfig(notADuration)},
+			expectedError: errox.InvalidArgs,
+		},
+		"Invalid single config with empty duration": {
+			configs:       []*storage.AuthMachineToMachineConfig{newConfig("")},
+			expectedError: errox.InvalidArgs,
+		},
+		"Invalid single config with unknown unit": {
+			configs:       []*storage.AuthMachineToMachineConfig{newConfig("1w")},
+			expectedError: errox.InvalidArgs,
+		},
+		"Multiple valid configs return the smallest TTL": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig(twoHours),
+				newConfig(thirtyMinutes),
+				newConfig(oneHour),
+			},
+			expectedTTL: 30 * time.Minute,
+		},
+		"Multiple valid configs with a repeated TTL": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig(oneHour),
+				newConfig(oneHour),
+			},
+			expectedTTL: 1 * time.Hour,
+		},
+		"Multiple configs with an invalid later config are rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig(oneHour),
+				newConfig(notADuration),
+			},
+			expectedError: errox.InvalidArgs,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(it *testing.T) {
+			ttl, err := getTTLFromConfigs(c.configs)
+			assert.ErrorIs(it, err, c.expectedError)
+			// In error cases, expectedTTL is unset and thus holds the zero value,
+			// which is what the function returns alongside the error.
+			assert.Equal(it, c.expectedTTL, ttl)
+		})
+	}
+}
+
+func TestExchangeToken(t *testing.T) {
 	newIDToken := func(subject string) *IDToken {
 		return &IDToken{
 			Subject:  subject,
