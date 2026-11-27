@@ -440,10 +440,14 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	assert.Empty(t, currentResp.GetCheckResults(), "expected CURRENT filter (scoped to this scan config) to return no rows")
 }
 
-// TestComplianceV2FreshnessStaleViaScanWatcherTimeout proves a rescan that is starved of sensor
-// updates marks its prior results STALE when its scan watcher times out. The schedule is set with
-// no near-term tick so the sweeper can't also produce STALE here. Must run non-parallel: it scales
-// Sensor to 0.
+// TestComplianceV2FreshnessStaleViaScanWatcherTimeout proves a rescan that never delivers any
+// check results marks its prior results STALE when its scan watcher times out. The test breaks
+// the profile's CustomRule before rescanning: the cel-scanner exits on the structurally invalid
+// rule without writing a CheckResult, so the run starts (Central sees the reset and creates the
+// watcher) but can never deliver. A sensor cut cannot starve this run reliably: the one-rule
+// scan delivers within seconds, faster than any observation-triggered cut. The schedule is set
+// with no near-term tick so the sweeper can't also produce STALE here. Must run non-parallel:
+// other tests in this suite scale Sensor to 0, which would starve this test's relays.
 func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	skipUnlessComplianceFreshnessEnabled(t)
 	ctx := context.Background()
@@ -488,13 +492,28 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	// A completed scan leaves a last scan time here (the helper above waited for it); the rescan
 	// below clears it, which the later poll relies on to confirm Central ingested the reset.
 
-	// Start a rescan that will never complete once the sensor is cut. Its watcher's prior results
-	// are the ones that should end up STALE.
+	// Break the rule's inputs: the rescan's cel-scanner validates the rule payload's
+	// structure before scanning -- an inputless rule fails that check and the scanner exits
+	// without writing any CheckResult, so the run starts but can never deliver. (Breaking
+	// the CEL expression instead would not do: the scanner only validates structure, and a
+	// syntactically invalid expression yields an ERROR CheckResult that satisfies the
+	// watcher.) The rule object must stay around -- deleting it would break Central's
+	// results queries, which resolve every check result's rule. The sensor stays up and
+	// relays the run's start, which is what creates the watcher whose timeout must mark
+	// the prior results STALE.
+	rule := &complianceoperatorv1.CustomRule{}
+	require.NoErrorf(t, dynClient.Get(ctx, types.NamespacedName{Name: testID, Namespace: coNamespaceV2}, rule),
+		"failed to get CustomRule %s", testID)
+	rule.Spec.CustomRulePayload.Inputs = nil
+	require.NoErrorf(t, dynClient.Update(ctx, rule), "failed to break CustomRule %s", testID)
+
+	// Start a rescan that can never deliver results. Its watcher's prior results are the ones
+	// that should end up STALE.
 	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
 	require.NoErrorf(t, err, "failed to trigger rescan for %s", testID)
 
-	// Wait for Central's view to leave "DONE" (the first scan's phase) before cutting the sensor,
-	// so the rescan's watcher exists (see waitForScanConfigRescanObserved).
+	// Wait for Central's view to leave "DONE" (the first scan's phase), so the rescan's watcher
+	// exists (see waitForScanConfigRescanObserved).
 	waitForScanConfigRescanObserved(t, ctx, scanConfigService, resp.GetId(), clusterID, "DONE", 2*time.Minute, 5*time.Second)
 
 	// The suite and scan updates arrive as separate messages, so the phase change above does not
@@ -510,8 +529,6 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 		require.Nilf(c, resultsResp.GetLastScanTime(),
 			"Central still reports last scan time %v; it has not observed the rescan's scan reset yet", resultsResp.GetLastScanTime())
 	}, 2*time.Minute, 5*time.Second)
-
-	scaleSensorDownForTest(ctx, t, k8sClient, dynClient)
 
 	// Central's scan watcher times out after ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT (see
 	// getFreshnessTimingsOrSkip) and marks the prior results STALE. The budget below covers the
