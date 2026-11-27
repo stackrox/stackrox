@@ -3,6 +3,7 @@ package watcher
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 	"time"
 
@@ -115,6 +116,227 @@ func TestPromoteTags_CopiesHistory(t *testing.T) {
 		tagLimit:    10,
 	}
 	require.NoError(t, w.promoteTags(context.Background(), repo))
+}
+
+func TestPromoteTags_KeepsPromotedDigestWhenCacheDigestIsEmpty(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+
+	created := timestamppb.Now()
+	failed := &storage.BaseImageTag{
+		Id:                    "tag-failed",
+		BaseImageRepositoryId: "repo-1",
+		Tag:                   "9.8",
+		Created:               created,
+		LayerDigests:          []string{"sha256:layer-old"},
+	}
+	refreshed := &storage.BaseImageTag{
+		Id:                    "tag-refreshed",
+		BaseImageRepositoryId: "repo-1",
+		Tag:                   "9.7",
+		ManifestDigest:        "sha256:new",
+		Created:               created,
+		LayerDigests:          []string{"sha256:layer-new"},
+		History: []*storage.BaseImageHistoryEntry{
+			{Instruction: "ADD", Value: "rootfs"},
+		},
+	}
+	unseen := &storage.BaseImageTag{
+		Id:                    "tag-unseen",
+		BaseImageRepositoryId: "repo-1",
+		Tag:                   "9.6",
+		Created:               created,
+		LayerDigests:          []string{"sha256:layer-unseen"},
+	}
+	repo := &storage.BaseImageRepository{
+		Id:             "repo-1",
+		RepositoryPath: "registry.redhat.io/ubi9/ubi",
+	}
+
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), "repo-1").
+		Return([]*storage.BaseImageTag{failed, refreshed, unseen}, nil)
+	mockBaseImageDS.EXPECT().
+		ListByRepository(gomock.Any(), "repo-1").
+		Return([]*storage.BaseImage{
+			{Id: "tag-failed", ManifestDigest: "sha256:kept"},
+			{Id: "tag-refreshed", ManifestDigest: "sha256:previous"},
+			{Id: "tag-unseen", ManifestDigest: "sha256:kept-too"},
+		}, nil)
+	mockBaseImageDS.EXPECT().
+		ReplaceByRepository(gomock.Any(), "repo-1", gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, images map[*storage.BaseImage][]string) error {
+			require.Len(t, images, 3)
+			byTag := make(map[string]*storage.BaseImage, len(images))
+			layersByTag := make(map[string][]string, len(images))
+			for img, digests := range images {
+				byTag[img.GetTag()] = img
+				layersByTag[img.GetTag()] = digests
+			}
+
+			require.NotNil(t, byTag["9.8"])
+			assert.Equal(t, "sha256:kept", byTag["9.8"].GetManifestDigest())
+			assert.Empty(t, byTag["9.8"].GetHistory())
+			assert.Equal(t, []string{"sha256:layer-old"}, layersByTag["9.8"])
+
+			require.NotNil(t, byTag["9.7"])
+			assert.Equal(t, "sha256:new", byTag["9.7"].GetManifestDigest())
+			require.Len(t, byTag["9.7"].GetHistory(), 1)
+			assert.Equal(t, "ADD", byTag["9.7"].GetHistory()[0].GetInstruction())
+
+			require.NotNil(t, byTag["9.6"])
+			assert.Equal(t, "sha256:kept-too", byTag["9.6"].GetManifestDigest())
+			return nil
+		})
+
+	w := &watcherImpl{
+		tagDS:       mockTagDS,
+		baseImageDS: mockBaseImageDS,
+		tagLimit:    10,
+	}
+	require.NoError(t, w.promoteTags(context.Background(), repo))
+}
+
+func TestDoScan_TagErrorKeepsPromotedDigest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+
+	repoID := uuid.NewV4().String()
+	tagID, err := tagUUID(repoID, "9.8")
+	require.NoError(t, err)
+
+	repo := &storage.BaseImageRepository{
+		Id:             repoID,
+		RepositoryPath: "registry.redhat.io/ubi9/ubi",
+		TagPattern:     "9.*",
+	}
+	cached := &storage.BaseImageTag{
+		Id:                    tagID,
+		BaseImageRepositoryId: repoID,
+		Tag:                   "9.8",
+		Created:               timestamppb.Now(),
+		LayerDigests:          []string{"sha256:layer"},
+	}
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repoID, gomock.Any()).
+		Return(nil, nil)
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), repoID).
+		Return([]*storage.BaseImageTag{cached}, nil).
+		Times(2)
+	mockBaseImageDS.EXPECT().
+		ListByRepository(gomock.Any(), repoID).
+		Return([]*storage.BaseImage{{
+			Id:             tagID,
+			ManifestDigest: "sha256:kept",
+		}}, nil)
+	mockBaseImageDS.EXPECT().
+		ReplaceByRepository(gomock.Any(), repoID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, images map[*storage.BaseImage][]string) error {
+			require.Len(t, images, 1)
+			for img, digests := range images {
+				assert.Equal(t, tagID, img.GetId())
+				assert.Equal(t, "sha256:kept", img.GetManifestDigest())
+				assert.Equal(t, []string{"sha256:layer"}, digests)
+			}
+			return nil
+		})
+
+	w := &watcherImpl{
+		repoDS:      mockRepoDS,
+		tagDS:       mockTagDS,
+		baseImageDS: mockBaseImageDS,
+		localScanner: stubScanner{events: []reposcan.TagEvent{{
+			Type:  reposcan.TagEventError,
+			Tag:   "9.8",
+			Error: errors.New("registry unavailable"),
+		}}},
+		tagLimit:  10,
+		batchSize: 10,
+	}
+	require.NoError(t, w.doScan(context.Background(), repo))
+}
+
+func TestDoScan_ScanErrorKeepsPromotedDigest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+
+	repoID := uuid.NewV4().String()
+	tagID, err := tagUUID(repoID, "9.8")
+	require.NoError(t, err)
+
+	repo := &storage.BaseImageRepository{
+		Id:             repoID,
+		RepositoryPath: "registry.redhat.io/ubi9/ubi",
+		TagPattern:     "9.*",
+	}
+	cached := &storage.BaseImageTag{
+		Id:                    tagID,
+		BaseImageRepositoryId: repoID,
+		Tag:                   "9.8",
+		Created:               timestamppb.Now(),
+		LayerDigests:          []string{"sha256:layer"},
+	}
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repoID, gomock.Any()).
+		Return(nil, nil)
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), repoID).
+		Return([]*storage.BaseImageTag{cached}, nil).
+		Times(2)
+	mockBaseImageDS.EXPECT().
+		ListByRepository(gomock.Any(), repoID).
+		Return([]*storage.BaseImage{{
+			Id:             tagID,
+			ManifestDigest: "sha256:kept",
+		}}, nil)
+	mockBaseImageDS.EXPECT().
+		ReplaceByRepository(gomock.Any(), repoID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, images map[*storage.BaseImage][]string) error {
+			require.Len(t, images, 1)
+			for img := range images {
+				assert.Equal(t, "sha256:kept", img.GetManifestDigest())
+			}
+			return nil
+		})
+
+	w := &watcherImpl{
+		repoDS:       mockRepoDS,
+		tagDS:        mockTagDS,
+		baseImageDS:  mockBaseImageDS,
+		localScanner: stubScanner{err: errors.New("registry unavailable")},
+		tagLimit:     10,
+		batchSize:    10,
+	}
+	require.ErrorContains(t, w.doScan(context.Background(), repo), "registry unavailable")
+}
+
+type stubScanner struct {
+	events []reposcan.TagEvent
+	err    error
+}
+
+func (s stubScanner) Name() string { return "stub" }
+
+func (s stubScanner) ScanRepository(context.Context, *storage.BaseImageRepository, reposcan.ScanRequest) iter.Seq2[reposcan.TagEvent, error] {
+	return func(yield func(reposcan.TagEvent, error) bool) {
+		if s.err != nil {
+			yield(reposcan.TagEvent{}, s.err)
+			return
+		}
+		for _, event := range s.events {
+			if !yield(event, nil) {
+				return
+			}
+		}
+	}
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
