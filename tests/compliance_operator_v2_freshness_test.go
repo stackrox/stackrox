@@ -47,8 +47,9 @@ func skipUnlessComplianceFreshnessEnabled(t *testing.T) {
 	t.Skipf("feature flag %s not reported by Central", envVar)
 }
 
-// scheduleAt returns a daily schedule at t's UTC hour:minute. The sweeper evaluates schedules in
-// time.Now()'s location, so this assumes Central's clock is UTC (the default for its images).
+// scheduleAt returns a daily schedule at t's UTC hour:minute. Central evaluates schedules
+// against UTC regardless of its clock's timezone, so no UTC assumption about Central itself
+// is needed.
 func scheduleAt(t time.Time) *v2.Schedule {
 	u := t.UTC()
 	return &v2.Schedule{
@@ -108,32 +109,6 @@ func getComplianceProfileStats(t require.TestingT, ctx context.Context, client v
 	require.NoErrorf(t, err, "failed to get compliance profile stats for %s", profile)
 	require.Lenf(t, resp.GetScanStats(), 1, "expected exactly one scan stats entry for profile %s", profile)
 	return resp.GetScanStats()[0]
-}
-
-// waitForScanConfigRescanObserved waits until Central's own view of scanConfigID shows clusterID's
-// suite phase moved past previousPhase. Central reports this only after sensor relays the suite
-// update, the relay that also creates the scan watcher, so it is stronger than polling the CO CRD.
-func waitForScanConfigRescanObserved(t *testing.T, ctx context.Context, client v2.ComplianceScanConfigurationServiceClient,
-	scanConfigID, clusterID, previousPhase string, timeout, interval time.Duration,
-) {
-	t.Helper()
-	t.Logf("Waiting up to %s for Central to observe scan config %s leave suite phase %q on cluster %s",
-		timeout, scanConfigID, previousPhase, clusterID)
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		status, err := client.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfigID})
-		require.NoErrorf(c, err, "failed to get scan config %s", scanConfigID)
-		for _, cs := range status.GetClusterStatus() {
-			if cs.GetClusterId() != clusterID {
-				continue
-			}
-			phase := cs.GetSuiteStatus().GetPhase()
-			require.NotEmptyf(c, phase, "Central has not reported a suite phase for cluster %s yet", clusterID)
-			require.NotEqualf(c, previousPhase, phase, "Central still reports suite phase %q for cluster %s", previousPhase, clusterID)
-			return
-		}
-		require.Failf(c, "cluster status not found", "cluster %s not found in scan config %s status", clusterID, scanConfigID)
-	}, timeout, interval)
-	t.Logf("Central observed scan config %s leave suite phase %q on cluster %s", scanConfigID, previousPhase, clusterID)
 }
 
 // scaleSensorDownForTest scales the cluster's sensor to 0 and restores it to 1 on cleanup.
@@ -386,9 +361,10 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		testID, updatedCfg.GetLastUpdatedTime().AsTime(), tick)
 
 	// Lower bound: the grace window must be respected. Nothing may mark results STALE before
-	// tick + grace (see getFreshnessTimingsOrSkip) has fully elapsed, so everything must still be
-	// CURRENT shortly before that point.
-	time.Sleep(time.Until(tick.Add(timings.grace - min(30*time.Second, timings.grace/2))))
+	// tick + grace (see getFreshnessTimingsOrSkip) has fully elapsed. Sample after at least one
+	// sweep interval has elapsed past the tick but before the grace window ends: a sweeper that
+	// ignored grace would have marked by then, so everything must still be CURRENT here.
+	time.Sleep(time.Until(tick.Add(max(timings.sweepInterval, timings.grace-30*time.Second))))
 	preGraceResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
 		ProfileName: profileName,
 		ClusterId:   clusterID,
@@ -479,6 +455,11 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	t.Cleanup(func() {
 		assert.NoError(t, deleteScanConfig(ctx, resp.GetId(), scanConfigService), "failed to delete scan config %s", testID)
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+		// The starved rescan's scan pod keeps restarting (RestartPolicy OnFailure) until the
+		// suite is torn down, so wait for the suite and its scan to go -- the scan's finalizer
+		// deletes the pod -- rather than leaving the crash loop running into later tests.
+		deleteResource[complianceoperatorv1.ComplianceSuite](ctx, t, dynClient, testID, coNamespaceV2)
+		deleteResource[complianceoperatorv1.ComplianceScan](ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
@@ -512,13 +493,9 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
 	require.NoErrorf(t, err, "failed to trigger rescan for %s", testID)
 
-	// Wait for Central's view to leave "DONE" (the first scan's phase), so the rescan's watcher
-	// exists (see waitForScanConfigRescanObserved).
-	waitForScanConfigRescanObserved(t, ctx, scanConfigService, resp.GetId(), clusterID, "DONE", 2*time.Minute, 5*time.Second)
-
-	// The suite and scan updates arrive as separate messages, so the phase change above does not
-	// prove Central got the scan reset. Central creates the watcher before clearing LastScanTime,
-	// so poll until it is nil: that proves Central ingested the reset, watcher included.
+	// Poll until the profile's last scan time is nil: the rescan clears it, so nil proves
+	// Central ingested the scan reset. (This does not by itself prove the watcher was created
+	// -- the STALE assertion below is that proof.)
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resultsResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
 			ProfileName: profileName,
