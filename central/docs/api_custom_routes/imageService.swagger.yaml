@@ -49,7 +49,7 @@ definitions:
         default: false
       digest:
         type: string
-        description: "Image digest if not already part of image name"
+        description: "Image digest if not already part of image name. A digest (inline or separate) is required to reuse a stored scan; requests without one always trigger a fresh scan."
     required:
     - imageName
   SBOM-SPDX23-Document:

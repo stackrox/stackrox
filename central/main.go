@@ -105,6 +105,7 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
@@ -838,7 +839,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/v1/images/sbom",
 			Authorizer:    user.With(permissions.Modify(resources.Image)),
-			ServerHandler: imageService.SBOMGenHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			ServerHandler: imageService.SBOMGenHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton(), imageMapperDatastore.Singleton()),
 			Compression:   true,
 		},
 		{

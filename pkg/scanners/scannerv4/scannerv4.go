@@ -118,7 +118,7 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 }
 
 // GetSBOM returns sbom of an image as a byte array. It also returns a boolean indicating if the index report for the image was found.
-func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
+func (s *scannerv4) GetSBOM(ctx context.Context, image *storage.Image) ([]byte, bool, error) {
 	digest, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
 		return nil, false, err
@@ -128,7 +128,7 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	// Desired URI for images: https://<registry>/<repo>-<uuid>
 	uri := "https://" + imgName.GetRegistry() + "/" + imgName.GetRemote() + "-" + uuid.NewV4().String()
 
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri, client.IncludeExternalIndexReports())
 	return sbom, found, err
