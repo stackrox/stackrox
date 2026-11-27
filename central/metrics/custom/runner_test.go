@@ -17,9 +17,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -195,12 +197,18 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 	}
 
 	runner := makeRunner(&runnerDatastores{})
+	workflowPermissions := map[string]storage.Access{
+		"WorkflowAdministration": storage.Access_READ_ACCESS,
+	}
 	workflowIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
 	workflowIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	workflowIdentity.EXPECT().UID().AnyTimes().Return("workflow-authz-test")
-	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
-		"WorkflowAdministration": storage.Access_READ_ACCESS,
+	workflowIdentity.EXPECT().Service().AnyTimes().Return(nil)
+	workflowIdentity.EXPECT().ExternalAuthProvider().AnyTimes().Return(nil)
+	workflowIdentity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{
+		roletest.NewResolvedRoleWithDenyAll("workflow-authz-test", workflowPermissions),
 	})
+	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(workflowPermissions)
 	workflowCtx := authn.ContextWithIdentity(context.Background(), workflowIdentity, t)
 	t.Cleanup(func() { metrics.DeleteCustomRegistry("workflow-authz-test") })
 	scopedIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
