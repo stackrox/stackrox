@@ -178,7 +178,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		ScanConfigName:         scanConfig.GetScanName(),
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
-		OneTimeScan:            false,
+		OneTimeScan:            scanConfig.GetScanConfig().GetOneTimeScan(),
 		StrictNodeScan:         false,
 		Schedule:               ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
 		Profiles:               profiles,
