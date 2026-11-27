@@ -1,6 +1,5 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
@@ -248,25 +247,6 @@ export function verifySelectedCvesInModal(cveNames) {
 }
 
 /**
- * Transform a v1 image CVE response to a v2 response format.
- * The v2 response uses `imageV2` as the root key, `ImageV2` as the typename,
- * a UUID-style `id`, and an additional `digest` field.
- */
-export function toImageV2Response(v1Response) {
-    const { image } = v1Response.data;
-    return {
-        data: {
-            imageV2: {
-                ...image,
-                id: '4c657931-d333-5cb8-8f0d-7e3836525ec7',
-                digest: image.id,
-                __typename: 'ImageV2',
-            },
-        },
-    };
-}
-
-/**
  * Navigates to the image list, clicks the first image, and mocks the detail page responses.
  *
  * Assumes the caller has already visited the workload CVE overview page and
@@ -279,28 +259,24 @@ export function clickFirstImageWithMockedResponses() {
     const cveListOpname = 'getCVEsForImage';
     const routeMatcherMap = getRouteMatcherMapForGraphQL([imageDetailsOpname, cveListOpname]);
 
-    return cy
-        .fixture('vulnerabilities/workloadCves/multipleCvesForImage.json')
-        .then((v1Response) => {
-            const staticResponseMap = {
-                [imageDetailsOpname]: {
-                    fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
-                },
-                [cveListOpname]: hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA')
-                    ? { body: toImageV2Response(v1Response) }
-                    : { body: v1Response },
-            };
+    const staticResponseMap = {
+        [imageDetailsOpname]: {
+            fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
+        },
+        [cveListOpname]: {
+            fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json',
+        },
+    };
 
-            return interactAndWaitForResponses(
-                () => cy.get('tbody tr td[data-label="Image"] a').first().click(),
-                routeMatcherMap,
-                staticResponseMap
-            ).then(() => {
-                return cy.get('h1').then(($h1) => {
-                    return $h1.text().replace(/(@sha256)?:.*/, '');
-                });
-            });
+    return interactAndWaitForResponses(
+        () => cy.get('tbody tr td[data-label="Image"] a').first().click(),
+        routeMatcherMap,
+        staticResponseMap
+    ).then(() => {
+        return cy.get('h1').then(($h1) => {
+            return $h1.text().replace(/(@sha256)?:.*/, '');
         });
+    });
 }
 
 /**
