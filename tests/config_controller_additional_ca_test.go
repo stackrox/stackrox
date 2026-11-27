@@ -181,6 +181,7 @@ func (s *ConfigControllerCASuite) createProxyConfigMap(proxyNs, nginxConfigName 
 	const nginxConfigTmpl = `
 server {
     listen 8443 ssl http2;
+    listen [::]:8443 ssl http2;
 
     ssl_certificate     /run/secrets/tls/tls.crt;
     ssl_certificate_key /run/secrets/tls/tls.key;

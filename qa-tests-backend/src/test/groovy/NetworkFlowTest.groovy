@@ -66,6 +66,10 @@ class NetworkFlowTest extends BaseSpecification {
 
     static final private String SOCAT_DEBUG = "-d -d -v"
 
+    private String getTcpListen() {
+        orchestrator.isIPv6PrimaryServiceNetwork() ? "TCP6-LISTEN" : "TCP-LISTEN"
+    }
+
     // Target deployments
     @Shared
     private List<Deployment> targetDeployments
@@ -90,8 +94,12 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    // socat's TCP-LISTEN binds the IPv4 wildcard only; on IPv6-primary
+                    // clusters connections are refused and no network flow is recorded.
+                    // TCP6-LISTEN binds "::" and serves both families, but relies on
+                    // kernel IPv6 being enabled, so use it only where it is needed.
+                    .setArgs(["(socat "+SOCAT_DEBUG+" "+tcpListen+":80,fork STDOUT & " +
+                                      "socat "+SOCAT_DEBUG+" "+tcpListen+":8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
                     .setImagePrefetcherAffinity()
