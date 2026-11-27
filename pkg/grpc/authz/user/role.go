@@ -16,6 +16,8 @@ func WithRole(roleName string) authz.Authorizer {
 	return &roleChecker{roleName}
 }
 
+var _ authz.Authorizer = (*roleChecker)(nil)
+
 type roleChecker struct {
 	roleName string
 }

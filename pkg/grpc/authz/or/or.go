@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 )
 
+var _ authz.Authorizer = (*or)(nil)
+
 type or struct {
 	authorizers []authz.Authorizer
 }
