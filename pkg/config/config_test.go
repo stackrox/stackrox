@@ -1,62 +1,78 @@
 package config
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestReadConfig(t *testing.T) {
-	testCases := []struct {
-		title             string
-		centralConfigPath string
-		extDBConfigPath   string
-		compactionEnabled bool
-		isValid           bool
-		isDefault         bool
-	}{
-		{
-			title:             "valid config",
-			centralConfigPath: "testdata/valid_case/central-config.yaml",
-			extDBConfigPath:   "testdata/valid_case/central-external-db.yaml",
-			compactionEnabled: false,
-			isValid:           true,
-			isDefault:         false,
-		},
-		{
-			title:             "default config",
-			centralConfigPath: "testdata/default_case/central-config.yaml",
-			extDBConfigPath:   "testdata/default_case/central-external-db.yaml",
-			compactionEnabled: true,
-			isValid:           true,
-			isDefault:         true,
-		},
-		{
-			title:             "malformed config",
-			centralConfigPath: "testdata/malformed_case/central-config.yaml",
-			extDBConfigPath:   "testdata/malformed_case/central-external-db.yaml",
-			isValid:           false,
-			isDefault:         false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.title, func(t *testing.T) {
-			configPath = tc.centralConfigPath
-			dbConfigPath = tc.extDBConfigPath
-			conf, err := readConfigs()
-			if tc.isValid {
-				assert.NoError(t, err)
-				require.NoError(t, conf.validate())
-				require.Equal(t, *conf.Maintenance.Compaction.Enabled, tc.compactionEnabled)
-				if tc.isDefault {
-					require.Equal(t, defaultDBSource, conf.CentralDB.Source)
-				} else {
-					assert.Contains(t, conf.CentralDB.Source, "fake")
-				}
-			} else {
-				assert.Error(t, err)
-			}
-		})
-	}
+func TestDefaultingReadConfig(t *testing.T) {
+	conf, err := readConfigsImpl(
+		"does-not-exist-and-will-be-defaulted/central-config.yaml",
+		"does-not-exist-and-will-be-defaulted/central-external-db.yaml")
+	assert.NoError(t, err)
+	assert.NoError(t, conf.validate())
+	assert.True(t, *conf.Maintenance.Compaction.Enabled)
+	assert.Equal(t, defaultDBSource, conf.CentralDB.Source)
+}
+
+func TestValidReadConfig(t *testing.T) {
+	const centralConfig = `
+maintenance:
+  safeMode: false
+  compaction:
+    enabled: false
+    bucketFillFraction: .5
+    freeFractionThreshold: 0.75`
+
+	const extDBConfig = `
+centralDB:
+  source: >
+    host=fakehost
+    port=5432
+    user=fakeuser`
+
+	conf, err := readConfigsT(t, centralConfig, extDBConfig)
+
+	assert.NoError(t, err)
+	assert.NoError(t, conf.validate())
+	assert.False(t, *conf.Maintenance.Compaction.Enabled)
+	assert.Contains(t, conf.CentralDB.Source, "fake")
+}
+
+func TestInvalidReadConfig(t *testing.T) {
+	const centralConfig = `
+maintenance:
+  safeMode: false
+  compaction:
+    enabled: false
+    bucketFillFraction: .5
+    freeFractionThreshold: 0.75`
+
+	const extDBConfig = `
+centralDB:
+  source
+    host=fakehost
+    port=5432
+    user=fakeuser`
+
+	conf, err := readConfigsT(t, centralConfig, extDBConfig)
+
+	assert.ErrorContains(t, err, "cannot unmarshal string into Go struct")
+	assert.Nil(t, conf)
+}
+
+func readConfigsT(t *testing.T, centralConfig, extDBConfig string) (*Config, error) {
+	dir := t.TempDir()
+	writeFile(t, dir+"/central.yaml", centralConfig)
+	writeFile(t, dir+"/external-db.yaml", extDBConfig)
+
+	return readConfigsImpl(dir+"/central.yaml", dir+"/external-db.yaml")
+}
+
+func writeFile(t *testing.T, filename, contents string) {
+	err := os.WriteFile(filename, []byte(contents), 0644)
+	require.NoError(t, err)
 }
