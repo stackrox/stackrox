@@ -48,6 +48,44 @@
           "ImageService"
         ]
       }
+    },
+    "/api/v1/sboms/scan": {
+      "post": {
+        "summary": "(Technology Preview) Scan an SBOM and return vulnerability scan results.",
+        "description": "Technology Preview feature. The request body is an SPDX 2.3 JSON document. Supported content types are application/spdx+json and text/spdx+json. Caller needs write permission on the Image resource.",
+        "operationId": "ScanSBOM",
+        "consumes": [
+          "application/spdx+json",
+          "text/spdx+json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SBOMScanResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SBOM-SPDX23-Document"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -121,7 +159,11 @@
                 ]
               }
             }
-          }
+          },
+          "required": [
+            "creators",
+            "created"
+          ]
         },
         "packages": {
           "type": "array",
@@ -174,6 +216,55 @@
               "relationshipType": {
                 "type": "string",
                 "example": "CONTAINED_BY"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "spdxVersion",
+        "dataLicense",
+        "SPDXID",
+        "name",
+        "documentNamespace",
+        "creationInfo"
+      ]
+    },
+    "v1SBOMScanResponse": {
+      "description": "SBOMScanResponse wraps metadata and scan results for an SBOM. Components must be JSON marshal/unmarshal compatible with storage.Image so that output formatting via roxctl is consistent.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The SBOM document ID."
+        },
+        "scan": {
+          "type": "object",
+          "properties": {
+            "scannerVersion": {
+              "type": "string"
+            },
+            "scanTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "components": {
+              "type": "array",
+              "description": "Components with matched vulnerabilities.",
+              "items": {
+                "$ref": "#/definitions/storageEmbeddedImageScanComponent"
+              }
+            },
+            "dataSource": {
+              "type": "object",
+              "description": "Scanner integration that produced the scan.",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
               }
             }
           }
