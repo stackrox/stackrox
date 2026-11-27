@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,5 +38,34 @@ func BenchmarkIndicatorPipeline_SteadyState(b *testing.B) {
 				<-d.output
 			}
 		})
+	}
+}
+
+// BenchmarkIndicatorPipeline_UnenrichedPublish measures the new path where
+// an unenriched IndicatorEvent is published directly to the dispatcher (as
+// the process signal pipeline does after ROX-35620). The detector consumer
+// enriches the event before running detection.
+func BenchmarkIndicatorPipeline_UnenrichedPublish(b *testing.B) {
+	b.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	d := createBenchDetector(b, true)
+	require.NoError(b, d.Start())
+	b.Cleanup(d.Stop)
+
+	d.Notify(common.SensorComponentEventCentralReachable)
+
+	pi := &storage.ProcessIndicator{
+		Id:           "pi-bench",
+		DeploymentId: "dep-1",
+		Signal:       &storage.ProcessSignal{ExecFilePath: "/bin/test"},
+	}
+
+	for b.Loop() {
+		event := &detectorEvents.IndicatorEvent{
+			Ctx:       context.Background(),
+			Indicator: pi,
+		}
+		require.NoError(b, d.pubSubDispatcher.Publish(event))
+		<-d.output
 	}
 }
