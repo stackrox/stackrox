@@ -58,7 +58,7 @@ func (rm *roleManager) createRolesForRoxClaims(
 		for resource, access := range permissionSet.GetResourceToAccess() {
 			role.Permissions[access] = append(role.Permissions[access], resource)
 		}
-		sortRoleResources(role)
+		sortPermissions(role.Permissions)
 		roles = append(roles, role)
 	}
 	return roles, nil
@@ -74,7 +74,7 @@ func legacyRoleForRoxClaims(requestedPermissions map[string]v1.Access, clusterSc
 			level := convertAccess(access)
 			role.Permissions[level] = append(role.Permissions[level], resource)
 		}
-		sortRoleResources(role)
+		sortPermissions(role.Permissions)
 	}
 	return role
 }
@@ -99,8 +99,8 @@ func newInternalRole(clusterScopes []*v1.ClusterScope) *tokens.InternalRole {
 	return role
 }
 
-func sortRoleResources(role *tokens.InternalRole) {
-	for _, resources := range role.Permissions {
+func sortPermissions(permissions map[storage.Access][]string) {
+	for _, resources := range permissions {
 		slices.Sort(resources)
 	}
 }

@@ -124,7 +124,7 @@ func TestPermissionSetPolicy(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, time.Hour, result.GetLifetime().AsDuration())
-			assert.Equal(t, original.GetPermissionSets(), result.GetPermissionSets())
+			protoassert.SlicesEqual(t, original.GetPermissionSets(), result.GetPermissionSets())
 			protoassert.Equal(t, original, req, "lifetime capping must not mutate the request")
 		})
 	}
@@ -154,7 +154,7 @@ func TestPermissionSetSelectorPresenceOnWire(t *testing.T) {
 			require.NoError(t, err)
 			decoded := new(v1.GenerateTokenForPermissionsAndScopeRequest)
 			require.NoError(t, decoded.UnmarshalVT(encoded))
-			assert.Equal(t, req.GetPermissionSets(), decoded.GetPermissionSets())
+			protoassert.SlicesEqual(t, req.GetPermissionSets(), decoded.GetPermissionSets())
 			ctx := sensorContext(t, gomock.NewController(t), "sensor-cluster")
 			_, err = defaultTokenPolicy().enforce(ctx, decoded)
 			if len(req.GetPermissionSets()) == 0 {
