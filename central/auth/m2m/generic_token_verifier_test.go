@@ -175,6 +175,8 @@ func Test_genericTokenVerifier_AudienceValidation(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			verifier := &genericTokenVerifier{provider: provider, audience: tc.audience}
+			assert.Equal(t, tc.audience, verifier.Audience())
+
 			tokenString := signToken(t, privateKey, keyID, baseClaims(tc.tokenAudience))
 
 			idToken, err := verifier.VerifyIDToken(ctx, tokenString)

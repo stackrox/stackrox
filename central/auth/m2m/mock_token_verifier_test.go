@@ -40,6 +40,20 @@ func (m *MocktokenVerifier) EXPECT() *MocktokenVerifierMockRecorder {
 	return m.recorder
 }
 
+// Audience mocks base method.
+func (m *MocktokenVerifier) Audience() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Audience")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Audience indicates an expected call of Audience.
+func (mr *MocktokenVerifierMockRecorder) Audience() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Audience", reflect.TypeOf((*MocktokenVerifier)(nil).Audience))
+}
+
 // VerifyIDToken mocks base method.
 func (m *MocktokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
 	m.ctrl.T.Helper()

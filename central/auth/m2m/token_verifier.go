@@ -24,6 +24,7 @@ type IDToken struct {
 //
 //go:generate mockgen -package m2m -self_package github.com/stackrox/rox/central/auth/m2m -destination mock_token_verifier_test.go -source token_verifier.go
 type tokenVerifier interface {
+	Audience() string
 	VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error)
 }
 

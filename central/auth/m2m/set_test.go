@@ -3,6 +3,7 @@ package m2m
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -33,6 +34,18 @@ func (f *fakeTokenExchanger) Provider() authproviders.Provider {
 
 func (f *fakeTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
 	return nil
+}
+
+func (f *fakeTokenExchanger) Configs() []*storage.AuthMachineToMachineConfig {
+	return nil
+}
+
+func (f *fakeTokenExchanger) GetTokenExpirationDuration() time.Duration {
+	return time.Duration(0)
+}
+
+func (f *fakeTokenExchanger) GetType() storage.AuthMachineToMachineConfig_Type {
+	return storage.AuthMachineToMachineConfig_GENERIC
 }
 
 type testExchangerFactory struct {

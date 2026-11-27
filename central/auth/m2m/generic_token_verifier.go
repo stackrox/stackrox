@@ -13,6 +13,10 @@ type genericTokenVerifier struct {
 
 var _ tokenVerifier = (*genericTokenVerifier)(nil)
 
+func (g *genericTokenVerifier) Audience() string {
+	return g.audience
+}
+
 func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
 	// When an expected audience is configured, validate the token's aud claim via the go-oidc
 	// ClientID check. Otherwise skip it for backward compatibility: a single client ID cannot

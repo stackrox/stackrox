@@ -22,6 +22,7 @@ var (
 )
 
 type parsedMapping struct {
+	Audience   string
 	Key        string
 	Expression *regexp.Regexp
 	Role       string
@@ -32,20 +33,24 @@ type roleMapper struct {
 	roleDS   roleDataStore.DataStore
 }
 
-func newRoleMapperFromMappings(
-	mappings []*storage.AuthMachineToMachineConfig_Mapping,
-	roleDS roleDataStore.DataStore) *roleMapper {
-	roleMappings := parseMappings(mappings)
+func newRoleMapperFromParsedMappings(
+	mappings []parsedMapping,
+	roleDS roleDataStore.DataStore,
+) *roleMapper {
 	return &roleMapper{
-		mappings: roleMappings,
+		mappings: mappings,
 		roleDS:   roleDS,
 	}
 }
 
-func parseMappings(mappings []*storage.AuthMachineToMachineConfig_Mapping) []parsedMapping {
+func parseMappings(
+	mappings []*storage.AuthMachineToMachineConfig_Mapping,
+	audience string,
+) []parsedMapping {
 	result := make([]parsedMapping, 0, len(mappings))
 	for _, m := range mappings {
 		result = append(result, parsedMapping{
+			Audience:   audience,
 			Key:        m.GetKey(),
 			Expression: regexp.MustCompile(m.GetValueExpression()),
 			Role:       m.GetRole(),
@@ -67,6 +72,9 @@ func resolveRolesForClaims(
 	rolesForUser := set.NewStringSet()
 
 	for _, mapping := range mappings {
+		if mapping.Audience != "" && !slices.Contains(claims["aud"], mapping.Audience) {
+			continue
+		}
 		if anyValueMatches(mapping.Expression, claims[mapping.Key]) {
 			rolesForUser.Add(mapping.Role)
 		}

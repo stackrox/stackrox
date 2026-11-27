@@ -31,6 +31,7 @@ func TestResolveRolesForClaims(t *testing.T) {
 		"groups":     {"system:admins"},
 	}
 	config := &storage.AuthMachineToMachineConfig{
+		Audience: "somewhere",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
 				Key:             "sub",
@@ -80,7 +81,7 @@ func TestResolveRolesForClaims(t *testing.T) {
 	for roleName, resolvedRole := range roles {
 		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
 	}
-	configMappings := parseMappings(config.GetMappings())
+	configMappings := parseMappings(config.GetMappings(), config.GetAudience())
 
 	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, configMappings)
 	assert.NoError(t, err)
@@ -90,6 +91,7 @@ func TestResolveRolesForClaims(t *testing.T) {
 func TestRoleMapperFromUserDescriptor(t *testing.T) {
 	testCases := map[string]struct {
 		claims        map[string][]string
+		audience      string
 		mappings      []*storage.AuthMachineToMachineConfig_Mapping
 		roles         map[string]permissions.ResolvedRole
 		roleLookupErr error
@@ -157,6 +159,41 @@ func TestRoleMapperFromUserDescriptor(t *testing.T) {
 			},
 			expectedRoles: nil,
 		},
+		"maps matching claims to roles when the token audience contains the config audience": {
+			claims: map[string][]string{
+				"sub": {"something"},
+				"aud": {"something", "somewhere"},
+			},
+			audience: "somewhere",
+			mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+				{
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            "Admin",
+				},
+			},
+			roles: map[string]permissions.ResolvedRole{
+				"Admin": &testResolvedRole{name: "Admin"},
+			},
+			expectedRoles: []permissions.ResolvedRole{
+				&testResolvedRole{name: "Admin"},
+			},
+		},
+		"returns error if no mapping matches because the token audience does not contain the config audience": {
+			claims: map[string][]string{
+				"sub": {"something"},
+				"aud": {"something"},
+			},
+			audience: "somewhere",
+			mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+				{
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            "Admin",
+				},
+			},
+			expectedError: auth.ErrNoValidRole,
+		},
 		"returns error if no mapping matches": {
 			claims: map[string][]string{
 				"sub": {"something"},
@@ -196,7 +233,8 @@ func TestRoleMapperFromUserDescriptor(t *testing.T) {
 				roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, tc.roleLookupErr).AnyTimes()
 			}
 
-			mapper := newRoleMapperFromMappings(tc.mappings, roleDSMock)
+			parsedMappings := parseMappings(tc.mappings, tc.audience)
+			mapper := newRoleMapperFromParsedMappings(parsedMappings, roleDSMock)
 			user := &permissions.UserDescriptor{
 				UserID:     "test-user",
 				Attributes: tc.claims,
@@ -235,7 +273,7 @@ func TestResolveRolesForClaimsList(t *testing.T) {
 	for roleName, resolvedRole := range roles {
 		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
 	}
-	configMappings := parseMappings(config.GetMappings())
+	configMappings := parseMappings(config.GetMappings(), config.GetAudience())
 
 	resolvedRoles, err := resolveRolesForClaims(t.Context(), claims, roleDSMock, configMappings)
 	assert.NoError(t, err)
