@@ -1,6 +1,7 @@
 package auditlog
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +16,7 @@ var (
 	// The audit logs report the resource all as one word, but the k8s event object (and elsewhere) uses underscore
 	auditResourceToKubeResource = map[string]storage.KubernetesEvent_Object_Resource{
 		"pods_exec":                  storage.KubernetesEvent_Object_PODS_EXEC,
+		"pods_attach":                storage.KubernetesEvent_Object_PODS_ATTACH,
 		"pods_portforward":           storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 		"secrets":                    storage.KubernetesEvent_Object_SECRETS,
 		"configmaps":                 storage.KubernetesEvent_Object_CONFIGMAPS,
@@ -46,10 +48,11 @@ type auditEvent struct {
 }
 
 type objectRef struct {
-	APIVersion string `json:"apiVersion"`
-	Name       string `json:"name"`
-	Namespace  string `json:"namespace"`
-	Resource   string `json:"resource"`
+	APIVersion  string `json:"apiVersion"`
+	Name        string `json:"name"`
+	Namespace   string `json:"namespace"`
+	Resource    string `json:"resource"`
+	Subresource string `json:"subresource"`
 }
 
 type userRef struct {
@@ -98,7 +101,7 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 
 	reason := e.Annotations[reasonAnnotationKey]
 
-	resource, found := auditResourceToKubeResource[strings.ToLower(e.ObjectRef.Resource)]
+	resource, found := auditResourceToKubeResource[e.ObjectRef.resourceKey()]
 	if !found {
 		resource = storage.KubernetesEvent_Object_UNKNOWN
 	}
@@ -121,6 +124,19 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 			Reason:     reason,
 		},
 		RequestUri: e.RequestURI,
+		AuditStage: e.Stage,
+	}
+
+	switch resource {
+	case storage.KubernetesEvent_Object_PODS_EXEC:
+		k8sEvent.ObjectArgs = &storage.KubernetesEvent_PodExecArgs_{PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
+			Container: requestQueryValue(e.RequestURI, "container"),
+			Commands:  requestQueryValues(e.RequestURI, "command"),
+		}}
+	case storage.KubernetesEvent_Object_PODS_ATTACH:
+		k8sEvent.ObjectArgs = &storage.KubernetesEvent_PodAttachArgs_{PodAttachArgs: &storage.KubernetesEvent_PodAttachArgs{
+			Container: requestQueryValue(e.RequestURI, "container"),
+		}}
 	}
 
 	if e.ImpersonatedUser != nil {
@@ -128,4 +144,28 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 	}
 
 	return k8sEvent
+}
+
+func (o *objectRef) resourceKey() string {
+	resource := strings.ToLower(o.Resource)
+	if o.Subresource == "" {
+		return resource
+	}
+	return resource + "_" + strings.ToLower(o.Subresource)
+}
+
+func requestQueryValue(requestURI, key string) string {
+	values := requestQueryValues(requestURI, key)
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+func requestQueryValues(requestURI, key string) []string {
+	u, err := url.ParseRequestURI(requestURI)
+	if err != nil {
+		return nil
+	}
+	return u.Query()[key]
 }

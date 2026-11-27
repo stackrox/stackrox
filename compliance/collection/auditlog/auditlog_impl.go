@@ -19,13 +19,14 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	// stagesAllowList is the set of stages that will be sent.
-	// Currently only `ResponseComplete` ("The response body has been completed, and no more bytes will be sent.") OR
-	// `Panic` ("Events generated when a panic occurred.") are supported
-	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
+	// completionStagesAllowList is the set of stages used for normal audit policy detection.
+	completionStagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
+
+	// interactiveStagesAllowList preserves the lifecycle needed to correlate exec and attach sessions.
+	interactiveStagesAllowList = set.NewFrozenStringSet("ResponseStarted", "ResponseComplete", "Panic")
 
 	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
+	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls", "pods_exec", "pods_attach")
 
 	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
 	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
@@ -42,6 +43,8 @@ var (
 		"networkpolicies":            verbsDenyListWithGet,
 		"securitycontextconstraints": verbsDenyListWithGet,
 		"egressfirewalls":            verbsDenyListWithGet,
+		"pods_exec":                  set.NewFrozenStringSet(),
+		"pods_attach":                set.NewFrozenStringSet(),
 	}
 )
 
@@ -165,11 +168,14 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 		s.startState = nil
 	}
 
-	// Only send when both the stage and resource type are in their corresponding allow-list
-	// and when verb is not disallowed
-	return stagesAllowList.Contains(event.Stage) &&
-		resourceTypesAllowList.Contains(event.ObjectRef.Resource) &&
-		!verbsDenyListPerResource[event.ObjectRef.Resource].Contains(strings.ToUpper(event.Verb))
+	resource := event.ObjectRef.resourceKey()
+	if !resourceTypesAllowList.Contains(resource) || verbsDenyListPerResource[resource].Contains(strings.ToUpper(event.Verb)) {
+		return false
+	}
+	if resource == "pods_exec" || resource == "pods_attach" {
+		return interactiveStagesAllowList.Contains(event.Stage)
+	}
+	return completionStagesAllowList.Contains(event.Stage)
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {
