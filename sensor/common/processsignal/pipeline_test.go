@@ -3,6 +3,7 @@ package processsignal
 import (
 	"context"
 	"testing"
+	"testing/cryptotest"
 	"testing/synctest"
 	"time"
 
@@ -321,6 +322,8 @@ func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
 
 func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+	// Only indicator identity matters here, not entropy generation in fake time.
+	cryptotest.SetGlobalRandom(t, 0)
 
 	synctest.Test(t, func(t *testing.T) {
 		sensorEvents := make(chan *message.ExpiringMessage, 1)
@@ -379,6 +382,7 @@ func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
 
 func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+	cryptotest.SetGlobalRandom(t, 0)
 
 	synctest.Test(t, func(t *testing.T) {
 		sensorEvents := make(chan *message.ExpiringMessage, 1)
