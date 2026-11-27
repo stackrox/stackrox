@@ -51,6 +51,13 @@ When creating pull requests, you must follow these requirements:
   - include: problem definition, considered alternatives, explain whys for chosen solution, if applicable.
   - include benchmark results if applicable
 
+### Watching CI
+
+When a PR is created or its tests are triggered, ask the user if they want you to babysit CI.
+If so, follow `.claude/skills/babysit-ci/SKILL.md` (user-invocable as `/babysit-ci`): it watches
+GitHub Actions and Prow checks, reacts to each result as it lands, and triages failures
+(Prow via the `stackrox-ci-failure-investigator` agent).
+
 ## Common Development Commands
 
 ### Build Commands
