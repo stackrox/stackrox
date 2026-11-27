@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -835,6 +836,30 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		"when content is default then report is default": {
 			arg:  &v4.Contents{},
 			want: &claircore.IndexReport{},
+		},
+		"when CPE is empty then preserve unset values": {
+			arg: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"sample pkg id": {Id: "sample pkg id"},
+				},
+				Distributions: map[string]*v4.Distribution{
+					"sample dist id": {Id: "sample dist id"},
+				},
+				Repositories: map[string]*v4.Repository{
+					"sample repo id": {Id: "sample repo id"},
+				},
+			},
+			want: &claircore.IndexReport{
+				Packages: map[string]*claircore.Package{
+					"sample pkg id": {ID: "sample pkg id"},
+				},
+				Distributions: map[string]*claircore.Distribution{
+					"sample dist id": {ID: "sample dist id"},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"sample repo id": {ID: "sample repo id"},
+				},
+			},
 		},
 		"when content package has source with source then error": {
 			arg: &v4.Contents{
@@ -3099,6 +3124,100 @@ func Test_PackageKindRoundTrip(t *testing.T) {
 
 			// ClairCore → Proto (round-trip)
 			assert.Equal(t, tc.roundTrip, got.String())
+		})
+	}
+}
+
+func Test_toCPEString(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     cpe.WFN
+		want    string
+		wantErr string
+	}{
+		{
+			name: "when zero value then wildcard",
+			arg:  cpe.WFN{},
+			want: emptyCPE,
+		},
+		{
+			name: "when wildcard then wildcard",
+			arg:  cpe.MustUnbind(emptyCPE),
+			want: emptyCPE,
+		},
+		{
+			name: "when set then bound",
+			arg:  cpe.MustUnbind("cpe:/a:redhat:openshift:4.12::el8"),
+			want: "cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*",
+		},
+		{
+			name:    "when invalid then error",
+			arg:     cpe.WFN{Attr: [cpe.NumAttr]cpe.Value{cpe.Part: {Kind: cpe.ValueSet, V: "x"}}},
+			wantErr: "disallowed value",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := toCPEString(tt.arg)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_toClairCoreCPE(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     string
+		want    cpe.WFN
+		wantErr string
+	}{
+		{
+			name: "when empty then zero value",
+			arg:  "",
+			want: cpe.WFN{},
+		},
+		{
+			name: "when wildcard then no error",
+			arg:  emptyCPE,
+			want: cpe.MustUnbind(emptyCPE),
+		},
+		{
+			name: "when set then unbound",
+			arg:  "cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*",
+			want: cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*"),
+		},
+		{
+			name:    "when invalid then error",
+			arg:     "not a cpe",
+			wantErr: `"not a cpe": `,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := toClairCoreCPE(tt.arg)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_CPERoundTrip(t *testing.T) {
+	for _, s := range []string{"", emptyCPE} {
+		t.Run("from "+strconv.Quote(s), func(t *testing.T) {
+			ccCPE, err := toClairCoreCPE(s)
+			require.NoError(t, err)
+			got, err := toCPEString(ccCPE)
+			require.NoError(t, err)
+			assert.Equal(t, emptyCPE, got)
 		})
 	}
 }
