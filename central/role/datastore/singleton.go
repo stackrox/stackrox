@@ -5,10 +5,12 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
+	"github.com/stackrox/rox/central/role/store"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,14 +35,64 @@ func Singleton() DataStore {
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Access)))
-		roles, permissionSets, accessScopes := getDefaultObjects()
-		utils.Must(roleStorage.UpsertMany(ctx, roles))
-		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
-		utils.Must(accessScopeStorage.UpsertMany(ctx, accessScopes))
+		utils.Must(roleStorage.UpsertMany(ctx, getDefaultRoles()))
+		utils.Must(seedDefaultPermissionSets(ctx, permissionSetStorage, getDefaultPermissionSets()))
+		utils.Must(accessScopeStorage.UpsertMany(ctx, getDefaultAccessScopes()))
+		seedMetricsPermissionSet(ctx, permissionSetStorage)
 	})
 	return ds
 }
 
-func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.SimpleAccessScope) {
-	return getDefaultRoles(), getDefaultPermissionSets(), getDefaultAccessScopes()
+func seedDefaultPermissionSets(ctx context.Context, permissionSetStorage store.PermissionSetStore,
+	defaults []*storage.PermissionSet) error {
+	var consoleProxy *storage.PermissionSet
+	others := make([]*storage.PermissionSet, 0, len(defaults))
+	for _, permissionSet := range defaults {
+		if permissionSet.GetName() == accesscontrol.ConsoleProxy {
+			consoleProxy = permissionSet
+		} else {
+			others = append(others, permissionSet)
+		}
+	}
+	if len(others) > 0 {
+		if err := permissionSetStorage.UpsertMany(ctx, others); err != nil {
+			return err
+		}
+	}
+	if consoleProxy != nil {
+		if err := permissionSetStorage.Upsert(ctx, consoleProxy); err != nil {
+			log.Errorf("Failed to seed Console Proxy permission set %q (ID %s); resolve any name conflict: %v",
+				consoleProxy.GetName(), consoleProxy.GetId(), err)
+		}
+	}
+	return nil
+}
+
+// seedMetricsPermissionSet provisions metrics permissions on every Central, including
+// those managing OpenShift secured clusters from a non-OpenShift management cluster.
+// Existing administrator-managed grants and constraints are preserved. Before using
+// an existing set for scoped tokens, administrators must explicitly configure READ
+// and CLUSTER_NAMESPACE constraints and remove any incompatible grants.
+func seedMetricsPermissionSet(ctx context.Context, permissionSetStorage store.PermissionSetStore) {
+	if exists, err := permissionSetStorage.Exists(ctx, accesscontrol.OpenShiftPrometheusMetricsReaderID); err != nil {
+		log.Warnf("Failed to check metrics permission set: %v", err)
+		return
+	} else if exists {
+		return
+	}
+
+	permissionSet := &storage.PermissionSet{
+		Id:               accesscontrol.OpenShiftPrometheusMetricsReaderID,
+		Name:             accesscontrol.OpenShiftPrometheusMetricsReader,
+		Description:      "For OpenShift Prometheus: use it to grant read-only access to scoped resources used by custom metrics",
+		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+		// Grant no permissions until an administrator chooses which metrics to expose.
+		ResourceToAccess: map[string]storage.Access{},
+		Traits:           &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+	}
+	if err := permissionSetStorage.Upsert(ctx, permissionSet); err != nil {
+		log.Warnf("Failed to seed metrics permission set %q (ID %s); resolve any name conflict: %v",
+			permissionSet.GetName(), permissionSet.GetId(), err)
+	}
 }

@@ -144,6 +144,16 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.View(resources.Cluster),
 		},
 	},
+	accesscontrol.ConsoleProxy: {
+		postgresID:       accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+		description:      "For users: read-only access through the secured-cluster OpenShift Console proxy",
+		accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image),
+		},
+	},
 }
 
 func getDefaultRoles() []*storage.Role {
