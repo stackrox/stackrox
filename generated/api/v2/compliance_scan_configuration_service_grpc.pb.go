@@ -59,9 +59,9 @@ type ComplianceScanConfigurationServiceClient interface {
 	GetMyReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error)
 	// DeleteReport deletes a given snapshot (scan execution).
 	DeleteReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+	// ListComplianceScanConfigProfiles lists the distinct profiles referenced by existing compliance scan configurations
 	ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error)
-	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+	// ListComplianceScanConfigClusterProfiles lists the distinct profiles referenced by existing compliance scan configurations for the specified cluster
 	ListComplianceScanConfigClusterProfiles(ctx context.Context, in *ComplianceConfigClusterProfileRequest, opts ...grpc.CallOption) (*ListComplianceScanConfigsClusterProfileResponse, error)
 }
 
@@ -219,9 +219,9 @@ type ComplianceScanConfigurationServiceServer interface {
 	GetMyReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error)
 	// DeleteReport deletes a given snapshot (scan execution).
 	DeleteReport(context.Context, *ResourceByID) (*Empty, error)
-	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+	// ListComplianceScanConfigProfiles lists the distinct profiles referenced by existing compliance scan configurations
 	ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error)
-	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+	// ListComplianceScanConfigClusterProfiles lists the distinct profiles referenced by existing compliance scan configurations for the specified cluster
 	ListComplianceScanConfigClusterProfiles(context.Context, *ComplianceConfigClusterProfileRequest) (*ListComplianceScanConfigsClusterProfileResponse, error)
 }
 
