@@ -72,6 +72,8 @@ func (a *MarshalerTest) TestDurationParsing() {
 	a.T().Cleanup(func() { api.Stop() })
 
 	for given, expected := range map[string]string{
+		`{"cves": ["ABC", "XYZ"], "duration": "0"}`:      `invalid google.protobuf.Duration value \"0\"`,
+		`{"cves": ["ABC", "XYZ"], "duration": "0s"}`:     `ABC, XYZ, 0s`,
 		`{"cves": ["ABC", "XYZ"], "duration": "86400s"}`: `ABC, XYZ, 24h0m0s`,
 		`{"cves": ["ABC", "XYZ"], "duration": "24s"}`:    `ABC, XYZ, 24s`,
 		`{"cves": ["ABC", "XYZ"], "duration": "24h"}`:    `invalid google.protobuf.Duration value \"24h\"`,
