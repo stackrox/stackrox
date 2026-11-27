@@ -36,6 +36,10 @@ func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error
 	return nil, nil
 }
 
+func (f *fakeRegistry) MetadataForAllPlatforms(_ *storage.Image) (*types.AllPlatformsMetadata, error) {
+	return nil, nil
+}
+
 func (f *fakeRegistry) Test() error {
 	return nil
 }

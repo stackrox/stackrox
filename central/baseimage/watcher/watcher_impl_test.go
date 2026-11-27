@@ -669,13 +669,13 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 	// Mock Metadata calls - 3 matching tags (1.0, 1.1, 1.2), but all return nil V1
 	// which causes validation errors
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-			return &storage.ImageMetadata{
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
+			return allPlatforms(&storage.ImageMetadata{
 				V2: &storage.V2Metadata{
 					Digest: "sha256:abc123" + img.GetName().GetTag(),
 				},
-			}, nil
+			}), nil
 		}).
 		Times(3)
 
@@ -848,8 +848,8 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 	// Metadata calls - return same digest for cached tags (no change)
 	// The scanner should skip refetching metadata for unchanged digests
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 			tag := img.GetName().GetTag()
 			// Return existing digest for cached tags - no update needed
 			var digest string
@@ -861,12 +861,12 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			case "1.23":
 				digest = "sha256:digest-23"
 			}
-			return &storage.ImageMetadata{
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{},
 				V2: &storage.V2Metadata{
 					Digest: digest,
 				},
-			}, nil
+			}), nil
 		}).
 		Times(3)
 
@@ -967,17 +967,17 @@ func TestWatcher_IncrementalUpdate_SkipTagsWithLargeCache(t *testing.T) {
 
 	// Only first 2 tags should have metadata fetched (CheckTags), rest are skipped.
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 			tag := img.GetName().GetTag()
 			// Should only see 1.25 and 1.24.
 			require.Contains(t, []string{"1.25", "1.24"}, tag, "Unexpected metadata fetch for tag outside CheckTags")
-			return &storage.ImageMetadata{
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{},
 				V2: &storage.V2Metadata{
 					Digest: "sha256:" + tag[2:], // Extract version number
 				},
-			}, nil
+			}), nil
 		}).
 		Times(2)
 
@@ -1060,9 +1060,9 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 
 	now := time.Now()
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-			return &storage.ImageMetadata{
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{
 					Created: protocompat.ConvertTimeToTimestampOrNil(&now),
 				},
@@ -1070,7 +1070,7 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 					Digest: "sha256:digest-" + img.GetName().GetTag(),
 				},
 				LayerShas: []string{"sha256:layer1", "sha256:layer2"},
-			}, nil
+			}), nil
 		}).
 		Times(3)
 
@@ -1184,9 +1184,9 @@ func TestWatcher_TagBatch_DeleteEvent(t *testing.T) {
 		Times(1)
 
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-			return &storage.ImageMetadata{
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{
 					Created: protocompat.ConvertTimeToTimestampOrNil(&now),
 				},
@@ -1194,7 +1194,7 @@ func TestWatcher_TagBatch_DeleteEvent(t *testing.T) {
 					Digest: "sha256:digest-" + img.GetName().GetTag(),
 				},
 				LayerShas: []string{"sha256:layer1", "sha256:layer2"},
-			}, nil
+			}), nil
 		}).
 		Times(2) // Only for 1.0 and 1.1
 

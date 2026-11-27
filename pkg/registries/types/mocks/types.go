@@ -115,6 +115,21 @@ func (mr *MockRegistryMockRecorder) Metadata(image any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Metadata", reflect.TypeOf((*MockRegistry)(nil).Metadata), image)
 }
 
+// MetadataForAllPlatforms mocks base method.
+func (m *MockRegistry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MetadataForAllPlatforms", image)
+	ret0, _ := ret[0].(*types.AllPlatformsMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MetadataForAllPlatforms indicates an expected call of MetadataForAllPlatforms.
+func (mr *MockRegistryMockRecorder) MetadataForAllPlatforms(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetadataForAllPlatforms", reflect.TypeOf((*MockRegistry)(nil).MetadataForAllPlatforms), image)
+}
+
 // Name mocks base method.
 func (m *MockRegistry) Name() string {
 	m.ctrl.T.Helper()
@@ -251,6 +266,21 @@ func (m *MockImageRegistry) Metadata(image *storage.Image) (*storage.ImageMetada
 func (mr *MockImageRegistryMockRecorder) Metadata(image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Metadata", reflect.TypeOf((*MockImageRegistry)(nil).Metadata), image)
+}
+
+// MetadataForAllPlatforms mocks base method.
+func (m *MockImageRegistry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MetadataForAllPlatforms", image)
+	ret0, _ := ret[0].(*types.AllPlatformsMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MetadataForAllPlatforms indicates an expected call of MetadataForAllPlatforms.
+func (mr *MockImageRegistryMockRecorder) MetadataForAllPlatforms(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetadataForAllPlatforms", reflect.TypeOf((*MockImageRegistry)(nil).MetadataForAllPlatforms), image)
 }
 
 // Name mocks base method.

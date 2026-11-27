@@ -226,6 +226,31 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	return handleManifests(r, manifestType, remote, digest.String())
 }
 
+// MetadataForAllPlatforms returns metadata for every linux platform the image supports,
+// plus the top-level manifest digest. For a multi-arch manifest list it returns one entry
+// per platform; for a single-platform image it returns a single entry. Unlike Metadata, it
+// does not collapse a manifest list to the caller's architecture.
+func (r *Registry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
+	if image == nil {
+		return nil, nil
+	}
+
+	remote := image.GetName().GetRemote()
+	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get the manifest digest")
+	}
+	platforms, err := handleManifestsAllPlatforms(r, manifestType, remote, digest.String())
+	if err != nil {
+		return nil, err
+	}
+	return &types.AllPlatformsMetadata{
+		ManifestDigest: digest.String(),
+		IsManifestList: isManifestList(manifestType),
+		Platforms:      platforms,
+	}, nil
+}
+
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
 	err := r.Client.Ping()

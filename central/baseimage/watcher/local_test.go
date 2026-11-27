@@ -12,10 +12,26 @@ import (
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	registryTypesMocks "github.com/stackrox/rox/pkg/registries/types/mocks"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// allPlatforms wraps a single-platform storage.ImageMetadata as the multi-platform
+// result returned by Registry.MetadataForAllPlatforms, so existing single-arch test
+// fixtures can drive the new interface. The top-level digest mirrors the image's
+// manifest digest (V2, falling back to V1).
+func allPlatforms(md *storage.ImageMetadata) *types.AllPlatformsMetadata {
+	return &types.AllPlatformsMetadata{
+		ManifestDigest: stringutils.FirstNonEmpty(md.GetV2().GetDigest(), md.GetV1().GetDigest()),
+		Platforms: []*types.PlatformMetadata{{
+			OS:           "linux",
+			Architecture: "amd64",
+			Metadata:     md,
+		}},
+	}
+}
 
 func TestLocalScanner_ScanRepository_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -48,16 +64,16 @@ func TestLocalScanner_ScanRepository_Success(t *testing.T) {
 
 	// Mock Metadata calls for the 3 matching tags (1.0, 1.1, 1.2).
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-			return &storage.ImageMetadata{
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{
 					Created: protoTime,
 				},
 				V2: &storage.V2Metadata{
 					Digest: "sha256:abc123" + img.GetName().GetTag(),
 				},
-			}, nil
+			}), nil
 		}).
 		Times(3)
 
@@ -290,13 +306,13 @@ func TestLocalScanner_ScanRepository_DeletionEvents(t *testing.T) {
 	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		Return(&storage.ImageMetadata{
+		MetadataForAllPlatforms(gomock.Any()).
+		Return(allPlatforms(&storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Created: protoTime,
 			},
 			V2: &storage.V2Metadata{Digest: "sha256:abc123"},
-		}, nil)
+		}), nil)
 
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
@@ -375,15 +391,15 @@ func TestLocalScanner_ScanRepository_SkipTags(t *testing.T) {
 
 	// Only 1 metadata call for "1.0" - other tags are skipped.
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 			assert.Equal(t, "1.0", img.GetName().GetTag(), "only 1.0 should be fetched")
-			return &storage.ImageMetadata{
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{
 					Created: protoTime,
 				},
 				V2: &storage.V2Metadata{Digest: "sha256:abc123"},
-			}, nil
+			}), nil
 		})
 
 	mockRegistrySet.EXPECT().
@@ -445,17 +461,17 @@ func TestLocalScanner_ScanRepository_MetadataFetchError(t *testing.T) {
 
 	// First tag succeeds, second tag fails.
 	mockRegistry.EXPECT().
-		Metadata(gomock.Any()).
-		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+		MetadataForAllPlatforms(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 			if img.GetName().GetTag() == "1.1" {
 				return nil, errox.InvariantViolation.New("manifest not found")
 			}
-			return &storage.ImageMetadata{
+			return allPlatforms(&storage.ImageMetadata{
 				V1: &storage.V1Metadata{
 					Created: protoTime,
 				},
 				V2: &storage.V2Metadata{Digest: "sha256:abc123"},
-			}, nil
+			}), nil
 		}).
 		Times(2)
 

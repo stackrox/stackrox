@@ -119,49 +119,78 @@ func (f *TagFetcher) fetchTags(ctx context.Context, tags []string, results chan<
 	}
 }
 
-// fetch fetches metadata at the registry for a single tag.
-func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*storage.ImageMetadata, error) {
+// metadata fetches per-platform metadata at the registry for a single tag.
+func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*types.AllPlatformsMetadata, error) {
 	if err := f.limiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("rate limiter wait: %w", err)
 	}
-	metadata, err := f.registry.Metadata(&storage.Image{Name: name})
+	metadata, err := f.registry.MetadataForAllPlatforms(&storage.Image{Name: name})
 	if err != nil {
 		return nil, fmt.Errorf("registry call failed: %w", err)
 	}
-	if metadata == nil {
-		return nil, errors.New("nil metadata returned")
+	if metadata == nil || len(metadata.Platforms) == 0 {
+		return nil, errors.New("no platform metadata returned")
 	}
-	if metadata.GetV1() == nil {
-		return nil, errors.New("nil V1 metadata returned")
-	}
-	if metadata.GetV1().GetCreated() == nil {
-		return nil, errors.New("nil V1 created metadata returned")
+	for _, p := range metadata.Platforms {
+		if p.Metadata.GetV1() == nil {
+			return nil, errors.New("nil V1 metadata returned")
+		}
+		if p.Metadata.GetV1().GetCreated() == nil {
+			return nil, errors.New("nil V1 created metadata returned")
+		}
 	}
 	return metadata, nil
 }
 
-// tagMetadata extracts TagMetadata from storage.ImageMetadata.
-//
-// TODO(ROX-32382): Manifest lists are not handled currently, and it will require
-// a new interface to retrieve metadata from the registry.
-func tagMetadata(tag string, metadata *storage.ImageMetadata) TagMetadata {
-	result := TagMetadata{Tag: tag}
+// tagMetadata extracts TagMetadata from per-platform registry metadata.
+func tagMetadata(tag string, metadata *types.AllPlatformsMetadata) TagMetadata {
+	result := TagMetadata{
+		Tag:            tag,
+		ManifestDigest: metadata.ManifestDigest,
+		IsManifestList: metadata.IsManifestList,
+		ListDigests:    make(map[string]string, len(metadata.Platforms)),
+		Platforms:      make([]PlatformTagMetadata, 0, len(metadata.Platforms)),
+	}
 
-	// Extract digest from V2 fallback to V1
-	result.ManifestDigest = stringutils.FirstNonEmpty(
-		metadata.GetV2().GetDigest(),
-		metadata.GetV1().GetDigest(),
-	)
+	for _, p := range metadata.Platforms {
+		// Extract this platform's manifest digest from V2, falling back to V1.
+		digest := stringutils.FirstNonEmpty(p.Metadata.GetV2().GetDigest(), p.Metadata.GetV1().GetDigest())
+		result.Platforms = append(result.Platforms, PlatformTagMetadata{
+			OS:             p.OS,
+			Architecture:   p.Architecture,
+			Variant:        p.Variant,
+			ManifestDigest: digest,
+			Created:        protocompat.ConvertTimestampToTimeOrNil(p.Metadata.GetV1().GetCreated()),
+			LayerDigests:   p.Metadata.GetLayerShas(),
+			History:        historyFromLayers(p.Metadata.GetV1().GetLayers()),
+		})
+		result.ListDigests[platformKey(p.OS, p.Architecture, p.Variant)] = digest
+	}
 
-	// Extract creation timestamp from V1 metadata.
-	t := protocompat.ConvertTimestampToTimeOrNil(metadata.GetV1().GetCreated())
-	result.Created = t
+	// Fall back to the primary platform's digest when the registry did not report a
+	// top-level manifest digest (e.g. a registry that omits Docker-Content-Digest).
+	if result.ManifestDigest == "" {
+		result.ManifestDigest = result.Platforms[0].ManifestDigest
+	}
 
-	// Extract layer digests for base image matching via layer commonality.
-	result.LayerDigests = metadata.GetLayerShas()
-	result.History = historyFromLayers(metadata.GetV1().GetLayers())
+	// The primary platform (first) feeds the watcher's current single-image path until
+	// promotion becomes per-platform.
+	primary := result.Platforms[0]
+	result.Created = primary.Created
+	result.LayerDigests = primary.LayerDigests
+	result.History = primary.History
 
 	return result
+}
+
+// platformKey builds the ListDigests map key: "os/arch", extended with "/variant"
+// when a variant is present so that platforms sharing an os/arch do not collide.
+func platformKey(os, arch, variant string) string {
+	key := os + "/" + arch
+	if variant != "" {
+		key += "/" + variant
+	}
+	return key
 }
 
 // historyFromLayers copies config history, including empty lines.

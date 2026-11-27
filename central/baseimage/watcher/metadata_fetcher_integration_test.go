@@ -4,6 +4,7 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -72,6 +73,58 @@ func TestMetadataFetcher_DockerHub_Integration(t *testing.T) {
 	}
 
 	require.Greater(t, successCount, 0, "Expected at least one successful metadata fetch")
+}
+
+// TestMetadataForAllPlatforms_DockerHub_Integration verifies that the registry returns
+// per-platform metadata for a real multi-arch image (alpine is published for amd64, arm64,
+// and more). Each platform must expose its own, distinct layer digests.
+func TestMetadataForAllPlatforms_DockerHub_Integration(t *testing.T) {
+	integration := &storage.ImageIntegration{
+		Name: "Docker Hub Integration Test",
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "https://registry-1.docker.io",
+			},
+		},
+	}
+
+	reg, err := docker.NewDockerRegistry(integration, true, nil)
+	require.NoError(t, err, "Failed to create Docker registry client")
+
+	img := &storage.Image{
+		Name: &storage.ImageName{
+			Registry: "docker.io",
+			Remote:   "library/alpine",
+			Tag:      "3.19",
+		},
+	}
+
+	result, err := reg.MetadataForAllPlatforms(img)
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(result.Platforms), 2, "alpine:3.19 should expose multiple platforms")
+	assert.True(t, result.IsManifestList, "alpine:3.19 is a manifest list")
+	assert.NotEmpty(t, result.ManifestDigest, "expected top-level manifest digest")
+
+	// alpine publishes several linux/arm variants (arm v6/v7, arm64 v8); os/arch alone
+	// is not a unique key, so index by os/arch/variant and assert none collide.
+	layersByPlatform := map[string][]string{}
+	layersByArch := map[string][]string{}
+	for _, pm := range result.Platforms {
+		key := fmt.Sprintf("%s/%s/%s", pm.OS, pm.Architecture, pm.Variant)
+		t.Logf("platform %s: %d layers", key, len(pm.Metadata.GetLayerShas()))
+		assert.Equal(t, "linux", pm.OS)
+		assert.NotEmpty(t, pm.Architecture, "expected architecture to be populated")
+		assert.NotEmpty(t, pm.Metadata.GetLayerShas(), "expected layer digests for %s", key)
+		_, dup := layersByPlatform[key]
+		assert.False(t, dup, "platform %s appeared twice; variant must disambiguate", key)
+		layersByPlatform[key] = pm.Metadata.GetLayerShas()
+		layersByArch[pm.Architecture] = pm.Metadata.GetLayerShas()
+	}
+
+	require.Contains(t, layersByArch, "amd64")
+	require.Contains(t, layersByArch, "arm64")
+	assert.NotEqual(t, layersByArch["amd64"], layersByArch["arm64"],
+		"per-platform layer digests must differ across architectures")
 }
 
 // TestMetadataFetcher_RateLimiting_Integration verifies rate limiting behavior.
