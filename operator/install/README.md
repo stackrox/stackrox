@@ -30,9 +30,12 @@ Once the operator is running, to actually deploy StackRox you need to create a `
 ### Migrations
 
 For help replacing an existing deployment (done with manifests or the `central-services`/`secured-cluster-services` charts)
-you can use the new `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands.
+you can use the `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands.
 These generate custom resources, which - if applied in the same namespace as an existing legacy installation -
 will cause the operator to seamlessly take over the existing resources.
+
+> [!WARNING]
+> The `migrate-to-operator` commands are deprecated and will be removed in a future release (ROX-39905).
 
 > [!WARNING]
 > The `migrate-to-operator` commands are not currently aware of every way that a legacy StackRox deployment
