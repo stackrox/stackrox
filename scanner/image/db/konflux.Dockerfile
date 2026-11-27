@@ -29,6 +29,8 @@ ENV BUILD_TAG="${BUILD_TAG}"
 
 USER root
 
+RUN update-crypto-policies --set DEFAULT:PQ
+
 # Copy required PG15 extensions from the PG15 image to PG15 lib directory for fallback
 COPY --from=pg15-source /usr/lib64/pgsql/uuid-ossp.so /usr/lib64/pgsql/postgresql-15/lib/
 
