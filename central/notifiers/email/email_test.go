@@ -42,7 +42,10 @@ func TestBuildReportMessage(t *testing.T) {
 	// filename header should have all non-alphanumerics collapsed to underscores, and report name limited to 80 characters for safety
 	expectedReportAttachmentHeader := "Content-Disposition: attachment; filename=StackRox_Mystery_Inc_fixable_and_non_fixable_critical_important_and_moderate_vulnerabilit_"
 
-	expectedBody := fmt.Sprintf("<div>\r\n%s\r\n</div>\r\n", messageText)
+	// The body is emitted as-is; report bodies now supply their own HTML
+	// (including the <img src="cid:logo.png"> reference), so writeContentBytes
+	// no longer wraps the body in an <img>/<div> shell.
+	expectedBody := fmt.Sprintf("%s\r\n", messageText)
 
 	assert.Contains(t, msgStr, "From: velma@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "To: scooby@stackrox.com,shaggy@stackrox.com\r\n")
@@ -105,7 +108,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
 
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
-	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
+	assert.Contains(t, msgStr, "How you doin'?\r\n")
 
 	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
 	require.NoError(t, err)
@@ -172,7 +175,7 @@ func TestEmailMsgWithMultipleAttachments(t *testing.T) {
 	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
 
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
-	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
+	assert.Contains(t, msgStr, "How you doin'?\r\n")
 
 	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
 	require.NoError(t, err)

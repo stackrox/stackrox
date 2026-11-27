@@ -2,7 +2,9 @@ package reportgenerator
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -17,6 +19,11 @@ import (
 const (
 	maxConfigNameLenInSubject     = 40
 	maxCollectionNameLenInSubject = 40
+
+	// UI routes for the "View report in console" link. Kept in sync with
+	// ui/apps/platform/src/routePaths.ts.
+	workloadReportUIPath = "/main/vulnerabilities/reports/images/configurations/%s"
+	nodeReportUIPath     = "/main/vulnerabilities/reports/nodes/configurations/%s"
 )
 
 var (
@@ -67,7 +74,8 @@ func FormatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot
 	return templates.ExecuteToString(tmpl, data)
 }
 
-// FormatEmailBody formats an email body from the given Go template.
+// FormatEmailBody formats an email body (the introductory paragraph) from the
+// given Go template.
 func FormatEmailBody(emailTemplate string) (string, error) {
 	data := &reportEmailBodyFormat{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
@@ -80,101 +88,176 @@ func FormatEmailBody(emailTemplate string) (string, error) {
 	return templates.ExecuteToString(tmpl, data)
 }
 
-// AddReportConfigDetails appends report configuration details HTML to the email body.
-func AddReportConfigDetails(emailBody, configDetailsHTML string) string {
-	var writer strings.Builder
-	writer.WriteString(emailBody)
-	writer.WriteString("<br><br>")
-	writer.WriteString(configDetailsHTML)
-
-	return writer.String()
-}
-
-func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImageCVEs, numWatchedImageCVEs int) (string, error) {
-	var writer strings.Builder
-
-	err := validateSnapshot(snapshot)
-	if err != nil {
+// FormatWorkloadReportEmailBody builds the full HTML body of a workload (image)
+// CVE report notification email. introHTML is the introductory text (from the
+// body template or a notifier's custom body) and reportURL, when non-empty,
+// renders the "View report in console" button.
+func FormatWorkloadReportEmailBody(introHTML string, snapshot *storage.ReportSnapshot,
+	numDeployedImageCVEs, numWatchedImageCVEs int, hasAttachment bool, reportURL string) (string, error) {
+	if err := validateSnapshot(snapshot); err != nil {
 		return "", err
 	}
-
-	writer.WriteString("<div>")
-
-	// Config name
-	formatSingleDetail(&writer, "Config name", snapshot.GetName())
-
-	// Number of CVEs found
-	formatSingleDetail(&writer, "Number of CVEs found",
-		fmt.Sprintf("%d in Deployed images", numDeployedImageCVEs),
-		fmt.Sprintf("%d in Watched images", numWatchedImageCVEs))
-	// Collection scope: show severity, fixability, collection, image types, CVEs since
 	reportFilters := snapshot.GetVulnReportFilters()
 
-	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
-		// Entity scope: show filter query and scope rules
-		if query := reportFilters.GetQuery(); query != "" {
-			formatSingleDetail(&writer, "Filter", query)
+	layout := emailLayout{
+		title:         "Workload CVE Report",
+		subtitle:      workloadSubtitle(snapshot),
+		introHTML:     introHTML,
+		hasAttachment: hasAttachment,
+		reportURL:     reportURL,
+	}
+
+	if numDeployedImageCVEs == 0 && numWatchedImageCVEs == 0 {
+		layout.noVulnsMsg = "No workload CVEs found for this configuration."
+	} else {
+		layout.statCards = []statCard{
+			{value: humanizeInt(numDeployedImageCVEs), label: "CVEs · Deployed images"},
+			{value: humanizeInt(numWatchedImageCVEs), label: "CVEs · Watched images"},
 		}
-		scopeParts := formatEntityScope(entityScope)
-		if len(scopeParts) > 0 {
-			formatSingleDetail(&writer, "Report scope", scopeParts...)
+	}
+
+	rows := []detailRow{
+		{label: "Config name", value: snapshot.GetName(), bold: true},
+	}
+
+	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
+		// Entity (custom) scope: severity and fixability are encoded in the raw
+		// filter query, so there is no severity legend or CVE status row.
+		if query := reportFilters.GetQuery(); query != "" {
+			rows = append(rows, detailRow{label: "Filter", value: query, mono: true})
+		}
+		if scopeParts := formatEntityScope(entityScope); len(scopeParts) > 0 {
+			rows = append(rows, detailRow{label: "Report scope", value: strings.Join(scopeParts, ", ")})
 		}
 	} else {
-
-		// Severities
+		// Collection scope: severities render as a legend; fixability and the
+		// collection name go in the details table.
 		severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
 		sort.Slice(severities, func(i, j int) bool {
 			return severities[i] > severities[j]
 		})
-		formatSingleDetail(&writer, "CVE severity", severities...)
+		layout.severities = severities
 
-		// Fixability
-		fixabilities := expandFixability(reportFilters.GetFixability())
-		formatSingleDetail(&writer, "CVE status", fixabilities...)
-
-		// Collection
-		formatSingleDetail(&writer, "Report scope", snapshot.GetCollection())
+		rows = append(rows, detailRow{label: "CVE status", value: joinFriendly(expandFixability(reportFilters.GetFixability())...)})
+		rows = append(rows, detailRow{label: "Report scope", value: snapshot.GetCollection().GetName()})
 	}
-	// Image types
+
 	imageTypes := append([]storage.VulnerabilityReportFilters_ImageType{}, reportFilters.GetImageTypes()...)
 	sliceutils.NaturalSort(imageTypes)
-	formatSingleDetail(&writer, "Image type", imageTypes...)
+	rows = append(rows, detailRow{label: "Image type", value: joinFriendly(imageTypes...)})
 
-	// CVEs discovered since
-	formatSingleDetail(&writer, "CVEs discovered since", reportFilters.GetCvesSince())
+	rows = append(rows, detailRow{label: "CVEs discovered in image since", value: convertValueToFriendlyText(reportFilters.GetCvesSince())})
 
-	writer.WriteString("</div>")
-
-	return writer.String(), nil
+	layout.detailRows = rows
+	return layout.render(), nil
 }
 
-// FormatNodeReportConfigDetails formats node report configuration details as HTML
-// for inclusion in the notification email.
-func FormatNodeReportConfigDetails(snapshot *storage.ReportSnapshot, numNodeCVEs int) (string, error) {
+// FormatNodeReportEmailBody builds the full HTML body of a node CVE report
+// notification email.
+func FormatNodeReportEmailBody(introHTML string, snapshot *storage.ReportSnapshot,
+	numNodeCVEs int, hasAttachment bool, reportURL string) (string, error) {
 	filters := snapshot.GetNodeVulnReportFilters()
 	if filters == nil {
 		return "", errors.New("report snapshot is missing node vulnerability report filters")
 	}
 
-	var writer strings.Builder
-	writer.WriteString("<div>")
-
-	formatSingleDetail(&writer, "Config name", snapshot.GetName())
-	formatSingleDetail(&writer, "Number of CVEs found", fmt.Sprintf("%d", numNodeCVEs))
-
-	if query := filters.GetQuery(); query != "" {
-		formatSingleDetail(&writer, "Filter", query)
+	layout := emailLayout{
+		title:         "Node CVE Report",
+		subtitle:      snapshot.GetName(),
+		introHTML:     introHTML,
+		hasAttachment: hasAttachment,
+		reportURL:     reportURL,
 	}
 
-	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
-		scopeParts := formatEntityScope(entityScope)
-		if len(scopeParts) > 0 {
-			formatSingleDetail(&writer, "Report scope", scopeParts...)
+	if numNodeCVEs == 0 {
+		layout.noVulnsMsg = "No node CVEs found for this configuration."
+	} else {
+		layout.statCards = []statCard{
+			{value: humanizeInt(numNodeCVEs), label: "Node CVEs found"},
 		}
 	}
 
-	writer.WriteString("</div>")
-	return writer.String(), nil
+	rows := []detailRow{
+		{label: "Config name", value: snapshot.GetName(), bold: true},
+	}
+	if query := filters.GetQuery(); query != "" {
+		rows = append(rows, detailRow{label: "Filter", value: query, mono: true})
+	}
+	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
+		if scopeParts := formatEntityScope(entityScope); len(scopeParts) > 0 {
+			rows = append(rows, detailRow{label: "Report scope", value: strings.Join(scopeParts, ", ")})
+		}
+	}
+
+	layout.detailRows = rows
+	return layout.render(), nil
+}
+
+// BuildWorkloadReportURL builds a link to the workload report configuration page
+// in the console. It returns an empty string (button omitted) when the endpoint
+// or config ID is missing or the endpoint is unparseable.
+func BuildWorkloadReportURL(uiEndpoint, reportConfigID string) string {
+	return buildReportURL(uiEndpoint, reportConfigID, workloadReportUIPath)
+}
+
+// BuildNodeReportURL builds a link to the node report configuration page in the
+// console.
+func BuildNodeReportURL(uiEndpoint, reportConfigID string) string {
+	return buildReportURL(uiEndpoint, reportConfigID, nodeReportUIPath)
+}
+
+func buildReportURL(uiEndpoint, reportConfigID, pathFormat string) string {
+	if uiEndpoint == "" || reportConfigID == "" {
+		return ""
+	}
+	base, err := url.Parse(uiEndpoint)
+	if err != nil {
+		return ""
+	}
+	ref, err := url.Parse(fmt.Sprintf(pathFormat, reportConfigID))
+	if err != nil {
+		return ""
+	}
+	return base.ResolveReference(ref).String()
+}
+
+func workloadSubtitle(snapshot *storage.ReportSnapshot) string {
+	scope := "Custom Scope"
+	if snapshot.GetCollection() != nil {
+		scope = snapshot.GetCollection().GetName()
+	}
+	return fmt.Sprintf("%s • Scope: %s", snapshot.GetName(), scope)
+}
+
+// humanizeInt formats an integer with thousands separators, e.g. 6298 -> "6,298".
+func humanizeInt(n int) string {
+	s := strconv.Itoa(n)
+	neg := strings.HasPrefix(s, "-")
+	if neg {
+		s = s[1:]
+	}
+	if len(s) <= 3 {
+		if neg {
+			return "-" + s
+		}
+		return s
+	}
+
+	var b strings.Builder
+	lead := len(s) % 3
+	if lead > 0 {
+		b.WriteString(s[:lead])
+	}
+	for i := lead; i < len(s); i += 3 {
+		if b.Len() > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(s[i : i+3])
+	}
+	if neg {
+		return "-" + b.String()
+	}
+	return b.String()
 }
 
 func formatEntityScope(entityScope *storage.EntityScope) []string {
@@ -228,27 +311,13 @@ func expandFixability(fixability storage.VulnerabilityReportFilters_Fixability) 
 	return []storage.VulnerabilityReportFilters_Fixability{fixability}
 }
 
-func formatSingleDetail[T any](writer *strings.Builder, heading string, values ...T) {
-	writer.WriteString("<div style=\"padding: 0 0 10px 0\">")
-
-	// Add heading
-	writer.WriteString("<span style=\"font-weight: bold; margin-right: 10px\">")
-	writer.WriteString(fmt.Sprintf("%s: ", heading))
-	writer.WriteString("</span>")
-
-	// Add values
-	if len(values) > 0 {
-		writer.WriteString("<span>")
-		for i, valI := range values {
-			writer.WriteString(convertValueToFriendlyText(valI))
-			if i < (len(values) - 1) {
-				writer.WriteString(", ")
-			}
-		}
-		writer.WriteString("</span>")
+// joinFriendly maps each value to its human-friendly text and joins them with ", ".
+func joinFriendly[T any](values ...T) string {
+	parts := make([]string, 0, len(values))
+	for _, v := range values {
+		parts = append(parts, convertValueToFriendlyText(v))
 	}
-
-	writer.WriteString("</div>")
+	return strings.Join(parts, ", ")
 }
 
 func convertValueToFriendlyText(valI interface{}) string {
