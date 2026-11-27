@@ -327,6 +327,9 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 	if sensor == nil {
 		sensor = &platform.SensorComponentSpec{}
 	}
+	if sensor.CentralProxyEnabled != nil {
+		sv.SetPathValue("centralProxy.enabled", *sensor.CentralProxyEnabled)
+	}
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 

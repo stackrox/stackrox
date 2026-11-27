@@ -1,10 +1,15 @@
 package centralproxy
 
-import "github.com/stackrox/rox/pkg/set"
+import (
+	"maps"
+	"slices"
 
-// AllowedProxyPaths defines the paths that Sensor's Central proxy is
-// permitted to forward. These are communicated to Sensor via the
-// CentralHello handshake.
+	"github.com/stackrox/rox/pkg/set"
+)
+
+// AllowedProxyPaths is the legacy console path compatibility contract advertised
+// in CentralHello. Sensors with per-client policy enforce that policy instead.
+// Metrics are excluded because older Sensors do not have a metrics proxy client.
 //
 // Matching semantics (enforced by the allowedpaths package on the Sensor side):
 //   - Entries ending with "/" are treated as prefixes: any request path
@@ -14,13 +19,4 @@ import "github.com/stackrox/rox/pkg/set"
 // IMPORTANT: The proxy buffers request bodies in memory for retry support.
 // When adding new paths, ensure the endpoints do not expect request bodies
 // exceeding the buffer limit.
-var AllowedProxyPaths = set.NewFrozenStringSet(
-	"/api/graphql",
-	"/static/ocp-plugin/",
-	"/v1/config/public",
-	"/v1/deployments",
-	"/v1/featureflags",
-	"/v1/metadata",
-	"/v1/mypermissions",
-	"/v1/telemetry/",
-)
+var AllowedProxyPaths = set.NewFrozenStringSet(slices.Collect(maps.Keys(ConsoleHTTPScopes))...)

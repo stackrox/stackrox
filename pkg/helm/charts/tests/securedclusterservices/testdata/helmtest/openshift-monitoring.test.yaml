@@ -6,6 +6,26 @@ server:
   - openshift-4.12
   - com.coreos
 tests:
+- name: "Central proxy opt-in works on native Kubernetes"
+  set:
+    env.openshift: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"].spec.ports | assertThat(. == [{"name": "https", "port": 443, "targetPort": "proxy-https", "protocol": "TCP"}])
+    .services["sensor-proxy"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] | assertThat(. == [{"name": "ROX_CENTRAL_PROXY_ENABLED", "value": "true"}])
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] | assertThat(. == [{"name": "proxy-https", "containerPort": 9444}])
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] | assertThat(. == [{"name": "proxy-tls-volume", "secret": {"secretName": "sensor-proxy-tls"}}])
+    [.deployments.sensor.spec.template.spec.containers[0].volumeMounts[] | select(.name == "proxy-tls-volume")] | assertThat(. == [{"name": "proxy-tls-volume", "mountPath": "/run/secrets/stackrox.io/proxy-tls/", "readOnly": true}])
+    .networkpolicys["sensor-proxy"].spec.ingress | assertThat(. == [])
+    .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. == null)
+- name: "Central proxy stays disabled by default on native Kubernetes"
+  set:
+    env.openshift: false
+  expect: |
+    .services["sensor-proxy"] | assertThat(. == null)
+    .networkpolicys["sensor-proxy"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] | assertThat(. == [])
 - name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true
