@@ -67,7 +67,7 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	createdAt := time.Now()
 	suppressDuration, err := protocompat.DurationFromProto(request.GetDuration())
 	if err != nil {
-		return nil, err
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if err := s.cves.Suppress(ctx, &createdAt, &suppressDuration, request.GetCves()...); err != nil {
 		return nil, err
