@@ -21,7 +21,10 @@ export function suppressVulns(cveType, cveNames, duration = '0') {
     const baseUrl = getBaseCveUrl(cveType);
     return baseUrl
         ? axios
-              .patch(`${baseUrl}/suppress`, { cves: cveNames, duration: duration === '0' ? '0s' : duration })
+              .patch(`${baseUrl}/suppress`, {
+                  cves: cveNames,
+                  duration: duration === '0' ? '0s' : duration,
+              })
               .then((response) => response.data)
         : Promise.resolve({});
 }

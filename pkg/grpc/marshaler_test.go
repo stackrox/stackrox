@@ -87,7 +87,7 @@ func (a *MarshalerTest) TestDurationParsing() {
 			resp, err := http.DefaultClient.Do(req)
 			a.Require().NoError(err)
 
-			defer resp.Body.Close()
+			defer testutils.SafeClientClose(resp)
 			if strings.HasPrefix(expected, "invalid") {
 				a.Equal(http.StatusBadRequest, resp.StatusCode)
 			}
