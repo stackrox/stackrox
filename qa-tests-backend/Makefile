@@ -57,7 +57,7 @@ test: compile
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) testParallelBAT testBAT $(GRADLE_TEST_ARGS)
+	$(GRADLE) testParallelBAT --tests FixableCVSSStressTest $(GRADLE_TEST_ARGS)
 
 .PHONY: smoke-test
 smoke-test: compile

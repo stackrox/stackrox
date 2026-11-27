@@ -167,6 +167,9 @@ test_part_1() {
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
+    # Diagnostic for ROX-36267: verify Central debug logging is active.
+    info "CVSSPROBE-DEBUG-CHECK: Vuln report debug lines in central log: $(kubectl -n stackrox logs deploy/central 2>/dev/null | grep -c 'Vuln report (match) received' || echo 0)"
+
     cleanup_workload_identities
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
