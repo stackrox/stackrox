@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
+	schedulerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/scheduler/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
@@ -93,6 +94,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 	ctx                         context.Context
 	manager                     *managerMocks.MockManager
 	reportManager               *reportManagerMocks.MockManager
+	reportScheduler             *schedulerMocks.MockManager
 	scanConfigDatastore         *scanConfigMocks.MockDataStore
 	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
 	suiteDataStore              *suiteMocks.MockDataStore
@@ -118,6 +120,7 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.reportManager = reportManagerMocks.NewMockManager(s.mockCtrl)
+	s.reportScheduler = schedulerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
 	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
@@ -125,7 +128,7 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)
 	s.blobDS = blobDSMocks.NewMockDatastore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.reportScheduler, s.notifierDS, s.profileDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -166,6 +169,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+	s.reportScheduler.EXPECT().UpsertScanConfig(processResponse).Times(1)
+	s.reportScheduler.EXPECT().ScheduleFirstScanReport(processResponse).Times(1)
 	s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 		{
 			ClusterId:    fixtureconsts.Cluster1,
@@ -212,6 +217,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().UpdateScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+	s.reportScheduler.EXPECT().UpsertScanConfig(processResponse).Times(1)
 
 	_, err := s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
@@ -257,6 +263,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 		getSnapshot(snapshotID, storageRequester),
 	}
 	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
+	s.reportScheduler.EXPECT().RemoveScanConfig(validID).Times(1)
 	s.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(snapshots, nil)
 	s.blobDS.EXPECT().Delete(gomock.Cond[context.Context](func(ctx context.Context) bool {
 		return validateBlobContext(ctx, storage.Access_READ_WRITE_ACCESS)
@@ -620,6 +627,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfiguratio
 
 	validID := "validScanConfigID"
 	s.manager.EXPECT().ProcessRescanRequest(gomock.Any(), validID).Return(nil).Times(1)
+	s.reportScheduler.EXPECT().ScheduleRescanReport(validID).Times(1)
 
 	_, err := s.service.RunComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
 	s.Require().NoError(err)
@@ -679,6 +687,18 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 	resp, err = s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{
 		ScanConfigId:             validScanConfigID,
 		ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
+	})
+	s.Require().NoError(err)
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")
+
+	// The decoupled report scheduler owns on-demand reports when its rollout flag is on.
+	s.T().Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportScheduler.EXPECT().SubmitReportRequest(ctx, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
+
+	resp, err = s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{
+		ScanConfigId:             validScanConfigID,
+		ReportNotificationMethod: v2.NotificationMethod_EMAIL,
 	})
 	s.Require().NoError(err)
 	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.GetRunState(), "Failed to submit report")

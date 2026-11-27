@@ -39,6 +39,11 @@ var (
 	// ComplianceCustomNodeRoles gates configurable node roles in compliance scan configurations (ROX-34167). Default off.
 	ComplianceCustomNodeRoles = registerFeature("Enable configurable node roles in compliance scan configurations", "ROX_COMPLIANCE_CUSTOM_NODE_ROLES")
 
+	// ComplianceDecoupledReports gates the decoupled compliance report scheduler: reports fire
+	// on their own schedule per scan configuration instead of being spawned by scan completion
+	// (see compliance-report-partial-cycles.md, proposal 1). Default off.
+	ComplianceDecoupledReports = registerFeature("Enable the decoupled compliance report scheduler", "ROX_COMPLIANCE_DECOUPLED_REPORTS")
+
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
 

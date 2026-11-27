@@ -512,6 +512,14 @@ func (m *managerImpl) handleReadyScan() {
 			continue
 		}
 		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
+		if features.ComplianceDecoupledReports.Enabled() {
+			// The decoupled report scheduler owns report generation when its rollout flag is
+			// on: no report cycles are spawned from scan completion. Everything above still
+			// runs -- the scan watchers exist for data hygiene (deleting superseded check
+			// results, stale marking), not only for reporting.
+			log.Debugf("Scan %s: report generation is owned by the decoupled report scheduler", scanWatcherResult.Scan.GetScanName())
+			continue
+		}
 		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			continue

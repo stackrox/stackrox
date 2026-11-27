@@ -39,10 +39,11 @@ func initialize() {
 	store := postgres.New(globaldb.GetPostgres())
 	dataStore = New(store)
 
-	// Purge any orphan report snapshots (reports that were not completed)
-	// This can only happen if central is restarted while reports are still running.
-	// Sensor will send the Scan and CheckResult resources again and Central will
-	// regenerate the Reports, so there isn't any data loss by doing this.
+	// Purge any orphan report snapshots (reports that were not completed): this happens when
+	// Central restarts while reports are still running. Pending state must not survive a
+	// restart, because nothing resumes it: scheduled reports are re-created by the next
+	// scheduled cycle and on-demand reports are re-requestable. The decoupled report
+	// scheduler relies on this purge as well (see DeleteOrphanedReportSnapshots).
 	if err := DeleteOrphanedReportSnapshots(complianceOperatorSnapshotAdministrationCtx, dataStore); err != nil {
 		log.Errorf("DeleteOrphanedReportSnapshots failed: %v", err)
 	}

@@ -14,6 +14,7 @@ import (
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
+	reportSchedulerPkg "github.com/stackrox/rox/central/complianceoperator/v2/report/scheduler"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
@@ -70,7 +71,7 @@ var (
 
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
-	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
+	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, reportScheduler reportSchedulerPkg.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
 	clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
@@ -78,6 +79,7 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		suiteDS:                         suiteDS,
 		manager:                         manager,
 		reportManager:                   reportManager,
+		reportScheduler:                 reportScheduler,
 		notifierDS:                      notifierDS,
 		profileDS:                       profileDS,
 		clusterDS:                       clusterDS,
@@ -94,6 +96,7 @@ type serviceImpl struct {
 	suiteDS                         suiteDS.DataStore
 	manager                         compliancemanager.Manager
 	reportManager                   complianceReportManager.Manager
+	reportScheduler                 reportSchedulerPkg.Manager
 	notifierDS                      notifierDS.DataStore
 	profileDS                       profileDS.DataStore
 	clusterDS                       clusterDatastore.DataStore
@@ -143,6 +146,14 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
+	// Keep the report scheduler's entry for the configuration in sync with the stored one.
+	s.reportScheduler.UpsertScanConfig(scanConfig)
+
+	// Report the first scan cycle: the creation-triggered scans get the report delay to run
+	// before the report fires. Skipped internally when the recurring entry already reports
+	// the cycle in progress.
+	s.reportScheduler.ScheduleFirstScanReport(scanConfig)
+
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
 }
 
@@ -159,10 +170,13 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	scanConfig := convertV2ScanConfigToStorage(ctx, req)
 
 	// Update scan request, config may be updated in the event of errors from sensor.
-	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, req.GetClusters())
+	scanConfig, err := s.manager.UpdateScanRequest(ctx, scanConfig, req.GetClusters())
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+
+	// Keep the report scheduler's entry for the configuration in sync with the stored one.
+	s.reportScheduler.UpsertScanConfig(scanConfig)
 
 	return &v2.Empty{}, nil
 }
@@ -206,6 +220,10 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+
+	// Drop the report scheduler's entries for the configuration, including a pending re-run
+	// report.
+	s.reportScheduler.RemoveScanConfig(req.GetId())
 
 	return &v2.Empty{}, nil
 }
@@ -266,7 +284,13 @@ func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, reques
 	}
 
 	err := s.manager.ProcessRescanRequest(ctx, request.GetId())
-	return &v2.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+
+	// The re-run's scans get the report delay to settle before the report job fires.
+	s.reportScheduler.ScheduleRescanReport(request.GetId())
+	return &v2.Empty{}, nil
 }
 
 func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunReportRequest) (*v2.ComplianceRunReportResponse, error) {
@@ -294,13 +318,20 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		return nil, err
 	}
 
-	err = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
-	if err != nil {
+	// The decoupled report scheduler owns on-demand reports when its rollout flag is on;
+	// otherwise the report manager handles them.
+	var submitErr error
+	if features.ComplianceDecoupledReports.Enabled() {
+		submitErr = s.reportScheduler.SubmitReportRequest(ctx, scanConfig, notificationMethod)
+	} else {
+		submitErr = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
+	}
+	if submitErr != nil {
 		return &v2.ComplianceRunReportResponse{
 			RunState:    v2.ComplianceRunReportResponse_ERROR,
 			SubmittedAt: types.TimestampNow(),
-			ErrorMsg:    err.Error(),
-		}, errors.Wrapf(err, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
+			ErrorMsg:    submitErr.Error(),
+		}, errors.Wrapf(submitErr, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
 	}
 
 	return &v2.ComplianceRunReportResponse{

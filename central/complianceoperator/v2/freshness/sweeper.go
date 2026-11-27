@@ -121,7 +121,7 @@ func (s *sweeperImpl) sweep(ctx context.Context) {
 
 		// cutoff is the latest scheduled start that has already had its full grace period. Results
 		// that started before it were not refreshed in time and are stale.
-		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
+		cutoff, ok := PreviousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
 		if !ok {
 			log.Debugf("compliance freshness sweeper: skipping scan configuration %q: no evaluable schedule", cfg.GetScanConfigName())
 			continue
@@ -149,11 +149,11 @@ func (s *sweeperImpl) sweep(ctx context.Context) {
 	}
 }
 
-// previousScheduledStart returns the most recent time strictly before ref at which sched expected a
-// scan to start, and true when that time could be computed. It returns false for a nil schedule, a
-// schedule that does not convert to a cron expression (e.g. an UNSET interval), or an unreachable
-// previous tick.
-func previousScheduledStart(sched *storage.Schedule, ref time.Time) (time.Time, bool) {
+// PreviousScheduledStart returns the most recent time strictly before ref at which sched
+// expected a scan to start, and true when that time could be computed. It returns false for a
+// nil schedule, a schedule that does not convert to a cron expression (e.g. an UNSET interval),
+// or an unreachable previous tick.
+func PreviousScheduledStart(sched *storage.Schedule, ref time.Time) (time.Time, bool) {
 	if sched == nil {
 		return time.Time{}, false
 	}
