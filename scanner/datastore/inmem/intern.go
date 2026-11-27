@@ -1,5 +1,10 @@
 package inmem
 
+import (
+	"fmt"
+	"math"
+)
+
 // intern maps distinct comparable values to dense int32 IDs, retaining the
 // insertion-ordered list for reconstruction.
 type intern[T comparable] struct {
@@ -17,6 +22,9 @@ func newIntern[T comparable]() *intern[T] {
 func (it *intern[T]) id(v T) (id int32, isNew bool) {
 	if existing, ok := it.m[v]; ok {
 		return existing, false
+	}
+	if len(it.list) >= math.MaxInt32 {
+		panic(fmt.Errorf("inmem: intern dictionary overflow (%d)", len(it.list)))
 	}
 	id = int32(len(it.list))
 	it.m[v] = id

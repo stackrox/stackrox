@@ -2,6 +2,7 @@ package inmem
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -22,13 +23,17 @@ type nameSpan struct {
 }
 
 // snapshot is an immutable, struct-of-arrays columnar fragment for a single
-// updater. Lifetime of its off-heap display blob is managed by atomic reference
-// counting so fragments shared across liveSets are released only once no liveSet
-// or in-flight reader references them.
+// updater. Per-row primitive columns and flat CSR byNamePostings are backed by
+// an off-heap read-only mmap .col file, and cold display strings live in an
+// off-heap zstd-compressed .blob file; string dictionaries and byNameSpan stay
+// on the Go heap so returned Vulnerability values hold no pointers into mmap
+// regions. Lifetime of both off-heap files is managed by atomic reference
+// counting.
 type snapshot struct {
 	refs atomic.Int64
+	id   uint32 // immutable, monotonic fragment ID assigned by Store
 
-	// Dictionaries (dedup). Row columns below index into these.
+	// Dictionaries (dedup, Go heap). Row columns below index into these.
 	cveNames  []string
 	pkgNames  []string
 	pkgVers   []string
@@ -47,7 +52,7 @@ type snapshot struct {
 	// scanner/datastore/postgres/distributions.go, including RHEL/Hummingbird CPEs).
 	knownDists []claircore.Distribution
 
-	// Per-row parallel columns (all small ints / bools).
+	// Per-row parallel columns (mmap-backed in cols after finish()).
 	cveID      []int32
 	pkgNameID  []int32
 	pkgVerID   []int32
@@ -77,13 +82,12 @@ type snapshot struct {
 	aliasPostings []int32
 	selfID        []int32 // -1: no self alias
 
-	// Cold display (description/links/severity) off-heap.
+	// Cold display (description/links/severity) off-heap dictionary indices.
 	descI []int32
 	linkI []int32
 	sevI  []int32
 
-	// Flat CSR package-name index: eliminates per-name []int32 slice headers on
-	// the Go heap.
+	// Flat CSR package-name index (byNamePostings is mmap-backed in cols).
 	byNamePostings []int32
 	byNameSpan     map[string]nameSpan
 
@@ -177,13 +181,21 @@ func (s *snapshot) reconstruct(row int32, id string) *claircore.Vulnerability {
 	return v
 }
 
-func (s *snapshot) fillDisplay(v *claircore.Vulnerability, row int32) {
+func (s *snapshot) fillDisplay(v *claircore.Vulnerability, row int32) error {
 	if s.display == nil {
-		return
+		return nil
 	}
-	v.Description = s.display.description(s.descI[row])
-	v.Links = s.display.links(s.linkI[row])
-	v.Severity = s.display.severity(s.sevI[row])
+	var err error
+	if v.Description, err = s.display.description(s.descI[row]); err != nil {
+		return err
+	}
+	if v.Links, err = s.display.links(s.linkI[row]); err != nil {
+		return err
+	}
+	if v.Severity, err = s.display.severity(s.sevI[row]); err != nil {
+		return err
+	}
+	return nil
 }
 
 // decodeCache memoizes decompressed display strings for the span of a single
@@ -194,34 +206,44 @@ type decodeCache struct {
 }
 
 type dcKey struct {
-	frag  int
-	field uint8
-	idx   int32
+	fragID uint32
+	field  uint8
+	idx    int32
 }
 
 func newDecodeCache() *decodeCache { return &decodeCache{m: make(map[dcKey]string)} }
 
-func (c *decodeCache) get(frag int, field uint8, idx int32, decode func(int32) string) string {
-	k := dcKey{frag: frag, field: field, idx: idx}
+func (c *decodeCache) get(fragID uint32, field uint8, idx int32, decode func(int32) (string, error)) (string, error) {
+	k := dcKey{fragID: fragID, field: field, idx: idx}
 	if s, ok := c.m[k]; ok {
-		return s
+		return s, nil
 	}
-	s := decode(idx)
+	s, err := decode(idx)
+	if err != nil {
+		return "", err
+	}
 	c.m[k] = s
-	return s
+	return s, nil
 }
 
-func (s *snapshot) fillDisplayCached(v *claircore.Vulnerability, row int32, cache *decodeCache, frag int) {
+func (s *snapshot) fillDisplayCached(v *claircore.Vulnerability, row int32, cache *decodeCache) error {
 	if s.display == nil {
-		return
+		return nil
 	}
 	if cache == nil {
-		s.fillDisplay(v, row)
-		return
+		return s.fillDisplay(v, row)
 	}
-	v.Description = cache.get(frag, 0, s.descI[row], s.display.description)
-	v.Links = cache.get(frag, 1, s.linkI[row], s.display.links)
-	v.Severity = cache.get(frag, 2, s.sevI[row], s.display.severity)
+	var err error
+	if v.Description, err = cache.get(s.id, 0, s.descI[row], s.display.description); err != nil {
+		return err
+	}
+	if v.Links, err = cache.get(s.id, 1, s.linkI[row], s.display.links); err != nil {
+		return err
+	}
+	if v.Severity, err = cache.get(s.id, 2, s.sevI[row], s.display.severity); err != nil {
+		return err
+	}
+	return nil
 }
 
 // recFilter precomputes, once per index record, acceptable dictionary IDs and a
@@ -240,7 +262,7 @@ type recFilter struct {
 	recVKind      string
 }
 
-func (s *snapshot) buildFilter(rec *claircore.IndexRecord, opts datastore.GetOpts) recFilter {
+func (s *snapshot) buildFilter(rec *claircore.IndexRecord, opts datastore.GetOpts) (recFilter, error) {
 	f := recFilter{module: noMatch, repoName: noMatch, repoKey: noMatch}
 	lk := func(m map[string]int32, key string) int32 {
 		if id, ok := m[key]; ok {
@@ -272,6 +294,8 @@ func (s *snapshot) buildFilter(rec *claircore.IndexRecord, opts datastore.GetOpt
 			driver.DistributionVersion, driver.DistributionVersionCodeName,
 			driver.DistributionPrettyName, driver.DistributionCPE, driver.DistributionArch:
 			distMs = append(distMs, m)
+		default:
+			return recFilter{}, fmt.Errorf("inmem: unknown match constraint: %v", m)
 		}
 	}
 	if len(distMs) > 0 {
@@ -287,7 +311,7 @@ func (s *snapshot) buildFilter(rec *claircore.IndexRecord, opts datastore.GetOpt
 		f.recV = rec.Package.NormalizedVersion.V
 		f.recVKind = rec.Package.NormalizedVersion.Kind
 	}
-	return f
+	return f, nil
 }
 
 func distMatches(vd claircore.Distribution, rd *claircore.Distribution, ms []driver.MatchConstraint) bool {
@@ -384,7 +408,6 @@ func (s *snapshot) matchRecord(
 	ctx context.Context,
 	rec *claircore.IndexRecord,
 	opts datastore.GetOpts,
-	fragPos int,
 	cache *decodeCache,
 	emit func(*claircore.Vulnerability),
 ) error {
@@ -397,7 +420,10 @@ func (s *snapshot) matchRecord(
 		return nil
 	}
 
-	f := s.buildFilter(rec, opts)
+	f, err := s.buildFilter(rec, opts)
+	if err != nil {
+		return err
+	}
 	var seen map[int32]struct{}
 	if len(pkgRows) > 0 && len(srcRows) > 0 {
 		seen = make(map[int32]struct{})
@@ -417,7 +443,7 @@ func (s *snapshot) matchRecord(
 			if !s.rowPasses(row, &f) {
 				continue
 			}
-			v := s.reconstruct(row, globalID(fragPos, int(row)))
+			v := s.reconstruct(row, globalID(s.id, row))
 			if opts.Vulnerable != nil {
 				ok, err := opts.Vulnerable(ctx, rec, v)
 				if err != nil {
@@ -427,7 +453,9 @@ func (s *snapshot) matchRecord(
 					continue
 				}
 			}
-			s.fillDisplayCached(v, row, cache, fragPos)
+			if err := s.fillDisplayCached(v, row, cache); err != nil {
+				return err
+			}
 			emit(v)
 		}
 		return nil

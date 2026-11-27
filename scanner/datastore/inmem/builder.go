@@ -13,8 +13,9 @@ import (
 // vulnerability stream. Display strings are streamed directly to the off-heap
 // blob as rows arrive so the raw feed is never retained in memory.
 type snapshotBuilder struct {
-	s   *snapshot
-	dir string
+	s       *snapshot
+	dir     string
+	maxRows int
 
 	cve     *intern[string]
 	pkg     *intern[string]
@@ -37,16 +38,18 @@ type snapshotBuilder struct {
 	row int32
 }
 
-func newSnapshotBuilder(dir string) (*snapshotBuilder, error) {
+func newSnapshotBuilder(dir string, fragID uint32, maxRows int) (*snapshotBuilder, error) {
 	disp, err := newDisplayBuilder(dir)
 	if err != nil {
 		return nil, err
 	}
 	return &snapshotBuilder{
 		s: &snapshot{
+			id:         fragID,
 			aliasStart: []int32{0},
 		},
 		dir:        dir,
+		maxRows:    maxRows,
 		cve:        newIntern[string](),
 		pkg:        newIntern[string](),
 		pkgVer:     newIntern[string](),
@@ -78,10 +81,17 @@ func skip(v *claircore.Vulnerability) bool {
 	return v == nil || v.Package == nil || v.Package.Name == ""
 }
 
-func (b *snapshotBuilder) add(v *claircore.Vulnerability, updater string) error {
+func (b *snapshotBuilder) add(v *claircore.Vulnerability) error {
 	if skip(v) {
 		return nil
 	}
+	if b.row == math.MaxInt32 {
+		return fmt.Errorf("inmem: fragment row count overflow (%d)", math.MaxInt32)
+	}
+	if b.maxRows > 0 && int(b.row) >= b.maxRows {
+		return fmt.Errorf("inmem: fragment exceeds max_rows limit (%d)", b.maxRows)
+	}
+
 	s := b.s
 	pkg := v.Package
 
@@ -90,7 +100,8 @@ func (b *snapshotBuilder) add(v *claircore.Vulnerability, updater string) error 
 	pkgVerID, _ := b.pkgVer.id(pkg.Version)
 	moduleID, _ := b.mod.id(pkg.Module)
 	archID, _ := b.arch.id(pkg.Arch)
-	updID, _ := b.upd.id(updater)
+	// Store v.Updater verbatim to match ClairCore Postgres updatevulnerabilities.go.
+	updID, _ := b.upd.id(v.Updater)
 
 	var repoName, repoKey, repoURI string
 	if v.Repo != nil {
@@ -162,8 +173,11 @@ func (b *snapshotBuilder) add(v *claircore.Vulnerability, updater string) error 
 	s.linkI = append(s.linkI, li)
 	s.sevI = append(s.sevI, si)
 
+	// Match Postgres updatevulnerabilities.go: skip invalid aliases.
 	for _, a := range v.Aliases {
-		s.aliasPostings = append(s.aliasPostings, b.aliasID(a))
+		if a.Valid() {
+			s.aliasPostings = append(s.aliasPostings, b.aliasID(a))
+		}
 	}
 	s.aliasStart = append(s.aliasStart, int32(len(s.aliasPostings)))
 	if v.Self.Valid() {
@@ -227,8 +241,7 @@ func (b *snapshotBuilder) finish() (*snapshot, error) {
 	s.verKinds = b.vk.list
 	s.updaters = b.upd.list
 
-	// Flatten byName into a single contiguous CSR posting slice so the Go GC
-	// does not scan hundreds of thousands of per-name []int32 headers.
+	// Flatten byName into a single contiguous CSR posting slice.
 	s.byNamePostings = make([]int32, 0, s.nrows)
 	s.byNameSpan = make(map[string]nameSpan, len(b.byName))
 	for name, rows := range b.byName {
@@ -237,6 +250,7 @@ func (b *snapshotBuilder) finish() (*snapshot, error) {
 		s.byNameSpan[name] = nameSpan{start: start, count: int32(len(rows))}
 	}
 	b.byName = nil
+
 	// Persist all primitive column arrays + flat CSR byNamePostings into a
 	// read-only mmap file so the Go heap retains only dictionaries and small
 	// query-time lookup maps.
@@ -245,6 +259,27 @@ func (b *snapshotBuilder) finish() (*snapshot, error) {
 		display.release()
 		return nil, err
 	}
+	bindCols(s, cols)
+
+	s.knownDists = make([]claircore.Distribution, 0, len(b.knownDists))
+	for d := range b.knownDists {
+		s.knownDists = append(s.knownDists, d)
+	}
+
+	s.moduleIdx = b.mod.m
+	s.repoNameIdx = b.rn.m
+	s.repoKeyIdx = b.rk.m
+	if id, ok := b.fx.lookup(""); ok {
+		s.fixedEmptyID = id
+	} else {
+		s.fixedEmptyID = noMatch
+	}
+
+	s.refs.Store(1)
+	return s, nil
+}
+
+func bindCols(s *snapshot, cols *colsStore) {
 	s.cols = cols
 	s.cveID = cols.cveID
 	s.pkgNameID = cols.pkgNameID
@@ -273,27 +308,10 @@ func (b *snapshotBuilder) finish() (*snapshot, error) {
 	s.linkI = cols.linkI
 	s.sevI = cols.sevI
 	s.byNamePostings = cols.byNamePostings
-
-	s.knownDists = make([]claircore.Distribution, 0, len(b.knownDists))
-	for d := range b.knownDists {
-		s.knownDists = append(s.knownDists, d)
-	}
-
-	s.moduleIdx = b.mod.m
-	s.repoNameIdx = b.rn.m
-	s.repoKeyIdx = b.rk.m
-	if id, ok := b.fx.lookup(""); ok {
-		s.fixedEmptyID = id
-	} else {
-		s.fixedEmptyID = noMatch
-	}
-
-	s.refs.Store(1)
-	return s, nil
 }
 
-func buildFragment(ctx context.Context, dir, updater string, it datastore.VulnerabilityIter) (*snapshot, error) {
-	b, err := newSnapshotBuilder(dir)
+func buildFragment(ctx context.Context, dir, updater string, fragID uint32, maxRows int, it datastore.VulnerabilityIter) (*snapshot, error) {
+	b, err := newSnapshotBuilder(dir, fragID, maxRows)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +325,7 @@ func buildFragment(ctx context.Context, dir, updater string, it datastore.Vulner
 			iterErr = err
 			return false
 		}
-		if err := b.add(v, updater); err != nil {
+		if err := b.add(v); err != nil {
 			iterErr = err
 			return false
 		}

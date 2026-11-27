@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
+	"runtime"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -72,6 +74,7 @@ type colSecMeta struct {
 type colsStore struct {
 	region   *mmapRegion
 	fileSize int64
+	nrows    int
 
 	cveID          []int32
 	pkgNameID      []int32
@@ -112,6 +115,7 @@ func (c *colsStore) offHeapBytes() int64 {
 func (c *colsStore) release() {
 	if c != nil && c.region != nil {
 		c.region.release()
+		runtime.KeepAlive(c)
 	}
 }
 
@@ -125,148 +129,104 @@ func hostEndian() uint8 {
 	return 1
 }
 
+type colWriter struct {
+	w    io.Writer
+	off  uint64
+	secs [colSectionCount]colSecMeta
+	err  error
+}
+
+func writeSec[T colElem](cw *colWriter, sec colSection, src []T) {
+	if cw.err != nil {
+		return
+	}
+	cw.secs[sec] = colSecMeta{offset: cw.off, count: uint64(len(src))}
+	if len(src) == 0 {
+		return
+	}
+	var zero T
+	nbytes := uintptr(len(src)) * unsafe.Sizeof(zero)
+	//nolint:gosec // G103: zero-copy serialization of pointer-free primitive slice.
+	raw := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(src))), nbytes)
+	if _, err := cw.w.Write(raw); err != nil {
+		cw.err = fmt.Errorf("inmem: writing column section %d: %w", sec, err)
+		return
+	}
+	cw.off += uint64(nbytes)
+	if rem := cw.off % colsAlign; rem != 0 {
+		pad := colsAlign - rem
+		var zeros [colsAlign]byte
+		if _, err := cw.w.Write(zeros[:pad]); err != nil {
+			cw.err = fmt.Errorf("inmem: padding column section %d: %w", sec, err)
+			return
+		}
+		cw.off += pad
+	}
+}
+
 // writeColsFile serializes all primitive column slices of s into an aligned
 // binary file in dir, memory-maps it read-only, and returns a colsStore whose
 // slices point directly into the mapped region.
 func writeColsFile(dir string, s *snapshot) (*colsStore, error) {
+	if s.nrows < 0 || s.nrows > math.MaxInt32 {
+		return nil, fmt.Errorf("inmem: invalid row count %d", s.nrows)
+	}
 	f, err := os.CreateTemp(dir, colsFilePattern)
 	if err != nil {
 		return nil, fmt.Errorf("inmem: creating columns file: %w", err)
 	}
 	path := f.Name()
-	cleanupFile := func() {
+	var ok bool
+	defer func() {
+		if ok {
+			return
+		}
 		if f != nil {
 			_ = f.Close()
-			f = nil
 		}
 		if path != "" {
 			_ = os.Remove(path)
-			path = ""
 		}
-	}
+	}()
 
-	bw := bufio.NewWriterSize(f, 256*1024)
+	bw := bufio.NewWriterSize(f, blobWriteBufSize)
 	var zeroMeta [colsMetaSize]byte
 	if _, err := bw.Write(zeroMeta[:]); err != nil {
-		cleanupFile()
 		return nil, fmt.Errorf("inmem: writing columns header placeholder: %w", err)
 	}
 
-	var (
-		secs [colSectionCount]colSecMeta
-		off  = uint64(colsMetaSize)
-	)
-	if err := writeTypedSec(bw, &off, &secs[secCVEID], s.cveID); err != nil {
-		cleanupFile()
-		return nil, err
+	cw := &colWriter{w: bw, off: uint64(colsMetaSize)}
+	writeSec(cw, secCVEID, s.cveID)
+	writeSec(cw, secPkgNameID, s.pkgNameID)
+	writeSec(cw, secPkgVerID, s.pkgVerID)
+	writeSec(cw, secKind, s.kind)
+	writeSec(cw, secModuleID, s.moduleID)
+	writeSec(cw, secArchID, s.archID)
+	writeSec(cw, secDistID, s.distID)
+	writeSec(cw, secRepoNameID, s.repoNameID)
+	writeSec(cw, secRepoKeyID, s.repoKeyID)
+	writeSec(cw, secRepoURIID, s.repoURIID)
+	writeSec(cw, secFixedID, s.fixedID)
+	writeSec(cw, secVerKindID, s.verKindID)
+	writeSec(cw, secUpdaterID, s.updaterID)
+	writeSec(cw, secNormSev, s.normSev)
+	writeSec(cw, secArchOp, s.archop)
+	writeSec(cw, secInvert, s.invert)
+	writeSec(cw, secIssued, s.issued)
+	writeSec(cw, secRangeIdx, s.rangeIdx)
+	writeSec(cw, secRLower, s.rLower)
+	writeSec(cw, secRUpper, s.rUpper)
+	writeSec(cw, secAliasStart, s.aliasStart)
+	writeSec(cw, secAliasPostings, s.aliasPostings)
+	writeSec(cw, secSelfID, s.selfID)
+	writeSec(cw, secDescI, s.descI)
+	writeSec(cw, secLinkI, s.linkI)
+	writeSec(cw, secSevI, s.sevI)
+	writeSec(cw, secByNamePostings, s.byNamePostings)
+	if cw.err != nil {
+		return nil, cw.err
 	}
-	if err := writeTypedSec(bw, &off, &secs[secPkgNameID], s.pkgNameID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secPkgVerID], s.pkgVerID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secKind], s.kind); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secModuleID], s.moduleID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secArchID], s.archID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secDistID], s.distID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRepoNameID], s.repoNameID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRepoKeyID], s.repoKeyID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRepoURIID], s.repoURIID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secFixedID], s.fixedID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secVerKindID], s.verKindID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secUpdaterID], s.updaterID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secNormSev], s.normSev); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secArchOp], s.archop); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secInvert], s.invert); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secIssued], s.issued); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRangeIdx], s.rangeIdx); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRLower], s.rLower); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secRUpper], s.rUpper); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secAliasStart], s.aliasStart); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secAliasPostings], s.aliasPostings); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secSelfID], s.selfID); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secDescI], s.descI); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secLinkI], s.linkI); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secSevI], s.sevI); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-	if err := writeTypedSec(bw, &off, &secs[secByNamePostings], s.byNamePostings); err != nil {
-		cleanupFile()
-		return nil, err
-	}
-
 	if err := bw.Flush(); err != nil {
-		cleanupFile()
 		return nil, fmt.Errorf("inmem: flushing columns file: %w", err)
 	}
 
@@ -276,62 +236,35 @@ func writeColsFile(dir string, s *snapshot) (*colsStore, error) {
 	meta[12] = hostEndian()
 	binary.LittleEndian.PutUint32(meta[16:20], uint32(colSectionCount))
 	binary.LittleEndian.PutUint32(meta[20:24], uint32(s.nrows))
-	for i, sec := range secs {
+	for i, sec := range cw.secs {
 		base := colsHeaderSize + i*colsSecEntryLen
 		binary.LittleEndian.PutUint64(meta[base:base+8], sec.offset)
 		binary.LittleEndian.PutUint64(meta[base+8:base+16], sec.count)
 	}
 	if _, err := f.WriteAt(meta[:], 0); err != nil {
-		cleanupFile()
 		return nil, fmt.Errorf("inmem: writing columns header: %w", err)
 	}
 
 	closeErr := f.Close()
 	f = nil
 	if closeErr != nil {
-		cleanupFile()
 		return nil, fmt.Errorf("inmem: closing columns file: %w", closeErr)
 	}
 
-	region, err := mapColsRegion(path, int64(off))
+	region, err := mapColsRegion(path, int64(cw.off))
 	if err != nil {
-		cleanupFile()
 		return nil, err
 	}
-	path = ""
+	path = "" // ownership transferred to region
 
-	cs, err := parseCols(region, int64(off))
+	cs, err := parseCols(region, int64(cw.off))
 	if err != nil {
 		region.release()
 		return nil, err
 	}
 	attachCleanup(region, cs)
+	ok = true
 	return cs, nil
-}
-
-func writeTypedSec[T colElem](w io.Writer, off *uint64, meta *colSecMeta, src []T) error {
-	meta.offset = *off
-	meta.count = uint64(len(src))
-	if len(src) == 0 {
-		return nil
-	}
-	var zero T
-	nbytes := uintptr(len(src)) * unsafe.Sizeof(zero)
-	//nolint:gosec // G103: zero-copy serialization of pointer-free primitive slice.
-	raw := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(src))), nbytes)
-	if _, err := w.Write(raw); err != nil {
-		return fmt.Errorf("inmem: writing column section: %w", err)
-	}
-	*off += uint64(nbytes)
-	if rem := *off % colsAlign; rem != 0 {
-		pad := colsAlign - rem
-		var zeros [colsAlign]byte
-		if _, err := w.Write(zeros[:pad]); err != nil {
-			return fmt.Errorf("inmem: padding column section: %w", err)
-		}
-		*off += pad
-	}
-	return nil
 }
 
 func mapColsRegion(path string, size int64) (*mmapRegion, error) {
@@ -352,13 +285,47 @@ func mapColsRegion(path string, size int64) (*mmapRegion, error) {
 		_ = unix.Munmap(data)
 		return nil, fmt.Errorf("inmem: closing columns fd: %w", closeErr)
 	}
-	return &mmapRegion{data: data, path: path}, nil
+	return &mmapRegion{handle: &mmapHandle{data: data, path: path}}, nil
 }
 
-// parseCols validates the binary header, endianness, and section bounds of a
-// mapped columns file and binds typed read-only slices into region.data.
+type colReader struct {
+	data []byte
+	secs [colSectionCount]colSecMeta
+	err  error
+}
+
+func readSec[T colElem](cr *colReader, sec colSection) []T {
+	if cr.err != nil {
+		return nil
+	}
+	meta := cr.secs[sec]
+	if meta.count == 0 {
+		return nil
+	}
+	if meta.offset%colsAlign != 0 {
+		cr.err = fmt.Errorf("inmem: unaligned column section %d offset %d", sec, meta.offset)
+		return nil
+	}
+	var zero T
+	elemSize := uint64(unsafe.Sizeof(zero))
+	if meta.count > uint64(len(cr.data))/elemSize {
+		cr.err = fmt.Errorf("inmem: column section %d count overflow (%d)", sec, meta.count)
+		return nil
+	}
+	nbytes := meta.count * elemSize
+	if meta.offset > uint64(len(cr.data)) || nbytes > uint64(len(cr.data))-meta.offset {
+		cr.err = fmt.Errorf("inmem: column section %d out of bounds (off=%d len=%d file=%d)", sec, meta.offset, nbytes, len(cr.data))
+		return nil
+	}
+	//nolint:gosec // G103: bounds- and alignment-checked read-only mmap view of pointer-free primitives.
+	return unsafe.Slice((*T)(unsafe.Pointer(&cr.data[meta.offset])), meta.count)
+}
+
+// parseCols validates the binary header, endianness, section bounds, and
+// cross-section row counts of a mapped columns file and binds typed read-only
+// slices into region.data().
 func parseCols(region *mmapRegion, fileSize int64) (*colsStore, error) {
-	data := region.data
+	data := region.data()
 	if len(data) < colsMetaSize {
 		return nil, fmt.Errorf("inmem: columns file too short (%d < %d)", len(data), colsMetaSize)
 	}
@@ -374,118 +341,97 @@ func parseCols(region *mmapRegion, fileSize int64) (*colsStore, error) {
 	if nsec := binary.LittleEndian.Uint32(data[16:20]); nsec != uint32(colSectionCount) {
 		return nil, fmt.Errorf("inmem: unexpected columns section count %d (want %d)", nsec, colSectionCount)
 	}
+	nrows := int(binary.LittleEndian.Uint32(data[20:24]))
 
-	var secs [colSectionCount]colSecMeta
-	for i := range secs {
+	cr := &colReader{data: data}
+	for i := range cr.secs {
 		base := colsHeaderSize + i*colsSecEntryLen
-		secs[i] = colSecMeta{
+		cr.secs[i] = colSecMeta{
 			offset: binary.LittleEndian.Uint64(data[base : base+8]),
 			count:  binary.LittleEndian.Uint64(data[base+8 : base+16]),
 		}
 	}
 
-	cs := &colsStore{region: region, fileSize: fileSize}
-	var err error
-	if cs.cveID, err = readTypedSec[int32](data, secs[secCVEID]); err != nil {
-		return nil, err
+	cs := &colsStore{
+		region:         region,
+		fileSize:       fileSize,
+		nrows:          nrows,
+		cveID:          readSec[int32](cr, secCVEID),
+		pkgNameID:      readSec[int32](cr, secPkgNameID),
+		pkgVerID:       readSec[int32](cr, secPkgVerID),
+		kind:           readSec[uint8](cr, secKind),
+		moduleID:       readSec[int32](cr, secModuleID),
+		archID:         readSec[int32](cr, secArchID),
+		distID:         readSec[int16](cr, secDistID),
+		repoNameID:     readSec[int32](cr, secRepoNameID),
+		repoKeyID:      readSec[int16](cr, secRepoKeyID),
+		repoURIID:      readSec[int32](cr, secRepoURIID),
+		fixedID:        readSec[int32](cr, secFixedID),
+		verKindID:      readSec[int8](cr, secVerKindID),
+		updaterID:      readSec[int32](cr, secUpdaterID),
+		normSev:        readSec[uint8](cr, secNormSev),
+		archop:         readSec[uint8](cr, secArchOp),
+		invert:         readSec[uint8](cr, secInvert),
+		issued:         readSec[int64](cr, secIssued),
+		rangeIdx:       readSec[int32](cr, secRangeIdx),
+		rLower:         readSec[[10]int32](cr, secRLower),
+		rUpper:         readSec[[10]int32](cr, secRUpper),
+		aliasStart:     readSec[int32](cr, secAliasStart),
+		aliasPostings:  readSec[int32](cr, secAliasPostings),
+		selfID:         readSec[int32](cr, secSelfID),
+		descI:          readSec[int32](cr, secDescI),
+		linkI:          readSec[int32](cr, secLinkI),
+		sevI:           readSec[int32](cr, secSevI),
+		byNamePostings: readSec[int32](cr, secByNamePostings),
 	}
-	if cs.pkgNameID, err = readTypedSec[int32](data, secs[secPkgNameID]); err != nil {
-		return nil, err
+	if cr.err != nil {
+		return nil, cr.err
 	}
-	if cs.pkgVerID, err = readTypedSec[int32](data, secs[secPkgVerID]); err != nil {
-		return nil, err
-	}
-	if cs.kind, err = readTypedSec[uint8](data, secs[secKind]); err != nil {
-		return nil, err
-	}
-	if cs.moduleID, err = readTypedSec[int32](data, secs[secModuleID]); err != nil {
-		return nil, err
-	}
-	if cs.archID, err = readTypedSec[int32](data, secs[secArchID]); err != nil {
-		return nil, err
-	}
-	if cs.distID, err = readTypedSec[int16](data, secs[secDistID]); err != nil {
-		return nil, err
-	}
-	if cs.repoNameID, err = readTypedSec[int32](data, secs[secRepoNameID]); err != nil {
-		return nil, err
-	}
-	if cs.repoKeyID, err = readTypedSec[int16](data, secs[secRepoKeyID]); err != nil {
-		return nil, err
-	}
-	if cs.repoURIID, err = readTypedSec[int32](data, secs[secRepoURIID]); err != nil {
-		return nil, err
-	}
-	if cs.fixedID, err = readTypedSec[int32](data, secs[secFixedID]); err != nil {
-		return nil, err
-	}
-	if cs.verKindID, err = readTypedSec[int8](data, secs[secVerKindID]); err != nil {
-		return nil, err
-	}
-	if cs.updaterID, err = readTypedSec[int32](data, secs[secUpdaterID]); err != nil {
-		return nil, err
-	}
-	if cs.normSev, err = readTypedSec[uint8](data, secs[secNormSev]); err != nil {
-		return nil, err
-	}
-	if cs.archop, err = readTypedSec[uint8](data, secs[secArchOp]); err != nil {
-		return nil, err
-	}
-	if cs.invert, err = readTypedSec[uint8](data, secs[secInvert]); err != nil {
-		return nil, err
-	}
-	if cs.issued, err = readTypedSec[int64](data, secs[secIssued]); err != nil {
-		return nil, err
-	}
-	if cs.rangeIdx, err = readTypedSec[int32](data, secs[secRangeIdx]); err != nil {
-		return nil, err
-	}
-	if cs.rLower, err = readTypedSec[[10]int32](data, secs[secRLower]); err != nil {
-		return nil, err
-	}
-	if cs.rUpper, err = readTypedSec[[10]int32](data, secs[secRUpper]); err != nil {
-		return nil, err
-	}
-	if cs.aliasStart, err = readTypedSec[int32](data, secs[secAliasStart]); err != nil {
-		return nil, err
-	}
-	if cs.aliasPostings, err = readTypedSec[int32](data, secs[secAliasPostings]); err != nil {
-		return nil, err
-	}
-	if cs.selfID, err = readTypedSec[int32](data, secs[secSelfID]); err != nil {
-		return nil, err
-	}
-	if cs.descI, err = readTypedSec[int32](data, secs[secDescI]); err != nil {
-		return nil, err
-	}
-	if cs.linkI, err = readTypedSec[int32](data, secs[secLinkI]); err != nil {
-		return nil, err
-	}
-	if cs.sevI, err = readTypedSec[int32](data, secs[secSevI]); err != nil {
-		return nil, err
-	}
-	if cs.byNamePostings, err = readTypedSec[int32](data, secs[secByNamePostings]); err != nil {
+	if err := validateColCounts(cs, nrows); err != nil {
 		return nil, err
 	}
 	return cs, nil
 }
 
-func readTypedSec[T colElem](data []byte, meta colSecMeta) ([]T, error) {
-	if meta.count == 0 {
-		return nil, nil
+func validateColCounts(cs *colsStore, nrows int) error {
+	perRow := []struct {
+		name string
+		n    int
+	}{
+		{"cveID", len(cs.cveID)},
+		{"pkgNameID", len(cs.pkgNameID)},
+		{"pkgVerID", len(cs.pkgVerID)},
+		{"kind", len(cs.kind)},
+		{"moduleID", len(cs.moduleID)},
+		{"archID", len(cs.archID)},
+		{"distID", len(cs.distID)},
+		{"repoNameID", len(cs.repoNameID)},
+		{"repoKeyID", len(cs.repoKeyID)},
+		{"repoURIID", len(cs.repoURIID)},
+		{"fixedID", len(cs.fixedID)},
+		{"verKindID", len(cs.verKindID)},
+		{"updaterID", len(cs.updaterID)},
+		{"normSev", len(cs.normSev)},
+		{"archop", len(cs.archop)},
+		{"invert", len(cs.invert)},
+		{"issued", len(cs.issued)},
+		{"rangeIdx", len(cs.rangeIdx)},
+		{"selfID", len(cs.selfID)},
+		{"descI", len(cs.descI)},
+		{"linkI", len(cs.linkI)},
+		{"sevI", len(cs.sevI)},
+		{"byNamePostings", len(cs.byNamePostings)},
 	}
-	if meta.offset%colsAlign != 0 {
-		return nil, fmt.Errorf("inmem: unaligned column section offset %d", meta.offset)
+	for _, col := range perRow {
+		if col.n != nrows {
+			return fmt.Errorf("inmem: column %s length %d != nrows %d", col.name, col.n, nrows)
+		}
 	}
-	var zero T
-	elemSize := uint64(unsafe.Sizeof(zero))
-	if meta.count > (uint64(len(data)))/elemSize {
-		return nil, fmt.Errorf("inmem: column section count overflow (%d)", meta.count)
+	if len(cs.aliasStart) != nrows+1 {
+		return fmt.Errorf("inmem: aliasStart length %d != nrows+1 (%d)", len(cs.aliasStart), nrows+1)
 	}
-	nbytes := meta.count * elemSize
-	if meta.offset > uint64(len(data)) || nbytes > uint64(len(data))-meta.offset {
-		return nil, fmt.Errorf("inmem: column section out of bounds (off=%d len=%d file=%d)", meta.offset, nbytes, len(data))
+	if len(cs.rLower) != len(cs.rUpper) {
+		return fmt.Errorf("inmem: range lower length %d != upper length %d", len(cs.rLower), len(cs.rUpper))
 	}
-	//nolint:gosec // G103: bounds- and alignment-checked read-only mmap view of pointer-free primitives.
-	return unsafe.Slice((*T)(unsafe.Pointer(&data[meta.offset])), meta.count), nil
+	return nil
 }

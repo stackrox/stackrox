@@ -38,14 +38,30 @@ func TestLocker(t *testing.T) {
 	assert.ErrorIs(t, lCtxTimeout.Err(), context.DeadlineExceeded)
 	doneTimeout()
 
-	// Release bundle-a in background; Lock should succeed.
+	// Verify Lock waits for done1 deterministically using a channel handshake.
+	started := make(chan struct{})
+	acquired := make(chan struct{})
 	go func() {
-		time.Sleep(15 * time.Millisecond)
-		done1()
+		close(started)
+		lCtx3, done3 := l.Lock(ctx, "bundle-a")
+		require.NoError(t, lCtx3.Err())
+		close(acquired)
+		done3()
+		// Calling done twice must be safe.
+		done3()
 	}()
-	lCtx3, done3 := l.Lock(ctx, "bundle-a")
-	require.NoError(t, lCtx3.Err())
-	done3()
-	// Calling done twice must be safe.
-	done3()
+
+	<-started
+	select {
+	case <-acquired:
+		t.Fatal("Lock acquired before previous holder released")
+	default:
+	}
+
+	done1()
+	select {
+	case <-acquired:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for Lock to acquire after release")
+	}
 }

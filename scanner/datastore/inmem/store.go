@@ -7,7 +7,6 @@ import (
 	"os"
 	"slices"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -15,6 +14,8 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
 
@@ -28,12 +29,22 @@ var (
 
 // Options configures an in-memory matcher Store.
 type Options struct {
-	// BlobDir is the directory where off-heap display and enrichment blobs are
-	// written and memory-mapped. Defaults to os.TempDir().
+	// BlobDir is the directory where off-heap column (.col) and display /
+	// enrichment (.blob) files are written and memory-mapped. Defaults to
+	// os.TempDir().
 	BlobDir string
-	// CleanBlobDir, when true, removes leftover inmem-*.blob files from BlobDir
-	// on store construction (for dedicated directories after crash-loops).
+	// CleanBlobDir, when true, removes leftover inmem-*.blob and
+	// inmem-cols-*.col files from BlobDir on store construction (for dedicated
+	// directories after unclean restarts).
 	CleanBlobDir bool
+	// MaxRows, when positive, rejects an update if the resulting total live row
+	// count across all fragments would exceed MaxRows, keeping the previous
+	// liveSet intact.
+	MaxRows int
+	// MaxOffHeapBytes, when positive, rejects an update if the resulting total
+	// off-heap mmap footprint across all fragments would exceed MaxOffHeapBytes,
+	// keeping the previous liveSet intact.
+	MaxOffHeapBytes int64
 }
 
 // liveSet is an immutable, reference-counted set of per-updater fragments.
@@ -63,12 +74,14 @@ func (ls *liveSet) release() {
 // Store is an in-memory, column-native postgres.MatcherStore.
 //
 // Each updater's vulnerabilities and enrichments are compiled on import into
-// immutable per-updater fragments with cold display/enrichment blobs compressed
-// off-heap in read-only mmap files. Published liveSets are reference-counted so
-// replaced fragments are unmapped and deleted immediately once in-flight queries
-// finish, without blocking readers or racing on munmap.
+// immutable per-updater fragments with hot columnar arrays (.col) and cold
+// display/enrichment blobs (.blob) backed by read-only mmap files. Published
+// liveSets are reference-counted so replaced fragments are unmapped and deleted
+// immediately once in-flight queries finish, without blocking readers or racing
+// on munmap.
 type Store struct {
-	opts Options
+	opts       Options
+	nextFragID atomic.Uint32
 
 	// liveMu protects ONLY the live pointer read+retain (readers) and pointer
 	// swap (writers). It is never held during matching or fragment building.
@@ -138,25 +151,29 @@ func (s *Store) Stats() Stats {
 
 // Close detaches the live fragment set and releases the store's owner
 // references. Any in-flight queries finish safely on their retained liveSet and
-// unmap its blobs upon returning.
+// unmap its files upon returning.
 func (s *Store) Close() {
-	s.mu.Lock()
-	if s.closed {
-		s.mu.Unlock()
-		return
-	}
-	s.closed = true
-
-	s.liveMu.Lock()
-	oldLive := s.live
-	s.live = nil
-	s.liveMu.Unlock()
-
-	oldVulns := s.vulnFrags
-	oldEnrich := s.enrichFrags
-	s.vulnFrags = nil
-	s.enrichFrags = nil
-	s.mu.Unlock()
+	var (
+		oldLive   *liveSet
+		oldVulns  map[string]*snapshot
+		oldEnrich map[string]*enrichStore
+	)
+	concurrency.WithLock(&s.mu, func() {
+		if s.closed {
+			return
+		}
+		s.closed = true
+		oldLive = concurrency.WithLock1(&s.liveMu, func() *liveSet {
+			prev := s.live
+			s.live = nil
+			return prev
+		})
+		oldVulns = s.vulnFrags
+		oldEnrich = s.enrichFrags
+		s.vulnFrags = nil
+		s.enrichFrags = nil
+		recordLiveMetrics(nil)
+	})
 
 	if oldLive != nil {
 		oldLive.release()
@@ -170,25 +187,33 @@ func (s *Store) Close() {
 }
 
 func (s *Store) acquireLive() *liveSet {
-	s.liveMu.RLock()
-	ls := s.live
-	if ls != nil {
-		ls.retain()
-	}
-	s.liveMu.RUnlock()
-	return ls
+	return concurrency.WithRLock1(&s.liveMu, func() *liveSet {
+		ls := s.live
+		if ls != nil {
+			ls.retain()
+		}
+		return ls
+	})
 }
 
-// publishLocked builds a fresh liveSet from the current staged fragments,
-// retains every included fragment, and atomically swaps it in under liveMu.
+// publishLocked builds a fresh liveSet from the current staged fragments in
+// deterministic updater order, retains every included fragment, updates
+// Prometheus gauges, and atomically swaps it in under liveMu.
 // Caller must hold s.mu. Returns the previous liveSet (if any) for release.
 func (s *Store) publishLocked() *liveSet {
+	names := make([]string, 0, len(s.vulnFrags))
+	for name := range s.vulnFrags {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+
 	ls := &liveSet{
-		vuln:   make([]*snapshot, 0, len(s.vulnFrags)),
+		vuln:   make([]*snapshot, 0, len(names)),
 		enrich: make(map[string]*enrichStore, len(s.enrichFrags)),
 	}
 	distSeen := make(map[claircore.Distribution]struct{})
-	for _, f := range s.vulnFrags {
+	for _, name := range names {
+		f := s.vulnFrags[name]
 		f.retain()
 		ls.vuln = append(ls.vuln, f)
 		ls.rows += f.nrows
@@ -206,11 +231,50 @@ func (s *Store) publishLocked() *liveSet {
 	}
 	ls.refs.Store(1)
 
-	s.liveMu.Lock()
-	old := s.live
-	s.live = ls
-	s.liveMu.Unlock()
+	old := concurrency.WithLock1(&s.liveMu, func() *liveSet {
+		prev := s.live
+		s.live = ls
+		return prev
+	})
+	recordLiveMetrics(ls)
 	return old
+}
+
+// checkLimitsLocked validates that replacing updater/kind with candidate rows
+// and off-heap bytes would not exceed configured circuit-breaker ceilings.
+// Caller must hold s.mu.
+func (s *Store) checkLimitsLocked(replaceVuln string, newRows int, replaceEnrich string, newOffHeap int64) error {
+	if s.opts.MaxRows > 0 {
+		totalRows := newRows
+		for u, f := range s.vulnFrags {
+			if u == replaceVuln {
+				continue
+			}
+			totalRows += f.nrows
+		}
+		if totalRows > s.opts.MaxRows {
+			return fmt.Errorf("inmem: total rows %d exceeds max_rows limit %d", totalRows, s.opts.MaxRows)
+		}
+	}
+	if s.opts.MaxOffHeapBytes > 0 {
+		totalBytes := newOffHeap
+		for u, f := range s.vulnFrags {
+			if u == replaceVuln {
+				continue
+			}
+			totalBytes += f.cols.offHeapBytes() + f.display.offHeapBytes()
+		}
+		for k, e := range s.enrichFrags {
+			if k == replaceEnrich {
+				continue
+			}
+			totalBytes += e.offHeapBytes()
+		}
+		if totalBytes > s.opts.MaxOffHeapBytes {
+			return fmt.Errorf("inmem: total off-heap bytes %d exceeds max_offheap_bytes limit %d", totalBytes, s.opts.MaxOffHeapBytes)
+		}
+	}
+	return nil
 }
 
 // ---- read path ----
@@ -255,8 +319,8 @@ func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts 
 			pkgSeen[v.ID] = struct{}{}
 			out[rid] = append(out[rid], v)
 		}
-		for fragPos, frag := range ls.vuln {
-			if err := frag.matchRecord(ctx, rec, opts, fragPos, cache, emit); err != nil {
+		for _, frag := range ls.vuln {
+			if err := frag.matchRecord(ctx, rec, opts, cache, emit); err != nil {
 				return nil, err
 			}
 		}
@@ -264,10 +328,11 @@ func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts 
 	return out, nil
 }
 
-// globalID encodes a (fragment, row) pair into a unique decimal ID within a
-// liveSet.
-func globalID(frag, row int) string {
-	return strconv.FormatInt(int64(frag)<<32|int64(uint32(row)), 10)
+// globalID encodes an immutable (fragment ID, row) pair into a globally unique
+// decimal ID across the entire lifetime of a Store, preventing collisions when
+// concurrent matchers within one libvuln.Scan observe adjacent liveSets.
+func globalID(fragID uint32, row int32) string {
+	return strconv.FormatUint(uint64(fragID)<<32|uint64(uint32(row)), 10)
 }
 
 // GetEnrichment implements datastore.Enrichment.
@@ -278,7 +343,7 @@ func (s *Store) GetEnrichment(_ context.Context, kind string, tags []string) ([]
 	}
 	defer ls.release()
 
-	return ls.enrich[kind].GetEnrichment(kind, tags)
+	return ls.enrich[kind].GetEnrichment(tags)
 }
 
 // Distributions returns the deduplicated known distributions across all
@@ -322,25 +387,40 @@ func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, fp dr
 // updater into an immutable columnar fragment, atomically publishes the updated
 // liveSet, and releases the store's reference to any replaced fragment.
 func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.VulnerabilityIter) (uuid.UUID, error) {
-	frag, err := buildFragment(ctx, s.opts.BlobDir, updater, it)
+	start := time.Now()
+	fragID := s.nextFragID.Add(1)
+	frag, err := buildFragment(ctx, s.opts.BlobDir, updater, fragID, s.opts.MaxRows, it)
 	if err != nil {
 		return uuid.Nil, err
 	}
 	ref := uuid.New()
 
-	s.mu.Lock()
-	if s.closed {
-		s.mu.Unlock()
+	var (
+		oldLive  *liveSet
+		oldFrag  *snapshot
+		abortErr error
+	)
+	concurrency.WithLock(&s.mu, func() {
+		if s.closed {
+			abortErr = errors.New("inmem: store is closed")
+			return
+		}
+		newOffHeap := frag.cols.offHeapBytes() + frag.display.offHeapBytes()
+		if err := s.checkLimitsLocked(updater, frag.nrows, "", newOffHeap); err != nil {
+			abortErr = err
+			return
+		}
+		oldFrag = s.vulnFrags[updater]
+		s.vulnFrags[updater] = frag
+		s.ops[driver.VulnerabilityKind][updater] = driver.UpdateOperation{
+			Ref: ref, Updater: updater, Fingerprint: fp, Kind: driver.VulnerabilityKind, Date: time.Now(),
+		}
+		oldLive = s.publishLocked()
+	})
+	if abortErr != nil {
 		frag.release()
-		return uuid.Nil, errors.New("inmem: store is closed")
+		return uuid.Nil, abortErr
 	}
-	oldFrag := s.vulnFrags[updater]
-	s.vulnFrags[updater] = frag
-	s.ops[driver.VulnerabilityKind][updater] = driver.UpdateOperation{
-		Ref: ref, Updater: updater, Fingerprint: fp, Kind: driver.VulnerabilityKind, Date: time.Now(),
-	}
-	oldLive := s.publishLocked()
-	s.mu.Unlock()
 
 	if oldLive != nil {
 		oldLive.release()
@@ -348,6 +428,7 @@ func (s *Store) UpdateVulnerabilitiesIter(ctx context.Context, updater string, f
 	if oldFrag != nil {
 		oldFrag.release()
 	}
+	inmemUpdateDuration.WithLabelValues(string(driver.VulnerabilityKind)).Observe(time.Since(start).Seconds())
 	return ref, nil
 }
 
@@ -366,6 +447,7 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 // updater into an off-heap fragment, atomically publishes the updated liveSet,
 // and releases the store's reference to any replaced fragment.
 func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp driver.Fingerprint, it datastore.EnrichmentIter) (uuid.UUID, error) {
+	start := time.Now()
 	eb, err := newEnrichBuilder(s.opts.BlobDir)
 	if err != nil {
 		return uuid.Nil, err
@@ -383,7 +465,7 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 		if e == nil {
 			return true
 		}
-		if err := eb.add(kind, e.Tags, e.Enrichment); err != nil {
+		if err := eb.add(e.Tags, e.Enrichment); err != nil {
 			iterErr = err
 			return false
 		}
@@ -400,19 +482,31 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 	}
 	ref := uuid.New()
 
-	s.mu.Lock()
-	if s.closed {
-		s.mu.Unlock()
+	var (
+		oldLive  *liveSet
+		oldFrag  *enrichStore
+		abortErr error
+	)
+	concurrency.WithLock(&s.mu, func() {
+		if s.closed {
+			abortErr = errors.New("inmem: store is closed")
+			return
+		}
+		if err := s.checkLimitsLocked("", 0, kind, frag.offHeapBytes()); err != nil {
+			abortErr = err
+			return
+		}
+		oldFrag = s.enrichFrags[kind]
+		s.enrichFrags[kind] = frag
+		s.ops[driver.EnrichmentKind][kind] = driver.UpdateOperation{
+			Ref: ref, Updater: kind, Fingerprint: fp, Kind: driver.EnrichmentKind, Date: time.Now(),
+		}
+		oldLive = s.publishLocked()
+	})
+	if abortErr != nil {
 		frag.release()
-		return uuid.Nil, errors.New("inmem: store is closed")
+		return uuid.Nil, abortErr
 	}
-	oldFrag := s.enrichFrags[kind]
-	s.enrichFrags[kind] = frag
-	s.ops[driver.EnrichmentKind][kind] = driver.UpdateOperation{
-		Ref: ref, Updater: kind, Fingerprint: fp, Kind: driver.EnrichmentKind, Date: time.Now(),
-	}
-	oldLive := s.publishLocked()
-	s.mu.Unlock()
 
 	if oldLive != nil {
 		oldLive.release()
@@ -420,34 +514,36 @@ func (s *Store) UpdateEnrichmentsIter(ctx context.Context, kind string, fp drive
 	if oldFrag != nil {
 		oldFrag.release()
 	}
+	inmemUpdateDuration.WithLabelValues(string(driver.EnrichmentKind)).Observe(time.Since(start).Seconds())
 	return ref, nil
 }
 
 // ---- update-operation bookkeeping ----
 
+func (s *Store) kindsFor(kind driver.UpdateKind) []driver.UpdateKind {
+	if kind == "" {
+		return []driver.UpdateKind{driver.VulnerabilityKind, driver.EnrichmentKind}
+	}
+	return []driver.UpdateKind{kind}
+}
+
 func (s *Store) GetUpdateOperations(_ context.Context, kind driver.UpdateKind, updaters ...string) (map[string][]driver.UpdateOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := map[string][]driver.UpdateOperation{}
-	collect := func(k driver.UpdateKind) {
+	for _, k := range s.kindsFor(kind) {
 		m := s.ops[k]
 		if len(updaters) == 0 {
 			for u, op := range m {
-				out[u] = []driver.UpdateOperation{op}
+				out[u] = append(out[u], op)
 			}
-			return
+			continue
 		}
 		for _, u := range updaters {
 			if op, ok := m[u]; ok {
-				out[u] = []driver.UpdateOperation{op}
+				out[u] = append(out[u], op)
 			}
 		}
-	}
-	if kind == "" {
-		collect(driver.VulnerabilityKind)
-		collect(driver.EnrichmentKind)
-	} else {
-		collect(kind)
 	}
 	return out, nil
 }
@@ -456,8 +552,10 @@ func (s *Store) GetLatestUpdateRefs(_ context.Context, kind driver.UpdateKind) (
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := map[string][]driver.UpdateOperation{}
-	for u, op := range s.ops[kind] {
-		out[u] = []driver.UpdateOperation{op}
+	for _, k := range s.kindsFor(kind) {
+		for u, op := range s.ops[k] {
+			out[u] = append(out[u], op)
+		}
 	}
 	return out, nil
 }
@@ -466,9 +564,11 @@ func (s *Store) GetLatestUpdateRef(_ context.Context, kind driver.UpdateKind) (u
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var latest driver.UpdateOperation
-	for _, op := range s.ops[kind] {
-		if op.Date.After(latest.Date) {
-			latest = op
+	for _, k := range s.kindsFor(kind) {
+		for _, op := range s.ops[k] {
+			if op.Date.After(latest.Date) {
+				latest = op
+			}
 		}
 	}
 	return latest.Ref, nil
@@ -492,35 +592,34 @@ func (s *Store) DeleteUpdateOperations(_ context.Context, refs ...uuid.UUID) (in
 		oldEnrichs []*enrichStore
 	)
 
-	s.mu.Lock()
-	if s.closed {
-		s.mu.Unlock()
-		return 0, nil
-	}
-	for u, op := range s.ops[driver.VulnerabilityKind] {
-		if _, ok := drop[op.Ref]; ok {
-			delete(s.ops[driver.VulnerabilityKind], u)
-			if f, ok := s.vulnFrags[u]; ok {
-				delete(s.vulnFrags, u)
-				oldVulns = append(oldVulns, f)
-			}
-			n++
+	concurrency.WithLock(&s.mu, func() {
+		if s.closed {
+			return
 		}
-	}
-	for k, op := range s.ops[driver.EnrichmentKind] {
-		if _, ok := drop[op.Ref]; ok {
-			delete(s.ops[driver.EnrichmentKind], k)
-			if e, ok := s.enrichFrags[k]; ok {
-				delete(s.enrichFrags, k)
-				oldEnrichs = append(oldEnrichs, e)
+		for u, op := range s.ops[driver.VulnerabilityKind] {
+			if _, ok := drop[op.Ref]; ok {
+				delete(s.ops[driver.VulnerabilityKind], u)
+				if f, ok := s.vulnFrags[u]; ok {
+					delete(s.vulnFrags, u)
+					oldVulns = append(oldVulns, f)
+				}
+				n++
 			}
-			n++
 		}
-	}
-	if n > 0 {
-		oldLive = s.publishLocked()
-	}
-	s.mu.Unlock()
+		for k, op := range s.ops[driver.EnrichmentKind] {
+			if _, ok := drop[op.Ref]; ok {
+				delete(s.ops[driver.EnrichmentKind], k)
+				if e, ok := s.enrichFrags[k]; ok {
+					delete(s.enrichFrags, k)
+					oldEnrichs = append(oldEnrichs, e)
+				}
+				n++
+			}
+		}
+		if n > 0 {
+			oldLive = s.publishLocked()
+		}
+	})
 
 	if oldLive != nil {
 		oldLive.release()

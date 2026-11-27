@@ -1,11 +1,13 @@
 package inmem
 
 import (
+	"bufio"
 	"fmt"
+	"log/slog"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"sync/atomic"
 
 	"github.com/klauspost/compress/zstd"
@@ -16,6 +18,7 @@ import (
 const (
 	displayBlobPattern = "inmem-display-*.blob"
 	enrichBlobPattern  = "inmem-enrich-*.blob"
+	blobWriteBufSize   = 256 * 1024
 )
 
 // zstd encoder/decoder are safe for concurrent use by multiple goroutines, so a
@@ -29,64 +32,86 @@ func init() {
 	var err error
 	blobEnc, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
 	if err != nil {
-		panic(fmt.Sprintf("inmem: initializing zstd encoder: %v", err))
+		panic(fmt.Errorf("inmem: initializing zstd encoder: %w", err))
 	}
 	blobDec, err = zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 	if err != nil {
-		panic(fmt.Sprintf("inmem: initializing zstd decoder: %v", err))
+		panic(fmt.Errorf("inmem: initializing zstd decoder: %w", err))
 	}
 }
 
-// cleanStaleBlobs removes leftover display/enrichment blob files from dir (e.g.,
-// after an unclean process termination).
+// cleanStaleBlobs removes leftover display, enrichment, and column files from
+// dir (e.g., after an unclean process termination).
 func cleanStaleBlobs(dir string) {
 	for _, pattern := range []string{displayBlobPattern, enrichBlobPattern, colsFilePattern} {
 		matches, err := filepath.Glob(filepath.Join(dir, pattern))
 		if err != nil {
+			slog.Warn("searching for stale inmem files", "dir", dir, "pattern", pattern, "reason", err)
 			continue
 		}
 		for _, p := range matches {
-			_ = os.Remove(p)
+			if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+				slog.Warn("removing stale inmem file", "file", p, "reason", err)
+			}
 		}
 	}
 }
 
-// mmapRegion owns a memory-mapped, read-only blob file. It is unmapped and the
-// backing file removed either deterministically via release (driven by fragment
-// reference counting) or automatically if the owning store becomes unreachable.
+// mmapHandle is shared by mmapRegion and the GC runtime.AddCleanup fallback so
+// unix.Munmap and os.Remove execute at most once even if explicit release()
+// races with GC finalization.
+type mmapHandle struct {
+	data  []byte
+	path  string
+	freed atomic.Bool
+}
+
+func (h *mmapHandle) free() {
+	if h == nil || !h.freed.CompareAndSwap(false, true) {
+		return
+	}
+	if h.data != nil {
+		_ = unix.Munmap(h.data)
+	}
+	if h.path != "" {
+		_ = os.Remove(h.path)
+	}
+}
+
+// mmapRegion owns a memory-mapped, read-only blob or column file. It is
+// unmapped and the backing file removed either deterministically via release
+// (driven by fragment reference counting) or automatically if the owning store
+// becomes unreachable.
 type mmapRegion struct {
-	data    []byte
-	path    string
+	handle  *mmapHandle
 	cleanup runtime.Cleanup
-	once    sync.Once
+}
+
+func (r *mmapRegion) data() []byte {
+	if r == nil || r.handle == nil {
+		return nil
+	}
+	return r.handle.data
 }
 
 // release unmaps the region and removes its file. Safe to call multiple times
 // and concurrently with GC-scheduled cleanup.
 func (r *mmapRegion) release() {
-	r.once.Do(func() {
-		r.cleanup.Stop()
-		freeMmap(r.data, r.path)
-	})
-}
-
-// freeMmap performs the actual unmap+remove. It captures only the raw slice and
-// path so it can run as a GC cleanup without retaining the owning store.
-func freeMmap(data []byte, path string) {
-	if data != nil {
-		_ = unix.Munmap(data)
+	if r == nil {
+		return
 	}
-	if path != "" {
-		_ = os.Remove(path)
-	}
+	r.cleanup.Stop()
+	r.handle.free()
 }
 
 // attachCleanup registers a GC cleanup as a safety net in case a Store is
-// abandoned without Close. Normal operation releases deterministically via
-// reference counting.
+// abandoned without Close. The cleanup captures only r.handle (never obj or r).
 func attachCleanup[T any](r *mmapRegion, obj *T) {
-	data, path := r.data, r.path
-	r.cleanup = runtime.AddCleanup(obj, func(struct{}) { freeMmap(data, path) }, struct{}{})
+	if r == nil || r.handle == nil {
+		return
+	}
+	h := r.handle
+	r.cleanup = runtime.AddCleanup(obj, func(h *mmapHandle) { h.free() }, h)
 }
 
 // displayStore holds the cold display fields (description, links, raw severity
@@ -106,20 +131,21 @@ type displayStore struct {
 	fileSize int64
 }
 
-func (d *displayStore) decode(off []int64, ln []int32, i int32) string {
+func (d *displayStore) decode(off []int64, ln []int32, i int32) (string, error) {
 	if d == nil || i < 0 || int(i) >= len(off) {
-		return ""
+		return "", nil
 	}
-	b, err := blobDec.DecodeAll(d.region.data[off[i]:off[i]+int64(ln[i])], nil)
+	raw := d.region.data()
+	b, err := blobDec.DecodeAll(raw[off[i]:off[i]+int64(ln[i])], nil)
 	if err != nil {
-		return ""
+		return "", fmt.Errorf("inmem: decoding display blob entry %d: %w", i, err)
 	}
-	return string(b)
+	return string(b), nil
 }
 
-func (d *displayStore) description(i int32) string { return d.decode(d.descOff, d.descLen, i) }
-func (d *displayStore) links(i int32) string       { return d.decode(d.linkOff, d.linkLen, i) }
-func (d *displayStore) severity(i int32) string    { return d.decode(d.sevOff, d.sevLen, i) }
+func (d *displayStore) description(i int32) (string, error) { return d.decode(d.descOff, d.descLen, i) }
+func (d *displayStore) links(i int32) (string, error)       { return d.decode(d.linkOff, d.linkLen, i) }
+func (d *displayStore) severity(i int32) (string, error)    { return d.decode(d.sevOff, d.sevLen, i) }
 
 func (d *displayStore) offHeapBytes() int64 {
 	if d == nil {
@@ -131,13 +157,15 @@ func (d *displayStore) offHeapBytes() int64 {
 func (d *displayStore) release() {
 	if d != nil && d.region != nil {
 		d.region.release()
+		runtime.KeepAlive(d)
 	}
 }
 
-// displayBuilder deduplicates and compresses display strings into a file as a
-// fragment is built.
+// displayBuilder deduplicates and compresses display strings into a buffered
+// file as a fragment is built.
 type displayBuilder struct {
 	f    *os.File
+	bw   *bufio.Writer
 	path string
 	off  int64
 
@@ -156,6 +184,7 @@ func newDisplayBuilder(dir string) (*displayBuilder, error) {
 	}
 	return &displayBuilder{
 		f:      f,
+		bw:     bufio.NewWriterSize(f, blobWriteBufSize),
 		path:   f.Name(),
 		descIx: newIntern[string](),
 		linkIx: newIntern[string](),
@@ -168,6 +197,7 @@ func (b *displayBuilder) abort() {
 	if b.f != nil {
 		_ = b.f.Close()
 		b.f = nil
+		b.bw = nil
 	}
 	if b.path != "" {
 		_ = os.Remove(b.path)
@@ -194,7 +224,10 @@ func (b *displayBuilder) appendStr(ix *intern[string], offs *[]int64, lens *[]in
 		return id, nil
 	}
 	enc := blobEnc.EncodeAll([]byte(s), nil)
-	if _, err := b.f.Write(enc); err != nil {
+	if len(enc) > math.MaxInt32 {
+		return 0, fmt.Errorf("inmem: compressed display string exceeds int32 (%d bytes)", len(enc))
+	}
+	if _, err := b.bw.Write(enc); err != nil {
 		return 0, fmt.Errorf("inmem: writing display blob: %w", err)
 	}
 	*offs = append(*offs, b.off)
@@ -204,8 +237,13 @@ func (b *displayBuilder) appendStr(ix *intern[string], offs *[]int64, lens *[]in
 }
 
 func (b *displayBuilder) finish() (*displayStore, error) {
+	if err := b.bw.Flush(); err != nil {
+		b.abort()
+		return nil, fmt.Errorf("inmem: flushing display blob: %w", err)
+	}
 	err := b.f.Close()
 	b.f = nil
+	b.bw = nil
 	if err != nil {
 		b.abort()
 		return nil, fmt.Errorf("inmem: closing display blob: %w", err)
@@ -236,9 +274,9 @@ type enrichRec struct {
 	ln   int32
 }
 
-// enrichStore holds enrichment payloads off-heap and mirrors the Postgres
-// GetEnrichment semantics: records for a given updater (kind) whose tags overlap
-// the query tags, latest update operation, LIMIT 1.
+// enrichStore holds enrichment payloads off-heap for a single updater kind and
+// mirrors Postgres GetEnrichment semantics: records whose tags overlap the
+// query tags, latest update operation, LIMIT 1.
 //
 // Lifetime is governed by atomic reference counting so an enrichStore shared
 // across liveSets is unmapped only after the Store and every in-flight reader
@@ -247,8 +285,8 @@ type enrichStore struct {
 	refs   atomic.Int64
 	region *mmapRegion
 
-	recs     map[string][]enrichRec
-	tagIdx   map[string]map[string]int32
+	recs     []enrichRec
+	tagIdx   map[string]int32
 	fileSize int64
 }
 
@@ -261,34 +299,36 @@ func (e *enrichStore) retain() {
 func (e *enrichStore) release() {
 	if e != nil && e.refs.Add(-1) == 0 && e.region != nil {
 		e.region.release()
+		runtime.KeepAlive(e)
 	}
 }
 
-func (e *enrichStore) GetEnrichment(kind string, tags []string) ([]driver.EnrichmentRecord, error) {
-	if e == nil {
-		return nil, nil
-	}
-	ti := e.tagIdx[kind]
-	if ti == nil {
+func (e *enrichStore) GetEnrichment(tags []string) ([]driver.EnrichmentRecord, error) {
+	if e == nil || len(e.tagIdx) == 0 {
 		return nil, nil
 	}
 	for _, tag := range tags {
-		idx, ok := ti[tag]
+		idx, ok := e.tagIdx[tag]
 		if !ok {
 			continue
 		}
-		return []driver.EnrichmentRecord{decodeEnrichRecord(e, kind, int(idx))}, nil
+		rec, err := decodeEnrichRecord(e, int(idx))
+		if err != nil {
+			return nil, err
+		}
+		return []driver.EnrichmentRecord{rec}, nil
 	}
 	return nil, nil
 }
 
-func decodeEnrichRecord(e *enrichStore, kind string, i int) driver.EnrichmentRecord {
-	rec := e.recs[kind][i]
-	b, err := blobDec.DecodeAll(e.region.data[rec.off:rec.off+int64(rec.ln)], nil)
+func decodeEnrichRecord(e *enrichStore, i int) (driver.EnrichmentRecord, error) {
+	rec := e.recs[i]
+	raw := e.region.data()
+	b, err := blobDec.DecodeAll(raw[rec.off:rec.off+int64(rec.ln)], nil)
 	if err != nil {
-		return driver.EnrichmentRecord{Tags: rec.tags}
+		return driver.EnrichmentRecord{}, fmt.Errorf("inmem: decoding enrichment record %d: %w", i, err)
 	}
-	return driver.EnrichmentRecord{Tags: rec.tags, Enrichment: b}
+	return driver.EnrichmentRecord{Tags: rec.tags, Enrichment: b}, nil
 }
 
 func (e *enrichStore) offHeapBytes() int64 {
@@ -300,11 +340,12 @@ func (e *enrichStore) offHeapBytes() int64 {
 
 type enrichBuilder struct {
 	f    *os.File
+	bw   *bufio.Writer
 	path string
 	off  int64
 
-	recs   map[string][]enrichRec
-	tagIdx map[string]map[string]int32
+	recs   []enrichRec
+	tagIdx map[string]int32
 }
 
 func newEnrichBuilder(dir string) (*enrichBuilder, error) {
@@ -314,9 +355,9 @@ func newEnrichBuilder(dir string) (*enrichBuilder, error) {
 	}
 	return &enrichBuilder{
 		f:      f,
+		bw:     bufio.NewWriterSize(f, blobWriteBufSize),
 		path:   f.Name(),
-		recs:   map[string][]enrichRec{},
-		tagIdx: map[string]map[string]int32{},
+		tagIdx: map[string]int32{},
 	}, nil
 }
 
@@ -324,6 +365,7 @@ func (b *enrichBuilder) abort() {
 	if b.f != nil {
 		_ = b.f.Close()
 		b.f = nil
+		b.bw = nil
 	}
 	if b.path != "" {
 		_ = os.Remove(b.path)
@@ -331,32 +373,38 @@ func (b *enrichBuilder) abort() {
 	}
 }
 
-func (b *enrichBuilder) add(kind string, tags []string, payload []byte) error {
+func (b *enrichBuilder) add(tags []string, payload []byte) error {
+	if len(b.recs) >= math.MaxInt32 {
+		return fmt.Errorf("inmem: enrichment record count overflow (%d)", len(b.recs))
+	}
 	enc := blobEnc.EncodeAll(payload, nil)
-	if _, err := b.f.Write(enc); err != nil {
+	if len(enc) > math.MaxInt32 {
+		return fmt.Errorf("inmem: compressed enrichment payload exceeds int32 (%d bytes)", len(enc))
+	}
+	if _, err := b.bw.Write(enc); err != nil {
 		return fmt.Errorf("inmem: writing enrichment blob: %w", err)
 	}
 	rec := enrichRec{tags: tags, off: b.off, ln: int32(len(enc))}
 	b.off += int64(len(enc))
 
-	idx := int32(len(b.recs[kind]))
-	b.recs[kind] = append(b.recs[kind], rec)
-	ti := b.tagIdx[kind]
-	if ti == nil {
-		ti = map[string]int32{}
-		b.tagIdx[kind] = ti
-	}
+	idx := int32(len(b.recs))
+	b.recs = append(b.recs, rec)
 	for _, tag := range tags {
-		if _, exists := ti[tag]; !exists {
-			ti[tag] = idx
+		if _, exists := b.tagIdx[tag]; !exists {
+			b.tagIdx[tag] = idx
 		}
 	}
 	return nil
 }
 
 func (b *enrichBuilder) finish() (*enrichStore, error) {
+	if err := b.bw.Flush(); err != nil {
+		b.abort()
+		return nil, fmt.Errorf("inmem: flushing enrichment blob: %w", err)
+	}
 	err := b.f.Close()
 	b.f = nil
+	b.bw = nil
 	if err != nil {
 		b.abort()
 		return nil, fmt.Errorf("inmem: closing enrichment blob: %w", err)
@@ -399,5 +447,5 @@ func mapRegion(path string, size int64) (*mmapRegion, error) {
 		return nil, fmt.Errorf("inmem: closing mmap fd: %w", closeErr)
 	}
 	_ = unix.Madvise(data, unix.MADV_RANDOM)
-	return &mmapRegion{data: data, path: path}, nil
+	return &mmapRegion{handle: &mmapHandle{data: data, path: path}}, nil
 }

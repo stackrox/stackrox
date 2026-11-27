@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 	"unique"
 
+	"github.com/google/uuid"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -572,42 +573,251 @@ func TestParseColsValidation(t *testing.T) {
 	}
 
 	t.Run("truncated file", func(t *testing.T) {
-		_, err := parseCols(&mmapRegion{data: make([]byte, 16)}, 16)
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: make([]byte, 16)}}, 16)
 		assert.ErrorContains(t, err, "too short")
 	})
 	t.Run("bad magic", func(t *testing.T) {
 		buf := validHeader()
 		copy(buf[0:8], "BADMAGIC")
-		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
 		assert.ErrorContains(t, err, "invalid columns magic")
 	})
 	t.Run("bad version", func(t *testing.T) {
 		buf := validHeader()
 		buf[8] = 99
-		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
 		assert.ErrorContains(t, err, "unsupported columns version")
 	})
 	t.Run("foreign endianness", func(t *testing.T) {
 		buf := validHeader()
 		buf[12] = 1 - hostEndian()
-		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
 		assert.ErrorContains(t, err, "endianness mismatch")
 	})
 	t.Run("unaligned section offset", func(t *testing.T) {
 		buf := validHeader()
-		// Section 0: offset = colsMetaSize+3 (not 8-byte aligned), count = 1.
 		buf[colsHeaderSize] = byte((colsMetaSize + 3) & 0xff)
 		buf[colsHeaderSize+1] = byte((colsMetaSize + 3) >> 8)
 		buf[colsHeaderSize+8] = 1
-		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
 		assert.ErrorContains(t, err, "unaligned")
 	})
 	t.Run("out of bounds section", func(t *testing.T) {
 		buf := validHeader()
 		buf[colsHeaderSize] = byte(colsMetaSize & 0xff)
 		buf[colsHeaderSize+1] = byte(colsMetaSize >> 8)
-		buf[colsHeaderSize+8] = 100 // 100*4 > 16 bytes available
-		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		buf[colsHeaderSize+8] = 100
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
 		assert.ErrorContains(t, err, "out of bounds")
 	})
+	t.Run("nrows mismatch against section count", func(t *testing.T) {
+		buf := validHeader()
+		buf[20] = 5 // header claims nrows = 5, sections have count = 0
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
+		assert.ErrorContains(t, err, "!= nrows")
+	})
+	t.Run("aliasStart length mismatch", func(t *testing.T) {
+		buf := validHeader() // nrows = 0, aliasStart count = 0 (must be 1)
+		_, err := parseCols(&mmapRegion{handle: &mmapHandle{data: buf}}, int64(len(buf)))
+		assert.ErrorContains(t, err, "aliasStart length")
+	})
+}
+
+func TestGlobalIDUniqueAcrossLiveSwaps(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newTestStore(t, map[string][]*claircore.Vulnerability{
+		"upd-a": {makeVuln("CVE-A1", "pkg", types.BinaryPackage, nil)},
+		"upd-b": {makeVuln("CVE-B1", "pkg", types.BinaryPackage, nil)},
+	})
+
+	rec := []*claircore.IndexRecord{makeRec("p1", "pkg", types.BinaryPackage, nil)}
+	before, err := s.Get(ctx, rec, datastore.GetOpts{})
+	require.NoError(t, err)
+	idsBefore := map[string]string{}
+	for _, v := range before["p1"] {
+		idsBefore[v.ID] = v.Name
+	}
+
+	// Replace upd-a and add upd-c; newly compiled fragments must receive fresh
+	// immutable fragment IDs so v.ID cannot collide with prior liveSets.
+	_, err = s.UpdateVulnerabilities(ctx, "upd-a", "fp-a2", []*claircore.Vulnerability{
+		makeVuln("CVE-A2", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+	_, err = s.UpdateVulnerabilities(ctx, "upd-c", "fp-c1", []*claircore.Vulnerability{
+		makeVuln("CVE-C1", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+
+	after, err := s.Get(ctx, rec, datastore.GetOpts{})
+	require.NoError(t, err)
+	for _, v := range after["p1"] {
+		if prevName, exists := idsBefore[v.ID]; exists {
+			// Only the unchanged upd-b fragment may reuse its ID (same CVE).
+			assert.Equal(t, prevName, v.Name, "v.ID %s collided between %s and %s", v.ID, prevName, v.Name)
+		}
+	}
+}
+
+func TestUnknownMatchConstraintReturnsError(t *testing.T) {
+	s, _ := newTestStore(t, map[string][]*claircore.Vulnerability{
+		"u": {makeVuln("CVE-1", "openssl", types.BinaryPackage, nil)},
+	})
+	_, err := s.Get(context.Background(), []*claircore.IndexRecord{
+		makeRec("p1", "openssl", types.BinaryPackage, nil),
+	}, datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.MatchConstraint(999)},
+	})
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "unknown match constraint")
+}
+
+func TestUpdaterFieldPreservedAndInvalidAliasesSkipped(t *testing.T) {
+	validAlias := claircore.Alias{Space: unique.Make("cve"), Name: "CVE-2025-1111"}
+	s, _ := newTestStore(t, map[string][]*claircore.Vulnerability{
+		"operation-name": {
+			makeVuln("RHSA-1", "curl", types.BinaryPackage, func(v *claircore.Vulnerability) {
+				v.Updater = "rhel-vex-custom"
+				v.Aliases = []claircore.Alias{{}, validAlias}
+			}),
+		},
+	})
+
+	got, err := s.Get(context.Background(), []*claircore.IndexRecord{
+		makeRec("p1", "curl", types.BinaryPackage, nil),
+	}, datastore.GetOpts{})
+	require.NoError(t, err)
+	require.Len(t, got["p1"], 1)
+	assert.Equal(t, "rhel-vex-custom", got["p1"][0].Updater)
+	assert.Equal(t, []claircore.Alias{validAlias}, got["p1"][0].Aliases)
+}
+
+func TestUpdateOperationBookkeepingAndUnsupportedOps(t *testing.T) {
+	ctx := context.Background()
+	s, dir := newTestStore(t, nil)
+
+	vRef, err := s.UpdateVulnerabilities(ctx, "shared-name", "fp-v1", []*claircore.Vulnerability{
+		makeVuln("CVE-1", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+	time.Sleep(2 * time.Millisecond)
+	eRef, err := s.UpdateEnrichments(ctx, "shared-name", "fp-e1", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-1"}, Enrichment: []byte(`{"k":1}`)},
+	})
+	require.NoError(t, err)
+
+	// Wildcard kind == "" must return both ops without overwriting.
+	allOps, err := s.GetUpdateOperations(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, allOps["shared-name"], 2)
+
+	// Filtered by updater + kind.
+	vOps, err := s.GetUpdateOperations(ctx, driver.VulnerabilityKind, "shared-name")
+	require.NoError(t, err)
+	require.Len(t, vOps["shared-name"], 1)
+	assert.Equal(t, vRef, vOps["shared-name"][0].Ref)
+
+	// GetLatestUpdateRefs with wildcard kind == "" returns both.
+	latestRefs, err := s.GetLatestUpdateRefs(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, latestRefs["shared-name"], 2)
+
+	// GetLatestUpdateRef with wildcard kind == "" returns the newer eRef.
+	latest, err := s.GetLatestUpdateRef(ctx, "")
+	require.NoError(t, err)
+	assert.Equal(t, eRef, latest)
+
+	latestV, err := s.GetLatestUpdateRef(ctx, driver.VulnerabilityKind)
+	require.NoError(t, err)
+	assert.Equal(t, vRef, latestV)
+
+	// Enrichment replacement & deletion unlinks old blobs.
+	eRef2, err := s.UpdateEnrichments(ctx, "shared-name", "fp-e2", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-2"}, Enrichment: []byte(`{"k":2}`)},
+	})
+	require.NoError(t, err)
+	gotE, err := s.GetEnrichment(ctx, "shared-name", []string{"CVE-2"})
+	require.NoError(t, err)
+	require.Len(t, gotE, 1)
+	assert.Equal(t, `{"k":2}`, string(gotE[0].Enrichment))
+
+	deleted, err := s.DeleteUpdateOperations(ctx, eRef2)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), deleted)
+	gotE, err = s.GetEnrichment(ctx, "shared-name", []string{"CVE-2"})
+	require.NoError(t, err)
+	assert.Empty(t, gotE)
+	eBlobs, err := filepath.Glob(filepath.Join(dir, "inmem-enrich-*.blob"))
+	require.NoError(t, err)
+	assert.Empty(t, eBlobs)
+
+	// Unsupported & no-op Updater methods.
+	_, err = s.DeltaUpdateVulnerabilities(ctx, "u", "fp", nil, nil)
+	assert.Error(t, err)
+	_, err = s.GetUpdateDiff(ctx, vRef, eRef)
+	assert.Error(t, err)
+	gcN, err := s.GC(ctx, 2)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), gcN)
+	assert.NoError(t, s.RecordUpdaterStatus(ctx, "u", time.Now(), "fp", nil))
+	assert.NoError(t, s.RecordUpdaterSetStatus(ctx, "u", time.Now()))
+}
+
+func TestUpdateAbortCancelAndCircuitBreakerAndPostClose(t *testing.T) {
+	dir := t.TempDir()
+	s, err := NewMatcherStore(Options{BlobDir: dir, MaxRows: 2})
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	// Iterator error aborts cleanly without leaving temp files.
+	_, err = s.UpdateVulnerabilitiesIter(ctx, "u-err", "fp", func(yield func(*claircore.Vulnerability, error) bool) {
+		yield(makeVuln("CVE-1", "pkg", types.BinaryPackage, nil), nil)
+		yield(nil, errors.New("stream boom"))
+	})
+	require.ErrorContains(t, err, "stream boom")
+
+	// Canceled context in UpdateEnrichmentsIter aborts cleanly.
+	cctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = s.UpdateEnrichmentsIter(cctx, "e-cancel", "fp", func(yield func(*driver.EnrichmentRecord, error) bool) {
+		yield(&driver.EnrichmentRecord{Tags: []string{"CVE-1"}, Enrichment: []byte("x")}, nil)
+	})
+	require.ErrorIs(t, err, context.Canceled)
+
+	leftover, err := filepath.Glob(filepath.Join(dir, "inmem-*"))
+	require.NoError(t, err)
+	assert.Empty(t, leftover, "aborted updates must not leak temp files")
+
+	// Load 2 valid rows (within MaxRows=2).
+	_, err = s.UpdateVulnerabilities(ctx, "u-ok", "fp-1", []*claircore.Vulnerability{
+		makeVuln("CVE-1", "pkg", types.BinaryPackage, nil),
+		makeVuln("CVE-2", "pkg", types.BinaryPackage, nil),
+	})
+	require.NoError(t, err)
+
+	// Adding another updater pushing total rows > MaxRows=2 must fail while keeping u-ok live.
+	_, err = s.UpdateVulnerabilities(ctx, "u-over", "fp-2", []*claircore.Vulnerability{
+		makeVuln("CVE-3", "pkg", types.BinaryPackage, nil),
+	})
+	require.ErrorContains(t, err, "max_rows")
+	assert.Equal(t, 2, s.Stats().Rows)
+
+	// Post-Close writes must return error and leave no files on disk.
+	s.Close()
+	_, err = s.UpdateVulnerabilities(ctx, "u-after", "fp-3", []*claircore.Vulnerability{
+		makeVuln("CVE-4", "pkg", types.BinaryPackage, nil),
+	})
+	require.ErrorContains(t, err, "closed")
+	_, err = s.UpdateEnrichments(ctx, "e-after", "fp-3", []driver.EnrichmentRecord{
+		{Tags: []string{"CVE-4"}, Enrichment: []byte("x")},
+	})
+	require.ErrorContains(t, err, "closed")
+	n, err := s.DeleteUpdateOperations(ctx, uuid.New())
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), n)
+
+	leftover, err = filepath.Glob(filepath.Join(dir, "inmem-*"))
+	require.NoError(t, err)
+	assert.Empty(t, leftover)
 }

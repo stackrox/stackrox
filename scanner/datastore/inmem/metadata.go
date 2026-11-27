@@ -2,8 +2,9 @@ package inmem
 
 import (
 	"context"
-	"sync"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // MetadataStore is an ephemeral, in-process implementation of

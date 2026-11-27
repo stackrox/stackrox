@@ -2,10 +2,10 @@ package inmem
 
 import (
 	"context"
-	"sync"
 
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Compile-time assertions that Locker satisfies both ClairCore lock interfaces.

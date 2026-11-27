@@ -117,6 +117,7 @@ var (
 			replacement: "github.com/stackrox/rox/pkg/uuid",
 			allowlist: set.NewStringSet(
 				// Used by ClairCore as return types.
+				"github.com/stackrox/rox/scanner/datastore/inmem",
 				"github.com/stackrox/rox/scanner/datastore/postgres/mocks",
 				"github.com/stackrox/rox/scanner/matcher/updater/vuln",
 				// TODO(ROX-24333): Remove this once ClairCore supports it.
