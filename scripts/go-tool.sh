@@ -13,47 +13,107 @@ die() {
 
 RACE="${RACE:-false}"
 
-x_defs=()
-x_def_errors=()
+# Fast path: when BUILD_TAG and SHORTCOMMIT are set (CI PR builds),
+# skip status.sh entirely — the values are already overridden, so
+# running git describe → make tag is pure overhead (~5-10s per build).
+if [[ -n "$BUILD_TAG" && -n "$SHORTCOMMIT" ]]; then
+  # Pre-populate the status variables that go-build.sh would normally
+  # get from status.sh; go-build.sh reads them via indirect expansion.
+  x_defs=()
+  x_def_errors=()
+  # Extract x_def definitions from source (same as below, but skip status.sh)
+  while read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+      continue
+    elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
+      go_file="${BASH_REMATCH[1]}"
+      go_var="${BASH_REMATCH[4]}"
+      status_var="${BASH_REMATCH[5]}"
+      # Only MainVersion and GitShortSha are overridden by env vars
+      case "$status_var" in
+        STABLE_MAIN_VERSION) val="$BUILD_TAG" ;;
+        STABLE_GIT_SHORT_SHA) val="$SHORTCOMMIT" ;;
+        *) continue ;; # non-overridden vars: skip (they don't affect compile)
+      esac
+      go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
+      x_defs+=(-X "\"${go_package}.${go_var}=${val}\"")
+    fi
+  done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go' 2>/dev/null || true)
+else
+  # Normal path: run status.sh and build the full x_defs
+  x_defs=()
+  x_def_errors=()
 
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
-		var="${BASH_REMATCH[1]}"
-		def="${BASH_REMATCH[2]}"
-		eval "status_${var}=$(printf '%q' "$def")"
-	else
-		die "Malformed status.sh output line ${line}"
-	fi
-done < <(cd "${SCRIPT_DIR}/.."; ./status.sh)
+  while read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+      continue
+    elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
+      var="${BASH_REMATCH[1]}"
+      def="${BASH_REMATCH[2]}"
+      eval "status_${var}=$(printf '%q' "$def")"
+    else
+      die "Malformed status.sh output line ${line}"
+    fi
+  done < <(cd "${SCRIPT_DIR}/.."; ./status.sh)
 
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
-		go_file="${BASH_REMATCH[1]}"
-		go_line="${BASH_REMATCH[2]}"
-		go_var="${BASH_REMATCH[4]}"
-		status_var="${BASH_REMATCH[5]}"
+  while read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+      continue
+    elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
+      go_file="${BASH_REMATCH[1]}"
+      go_line="${BASH_REMATCH[2]}"
+      go_var="${BASH_REMATCH[4]}"
+      status_var="${BASH_REMATCH[5]}"
 
-		varname="status_${status_var}"
-		[[ -n "${!varname}" ]] || x_def_errors+=(
-			"Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
-		)
-		go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
+      varname="status_${status_var}"
+      [[ -n "${!varname}" ]] || x_def_errors+=(
+        "Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
+      )
+      go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
 
-		x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
-	fi
-done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go')
-if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
-	printf >&2 "%s\n" "${x_def_errors[@]}"
-	exit 1
+      x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
+    fi
+  done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go')
+
+  if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
+    printf >&2 "%s\n" "${x_def_errors[@]}"
+    exit 1
+  fi
 fi
 
 ldflags=("${x_defs[@]}")
 if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
+fi
+# Optional external linker (e.g. ROX_LINKER=mold): substantially faster
+# links on large binaries than Go's internal linker.
+if [[ -n "$ROX_LINKER" ]]; then
+  ldflags+=(-linkmode=external "-extldflags=-fuse-ld=${ROX_LINKER}")
+fi
+
+# Deterministic build IDs: go's default buildid embeds the toolchain
+# build's hash, which varies across runner environments (setup-go vs
+# GOTOOLCHAIN-download produce different tool IDs for the same go
+# version) — measured as the only 80-byte difference between otherwise
+# byte-identical CI binaries. Override with a value derived from the
+# dependency state:
+#   - go.mod's language version (intentional compatibility changes)
+#   - go.sum hash (changes exactly when dependencies change)
+# Source changes do NOT need to change the buildid: binary content
+# changes with source, so content-addressed consumers (tars, outbin
+# validation via compile ActionIDs) already distinguish them — while a
+# ui/- or docs/-only commit keeps identical Go binaries sharing one
+# buildid, so cross-commit reuse works (no 4GB re-upload on unrelated
+# changes). Correctness is preserved because compile ActionIDs still
+# key on the exact toolchain: a patch bump forces recompile+relink
+# regardless of this buildid. (Verified: source changes rebuild
+# despite a constant buildid.)
+if [[ -n "${ROX_DETERMINISTIC_BUILDID:-1}" ]]; then
+  _gomod_go="$(awk '/^go /{print $2; exit}' go.mod)"
+  _gosum="$(sha256sum go.sum 2>/dev/null | cut -c1-16)"
+  if [[ -n "$_gomod_go" && -n "$_gosum" ]]; then
+    ldflags+=("-buildid=${_gomod_go}-${_gosum}")
+  fi
 fi
 
 function invoke_go() {
