@@ -6,16 +6,22 @@ import (
 	"testing/synctest"
 	"time"
 
+	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
+	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/robfig/cron.v2"
 )
 
@@ -434,4 +440,333 @@ func TestStoppingSchedulerDoesNotCancelOtherInstance(t *testing.T) {
 		assert.ErrorIs(t, first.stopCtx.Err(), context.Canceled)
 		assert.NoError(t, second.stopCtx.Err())
 	})
+}
+
+// vulnReportConfigForClosureTests returns a fully valid vulnerability report configuration
+// used by the reportClosure tests below.
+func vulnReportConfigForClosureTests() *storage.ReportConfiguration {
+	return &storage.ReportConfiguration{
+		Id:   "report-config-1",
+		Name: "Weekly Image CVE Report",
+		Type: storage.ReportConfiguration_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: "collection-1"},
+		},
+		Filter: &storage.ReportConfiguration_VulnReportFilters{
+			VulnReportFilters: &storage.VulnerabilityReportFilters{
+				Fixability: storage.VulnerabilityReportFilters_BOTH,
+			},
+		},
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						NotifierId:   "notifier-1",
+						MailingLists: []string{"security@example.com"},
+					},
+				},
+				Ref: &storage.NotifierConfiguration_Id{Id: "notifier-1"},
+			},
+		},
+		Creator: &storage.SlimUser{Id: "creator-user-id", Name: "Report Creator"},
+	}
+}
+
+func TestReportClosureSubmitsScheduledReport(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+	mockCollectionDS := collectionMocks.NewMockDataStore(ctrl)
+	mockNotifierDS := notifierMocks.NewMockDataStore(ctrl)
+
+	config := vulnReportConfigForClosureTests()
+
+	mockReportConfigDS.EXPECT().
+		GetReportConfiguration(gomock.Any(), "report-config-1").
+		Return(config, true, nil)
+	mockCollectionDS.EXPECT().
+		Get(gomock.Any(), "collection-1").
+		Return(&storage.ResourceCollection{Id: "collection-1", Name: "Collection One"}, true, nil)
+	mockNotifierDS.EXPECT().
+		GetManyNotifiers(gomock.Any(), []string{"notifier-1"}).
+		Return([]*storage.Notifier{{Id: "notifier-1", Name: "Email Notifier"}}, nil)
+
+	var persistedSnapshot *storage.ReportSnapshot
+	mockSnapshotStore.EXPECT().
+		AddReportSnapshot(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, snapshot *storage.ReportSnapshot) (string, error) {
+			persistedSnapshot = snapshot
+			return "generated-report-id", nil
+		})
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	// Wire a real validator backed by mock datastores so the closure runs through
+	// ValidateAndGenerateReportRequest and generateReportSnapshot.
+	validator := validation.New(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS)
+	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS,
+		nil, nil, validator, cronScheduler)
+	s.isStarted.Store(true)
+
+	s.reportClosure(config)()
+
+	// The report request produced by the closure must have been persisted and enqueued.
+	assert.Equal(t, 1, s.queues[0].queue.Len())
+	require.NotNil(t, persistedSnapshot)
+
+	assert.Equal(t, "report-config-1", persistedSnapshot.GetReportConfigurationId())
+	assert.Equal(t, storage.ReportSnapshot_VULNERABILITY, persistedSnapshot.GetType())
+	assert.Equal(t, &storage.CollectionSnapshot{Id: "collection-1", Name: "Collection One"}, persistedSnapshot.GetCollection())
+	assert.Equal(t, "generated-report-id", persistedSnapshot.GetReportId())
+
+	reportStatus := persistedSnapshot.GetReportStatus()
+	assert.Equal(t, storage.ReportStatus_WAITING, reportStatus.GetRunState())
+	assert.Equal(t, storage.ReportStatus_SCHEDULED, reportStatus.GetReportRequestType())
+	assert.Equal(t, storage.ReportStatus_EMAIL, reportStatus.GetReportNotificationMethod())
+
+	// The closure passes a nil requester identity (scheduled reports have no
+	// requesting user), so the requester falls back to the report config creator
+	// and generateReportSnapshot must not call common.ExtractAccessScopeRules.
+	assert.Equal(t, config.GetCreator(), persistedSnapshot.GetRequester())
+	require.NotNil(t, persistedSnapshot.GetVulnReportFilters())
+	assert.Empty(t, persistedSnapshot.GetVulnReportFilters().GetAccessScopeRules())
+}
+
+func TestReportClosureWithMissingConfigDoesNotSubmitReport(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+
+	missingConfig := &storage.ReportConfiguration{
+		Id:   "missing-config",
+		Name: "Missing Config",
+		Type: storage.ReportConfiguration_VULNERABILITY,
+	}
+
+	mockReportConfigDS.EXPECT().
+		GetReportConfiguration(gomock.Any(), "missing-config").
+		Return(nil, false, nil)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	validator := validation.New(mockReportConfigDS, mockSnapshotStore, nil, nil)
+	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, nil, nil, nil, nil, validator, cronScheduler)
+	s.isStarted.Store(true)
+
+	// The closure only logs validation errors; it must not panic and must not
+	// submit anything (SubmitReportRequest rejects the nil report request).
+	s.reportClosure(missingConfig)()
+
+	assert.Equal(t, 0, s.queues[0].queue.Len())
+}
+
+// TestRecoverMissedSchedulesRecoversMissedScheduledReport exercises the recovery
+// branch of recoverMissedSchedules: when the most recent scheduled snapshot for a
+// report config was queued before the schedule's previous fire time, the missed
+// run is recovered by going through the validator's
+// ValidateAndGenerateReportRequest and submitting a new report request.
+func TestRecoverMissedSchedulesRecoversMissedScheduledReport(t *testing.T) {
+	// recoverMissedSchedules is gated on this env var; pin it so the test does
+	// not depend on the registered default.
+	t.Setenv("ROX_REPORT_MISSED_SCHEDULE_RECOVERY", "true")
+
+	ctrl := gomock.NewController(t)
+	mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+	mockCollectionDS := collectionMocks.NewMockDataStore(ctrl)
+	mockNotifierDS := notifierMocks.NewMockDataStore(ctrl)
+
+	config := vulnReportConfigForClosureTests()
+	// Daily at 00:00, so the previous fire time is at most ~24h in the past.
+	config.Schedule = &storage.Schedule{
+		IntervalType: storage.Schedule_DAILY,
+		Hour:         0,
+		Minute:       0,
+	}
+
+	// The most recent scheduled snapshot completed but was queued three days
+	// ago, i.e. before the previous fire time: the schedule was missed.
+	lastSnapshot := &storage.ReportSnapshot{
+		ReportId:              "last-report-id",
+		ReportConfigurationId: config.GetId(),
+		Type:                  storage.ReportSnapshot_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:          storage.ReportStatus_GENERATED,
+			ReportRequestType: storage.ReportStatus_SCHEDULED,
+			QueuedAt:          timestamppb.New(time.Now().Add(-72 * time.Hour)),
+		},
+	}
+
+	mockReportConfigDS.EXPECT().
+		GetReportConfigurations(gomock.Any(), gomock.Any()).
+		Return([]*storage.ReportConfiguration{config}, nil)
+	mockSnapshotStore.EXPECT().
+		SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		Return([]*storage.ReportSnapshot{lastSnapshot}, nil)
+
+	// The recovery path runs through the real validator, backed by mock datastores.
+	mockReportConfigDS.EXPECT().
+		GetReportConfiguration(gomock.Any(), "report-config-1").
+		Return(config, true, nil)
+	mockCollectionDS.EXPECT().
+		Get(gomock.Any(), "collection-1").
+		Return(&storage.ResourceCollection{Id: "collection-1", Name: "Collection One"}, true, nil)
+	mockNotifierDS.EXPECT().
+		GetManyNotifiers(gomock.Any(), []string{"notifier-1"}).
+		Return([]*storage.Notifier{{Id: "notifier-1", Name: "Email Notifier"}}, nil)
+
+	var recoveredSnapshot *storage.ReportSnapshot
+	mockSnapshotStore.EXPECT().
+		AddReportSnapshot(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, snapshot *storage.ReportSnapshot) (string, error) {
+			recoveredSnapshot = snapshot
+			return "recovered-report-id", nil
+		})
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	validator := validation.New(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS)
+	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS,
+		nil, nil, validator, cronScheduler)
+	s.isStarted.Store(true)
+
+	s.recoverMissedSchedules()
+
+	// The missed run must have been recovered: a new snapshot was persisted and enqueued.
+	assert.Equal(t, 1, s.queues[0].queue.Len())
+	require.NotNil(t, recoveredSnapshot)
+
+	assert.Equal(t, "report-config-1", recoveredSnapshot.GetReportConfigurationId())
+	assert.Equal(t, "recovered-report-id", recoveredSnapshot.GetReportId())
+	assert.Equal(t, storage.ReportSnapshot_VULNERABILITY, recoveredSnapshot.GetType())
+	reportStatus := recoveredSnapshot.GetReportStatus()
+	assert.Equal(t, storage.ReportStatus_WAITING, reportStatus.GetRunState())
+	assert.Equal(t, storage.ReportStatus_SCHEDULED, reportStatus.GetReportRequestType())
+	assert.Equal(t, storage.ReportStatus_EMAIL, reportStatus.GetReportNotificationMethod())
+}
+
+// TestReportClosureValidatorOnDemandExtractsAccessScopeRules exercises the only
+// path from the scheduler's validator into common.ExtractAccessScopeRules:
+// reportClosure always requests SCHEDULED reports with a nil identity, for which
+// generateReportSnapshot skips ExtractAccessScopeRules. The ON_DEMAND request
+// type, submitted via the API handlers, is what triggers the extraction for both
+// vulnerability and node vulnerability report filters.
+func TestReportClosureValidatorOnDemandExtractsAccessScopeRules(t *testing.T) {
+	nodeConfig := &storage.ReportConfiguration{
+		Id:   "node-report-config-1",
+		Name: "Node CVE Report",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{
+				EntityScope: &storage.EntityScope{
+					Rules: []*storage.EntityScopeRule{
+						{
+							Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+							Field:  storage.EntityField_FIELD_NAME,
+							Values: []*storage.RuleValue{{Value: "cluster-a"}},
+						},
+					},
+				},
+			},
+		},
+		Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
+			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{},
+		},
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						NotifierId:   "notifier-1",
+						MailingLists: []string{"security@example.com"},
+					},
+				},
+				Ref: &storage.NotifierConfiguration_Id{Id: "notifier-1"},
+			},
+		},
+		Creator: &storage.SlimUser{Id: "creator-user-id", Name: "Report Creator"},
+	}
+
+	cases := map[string]struct {
+		config *storage.ReportConfiguration
+		// getAccessScopeRules returns the access scope rules carried by the
+		// generated snapshot's report filters.
+		getAccessScopeRules func(snap *storage.ReportSnapshot) []*storage.SimpleAccessScope_Rules
+	}{
+		"vulnerability report": {
+			config: vulnReportConfigForClosureTests(),
+			getAccessScopeRules: func(snap *storage.ReportSnapshot) []*storage.SimpleAccessScope_Rules {
+				return snap.GetVulnReportFilters().GetAccessScopeRules()
+			},
+		},
+		"node vulnerability report": {
+			config: nodeConfig,
+			getAccessScopeRules: func(snap *storage.ReportSnapshot) []*storage.SimpleAccessScope_Rules {
+				return snap.GetNodeVulnReportFilters().GetAccessScopeRules()
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+			mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+			mockCollectionDS := collectionMocks.NewMockDataStore(ctrl)
+			mockNotifierDS := notifierMocks.NewMockDataStore(ctrl)
+
+			mockReportConfigDS.EXPECT().
+				GetReportConfiguration(gomock.Any(), c.config.GetId()).
+				Return(c.config, true, nil)
+			if collectionID := c.config.GetResourceScope().GetCollectionId(); collectionID != "" {
+				mockCollectionDS.EXPECT().
+					Get(gomock.Any(), collectionID).
+					Return(&storage.ResourceCollection{Id: collectionID, Name: "Collection One"}, true, nil)
+			}
+			mockNotifierDS.EXPECT().
+				GetManyNotifiers(gomock.Any(), []string{"notifier-1"}).
+				Return([]*storage.Notifier{{Id: "notifier-1", Name: "Email Notifier"}}, nil)
+
+			accessScope := &storage.SimpleAccessScope{
+				Id: "custom-access-scope",
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusterIds: []string{"cluster-a"},
+				},
+			}
+			role := permissionsMocks.NewMockResolvedRole(ctrl)
+			role.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+
+			identity := identityMocks.NewMockIdentity(ctrl)
+			identity.EXPECT().UID().Return("on-demand-user").AnyTimes()
+			identity.EXPECT().FullName().Return("On Demand User").AnyTimes()
+			identity.EXPECT().FriendlyName().Return("on-demand-user").AnyTimes()
+			identity.EXPECT().Roles().Return([]permissions.ResolvedRole{role}).Times(1)
+
+			cronScheduler := cron.New()
+			cronScheduler.Start()
+			defer cronScheduler.Stop()
+
+			validator := validation.New(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS)
+			s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, mockNotifierDS,
+				nil, nil, validator, cronScheduler)
+
+			reportReq, err := s.validator.ValidateAndGenerateReportRequest(
+				c.config.GetId(), storage.ReportStatus_EMAIL, storage.ReportStatus_ON_DEMAND, identity)
+			require.NoError(t, err)
+			require.NotNil(t, reportReq)
+
+			snapshot := reportReq.ReportSnapshot
+			// On-demand reports are attributed to the requesting identity...
+			assert.Equal(t, "on-demand-user", snapshot.GetRequester().GetId())
+			assert.Equal(t, "On Demand User", snapshot.GetRequester().GetName())
+			assert.Equal(t, storage.ReportStatus_ON_DEMAND, snapshot.GetReportStatus().GetReportRequestType())
+			// ...and carry the access scope rules extracted from that identity's roles.
+			assert.Equal(t, []*storage.SimpleAccessScope_Rules{accessScope.GetRules()}, c.getAccessScopeRules(snapshot))
+		})
+	}
 }

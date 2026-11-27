@@ -13,6 +13,8 @@ import (
 )
 
 // DataStore is the gateway to the DB that enforces access control.
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
