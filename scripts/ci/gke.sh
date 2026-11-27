@@ -157,10 +157,9 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    SPOT_ARG=
+    local use_spot="false"
     if [[ "${GKE_SPOT:-false}" == "true" ]]; then
-        SPOT_ARG="--spot"
-        echo "Using spot (preemptible) VMs for cost savings"
+        use_spot="true"
     fi
     zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
     success=0
@@ -172,7 +171,7 @@ create_cluster() {
         # shellcheck disable=SC2153
         timeout 830 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
-            --num-nodes "${NUM_NODES}" \
+            --num-nodes "$( [[ "${use_spot}" == "true" ]] && echo 1 || echo "${NUM_NODES}" )" \
             --disk-type=pd-ssd \
             --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
@@ -186,11 +185,10 @@ create_cluster() {
             --tags="${tags}" \
             --labels="${labels}" \
             ${PSP_ARG} \
-            ${SPOT_ARG} \
             "${CLUSTER_NAME}" || status="$?"
+        local cluster_created="false"
         if [[ "${status}" == 0 ]]; then
-            success=1
-            break
+            cluster_created="true"
         elif [[ "${status}" == 124 ]]; then
             info "gcloud command timed out. Checking to see if cluster is still creating"
             if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
@@ -198,7 +196,7 @@ create_cluster() {
             else
                 for i in {1..60}; do
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
-                        success=1
+                        cluster_created="true"
                         break
                     fi
                     sleep 20
@@ -206,20 +204,53 @@ create_cluster() {
                 done
             fi
 
-            if [[ "${success}" == 1 ]]; then
-                info "Successfully launched cluster ${CLUSTER_NAME}"
-                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-                ls -l "${kubeconfig}" || true
-                gcloud container clusters get-credentials "$CLUSTER_NAME"
-                ls -l "${kubeconfig}" || true
-                break
+            if [[ "${cluster_created}" != "true" ]]; then
+                info "Timed out"
+                info "Attempting to delete the cluster before trying another zone"
+                gcloud container clusters delete "${CLUSTER_NAME}" || {
+                    info "An error occurred deleting the cluster: $?"
+                    true
+                }
             fi
-            info "Timed out"
-            info "Attempting to delete the cluster before trying another zone"
-            gcloud container clusters delete "${CLUSTER_NAME}" || {
-                info "An error occurred deleting the cluster: $?"
-                true
-            }
+        fi
+
+        if [[ "${cluster_created}" == "true" ]]; then
+            gcloud container clusters get-credentials "$CLUSTER_NAME"
+            if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
+                info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
+                if timeout 300 gcloud beta container node-pools create spot-pool \
+                    --cluster "${CLUSTER_NAME}" \
+                    --machine-type "${MACHINE_TYPE}" \
+                    --num-nodes "$((NUM_NODES - 1))" \
+                    --spot \
+                    --node-taints=cloud.google.com/gke-spot=true:PreferNoSchedule \
+                    --disk-type=pd-ssd \
+                    --disk-size="${DISK_SIZE_GB}GB" \
+                    --image-type "${GCP_IMAGE_TYPE}" \
+                    --no-enable-autorepair \
+                    --no-enable-autoupgrade; then
+                    info "Spot node pool created successfully"
+                else
+                    info "WARNING: Spot node pool failed. Falling back to non-spot nodes."
+                    if ! gcloud beta container node-pools create fallback-pool \
+                        --cluster "${CLUSTER_NAME}" \
+                        --machine-type "${MACHINE_TYPE}" \
+                        --num-nodes "$((NUM_NODES - 1))" \
+                        --disk-type=pd-ssd \
+                        --disk-size="${DISK_SIZE_GB}GB" \
+                        --image-type "${GCP_IMAGE_TYPE}" \
+                        --no-enable-autorepair \
+                        --no-enable-autoupgrade; then
+                        info "Fallback node pool also failed. Deleting cluster and trying another zone."
+                        gcloud container clusters delete "${CLUSTER_NAME}" --async || true
+                        continue
+                    fi
+                fi
+                success=1
+            else
+                success=1
+            fi
+            break
         fi
     done
 
