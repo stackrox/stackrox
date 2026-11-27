@@ -260,15 +260,15 @@ function FlowsTable({
                                 <Td dataLabel={columnNames.direction}>
                                     {row.baselineSimulationDiffState === 'ADDED' && (
                                         <Tooltip content={<div>Baseline added</div>}>
-                                            <Icon size="sm">
-                                                <PlusIcon className="pf-v6-u-text-color-status-success" />
+                                            <Icon size="sm" status="success">
+                                                <PlusIcon />
                                             </Icon>
                                         </Tooltip>
                                     )}
                                     {row.baselineSimulationDiffState === 'REMOVED' && (
                                         <Tooltip content={<div>Baseline removed</div>}>
-                                            <Icon size="sm">
-                                                <MinusIcon className="pf-v6-u-text-color-status-danger" />
+                                            <Icon size="sm" status="danger">
+                                                <MinusIcon />
                                             </Icon>
                                         </Tooltip>
                                     )}
