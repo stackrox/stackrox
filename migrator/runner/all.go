@@ -12,5 +12,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_227_to_m_228_remove_sensor_upgrade_configs_table"
 	_ "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_compliance_v1_tables"
 	_ "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_compliance_operator_v1_tables"
-	_ "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer"
+	_ "github.com/stackrox/rox/migrator/migrations/m_230_to_m_231_drop_machine_to_machine_configuration_unique_index_per_issuer"
 )
