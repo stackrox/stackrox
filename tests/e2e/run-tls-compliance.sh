@@ -69,13 +69,8 @@ push_tls_scanner() {
 }
 
 set_tls_profile() {
-    local master_config_before worker_config_before
-    local master_config_after worker_config_after
-    local i
-
-    master_config_before=$(oc get mcp master -o jsonpath='{.status.configuration.name}')
-    worker_config_before=$(oc get mcp worker -o jsonpath='{.status.configuration.name}')
-    info "MCP configs before changes: master=$master_config_before worker=$worker_config_before"
+    local worker_config_before worker_config_after deadline
+    worker_config_before=$(oc get mcp/worker -o jsonpath='{.spec.configuration.name}')
 
     info "Setting TLS profile..."
     oc patch apiserver cluster --type=merge -p '{
@@ -93,28 +88,25 @@ set_tls_profile() {
         }
     }'
 
-    info "Waiting for MCO to pick up TLS profile change..."
-    for i in $(seq 1 30); do
-        master_config_after=$(oc get mcp master -o jsonpath='{.spec.configuration.name}')
-        worker_config_after=$(oc get mcp worker -o jsonpath='{.spec.configuration.name}')
-        if [[ "$master_config_after" != "$master_config_before" || "$worker_config_after" != "$worker_config_before" ]]; then
-            info "MCO picked up TLS change: master=$master_config_after worker=$worker_config_after"
+    # Wait for worker reboots to finish before deploying ACS and running the scanner.
+    info "Waiting for a new worker configuration..."
+    deadline=$((SECONDS + 300))
+    while true; do
+        worker_config_after=$(oc get mcp/worker -o jsonpath='{.spec.configuration.name}')
+        if [[ -n "$worker_config_after" && "$worker_config_after" != "$worker_config_before" ]]; then
             break
         fi
-        if [[ "$i" -eq 30 ]]; then
-            info "MCO did not pick up TLS change within 300s, proceeding anyway."
-            break
+        if (( SECONDS >= deadline )); then
+            fail "No new worker configuration after the TLS profile change (baseline: $worker_config_before)."
+            return 1
         fi
         sleep 10
     done
 
-    info "Waiting for MCO to finish rolling out to all nodes (this can take 30+ minutes)..."
-    oc get mcp
-    oc get nodes
-    oc wait mcp --all --for=condition=Updated --timeout=3600s
-    info "MCO rollout complete."
-    oc get mcp
-    oc get nodes
+    info "Waiting for the worker rollout: $worker_config_after"
+    oc wait mcp/worker --for="jsonpath={.status.configuration.name}=$worker_config_after" --timeout=1h
+    oc wait mcp/worker --for=condition=Updated --timeout=5m
+    info "Worker rollout complete: $worker_config_after"
 }
 
 deploy_acs() {
