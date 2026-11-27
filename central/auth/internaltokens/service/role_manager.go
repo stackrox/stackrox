@@ -10,10 +10,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 const (
 	internalRoleName = "internal role"
+)
+
+var accessReadChecker = sac.AllowFixedScopes(
+	sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+	sac.ResourceScopeKeys(resources.Access),
 )
 
 func validatePermissionSetConstrains(ps *storage.PermissionSet) error {
@@ -39,6 +46,10 @@ func (rm *roleManager) createRolesForRoxClaims(
 	if len(selectedSets) == 0 {
 		return []*tokens.InternalRole{legacyRoleForRoxClaims(req.GetPermissions(), req.GetClusterScopes())}, nil
 	}
+	// Resolving the selected sets reads RBAC objects that the calling Sensor
+	// identity may not access by itself. The derived context stays local to
+	// this function and never widens the permissions granted by the issued roles.
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 	roles := make([]*tokens.InternalRole, 0, len(selectedSets))
 	seen := make(map[string]struct{}, len(selectedSets))
 	for _, selected := range selectedSets {
