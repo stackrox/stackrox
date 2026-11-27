@@ -1,0 +1,67 @@
+//go:build sql_integration
+
+package m229tom230
+
+import (
+	"context"
+	"testing"
+
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_compliance_operator_v1_tables/schema/old"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/suite"
+)
+
+type migrationTestSuite struct {
+	suite.Suite
+	db  *pghelper.TestPostgres
+	ctx context.Context
+}
+
+func TestMigration(t *testing.T) { suite.Run(t, new(migrationTestSuite)) }
+
+func (s *migrationTestSuite) SetupSuite() {
+	s.ctx = sac.WithAllAccess(context.Background())
+	s.db = pghelper.ForT(s.T(), false)
+}
+
+func (s *migrationTestSuite) TearDownSuite() { s.db.Teardown(s.T()) }
+
+func (s *migrationTestSuite) tableExists(table string) bool {
+	var num int64
+	err := s.db.DB.QueryRow(s.ctx, "SELECT 1 FROM information_schema.tables WHERE table_name = $1", table).Scan(&num)
+	return err == nil
+}
+
+func (s *migrationTestSuite) TestMigration() {
+	dbs := &types.Databases{GormDB: s.db.GetGormDB(), PostgresDB: s.db.DB, DBCtx: s.ctx}
+
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceOperatorCheckResultsStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceOperatorProfilesStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceOperatorRulesStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceOperatorScanSettingBindingsStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceOperatorScansStmt)
+
+	for _, table := range complianceOperatorV1Tables {
+		s.True(s.tableExists(table), "table %q should exist before migration", table)
+	}
+
+	s.Require().NoError(migration.Run(dbs))
+
+	for _, table := range complianceOperatorV1Tables {
+		s.False(s.tableExists(table), "table %q should be gone after migration", table)
+	}
+
+	// Idempotency: second run must be a no-op
+	s.Require().NoError(migration.Run(dbs))
+	for _, table := range complianceOperatorV1Tables {
+		s.False(s.tableExists(table), "table %q should still be gone after second run", table)
+	}
+}
+
+func (s *migrationTestSuite) TestMigration_FreshInstall() {
+	dbs := &types.Databases{GormDB: s.db.GetGormDB(), PostgresDB: s.db.DB, DBCtx: s.ctx}
+	s.Require().NoError(migration.Run(dbs))
+}

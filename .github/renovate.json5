@@ -20,11 +20,11 @@
   // Don't apply dependency cooldown because via MintMaker we take only Red Hat dependencies.
   "minimumReleaseAge":  null,
   // The number of PRs that can be open against the repo.
-  "prConcurrentLimit": 20,
+  "prConcurrentLimit": 40,
   // `null` means the branch limit should be the same as PR limit.
   "branchConcurrentLimit": null,
   // The number of PRs MintMaker can open in one hour, effectively in one run.
-  "prHourlyLimit": 4,
+  "prHourlyLimit": 20,
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule

@@ -3,6 +3,7 @@ package migratetooperator
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/migratetooperator"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	commonMigrate "github.com/stackrox/rox/roxctl/common/migratetooperator"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -12,8 +13,9 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := &commonMigrate.Command{Env: cliEnvironment}
 	c := &cobra.Command{
-		Use:   "migrate-to-operator",
-		Short: "Generate a SecuredCluster custom resource from existing sensor manifests",
+		Use:        "migrate-to-operator",
+		Short:      "Generate a SecuredCluster custom resource from existing sensor manifests",
+		Deprecated: common.DeprecatedCommandNotice,
 		Long: `Inspects an existing StackRox Sensor deployment (from a directory of manifests
 or a live cluster) and produces a SecuredCluster custom resource YAML that
 preserves the detected configuration, allowing the StackRox operator to

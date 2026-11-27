@@ -289,18 +289,3 @@ yaml_valid() {
   run yq e "$1"
   assert_success
 }
-
-generate_bundle() {
-  installation_flavor="$1";shift
-  run roxctl_authenticated sensor generate "$installation_flavor" \
-        --output-dir="$out_dir" \
-        --timeout=10m \
-        --continue-if-exists \
-        "$@"
-}
-
-delete_cluster() {
-  local name="$1";shift
-  run roxctl_authenticated cluster delete --name "$name" --timeout=1m
-  assert_success
-}

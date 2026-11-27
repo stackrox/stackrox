@@ -97,6 +97,9 @@ jobs:
     - name: Check dependabot gomod configurations match go.mod files
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
+    - name: Check scanner-v4-install test case count
+      run: scripts/ci/jobs/check-scanner-v4-install-test-count.sh
+
   style-check:
     runs-on: ubuntu-24.04
     steps:
