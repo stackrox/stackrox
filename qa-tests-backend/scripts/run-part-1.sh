@@ -106,6 +106,7 @@ EOF
         deploy_default_psp
     fi
     deploy_optional_e2e_components
+    trap cleanup_workload_identities EXIT
     setup_workload_identities
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
@@ -168,6 +169,7 @@ test_part_1() {
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
     cleanup_workload_identities
+    trap - EXIT
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
 }
