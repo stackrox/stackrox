@@ -6,15 +6,19 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/toolkit/types"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/datastore/inmem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,11 +108,11 @@ func TestNewMatcherInMemEndToEnd(t *testing.T) {
 	cfg := config.MatcherConfig{
 		Enable:              true,
 		Store:               config.MatcherStoreInMem,
-		Readiness:           config.ReadinessVulnerability,
+		InMemBlobDir:        t.TempDir(),
+		Readiness:           config.ReadinessDatabase, // must still wait for vulns in inmem mode
 		VulnerabilitiesURL:  srv.URL,
 		VulnerabilitiesURLs: []string{srv.URL},
 	}
-
 	m, err := NewMatcher(ctx, cfg, nil)
 	require.NoError(t, err)
 	defer func() {
@@ -184,4 +188,102 @@ func TestNewMatcherInMemEndToEnd(t *testing.T) {
 	assert.Equal(t, "CVE-2025-9999", v.Name)
 	assert.Equal(t, "test alpine vulnerability", v.Description)
 	assert.Equal(t, "https://security.alpinelinux.org/vuln/CVE-2025-9999", v.Links)
+}
+
+func TestConcurrentLibvulnScanDuringLiveRefresh(t *testing.T) {
+	ctx := context.Background()
+	store, err := inmem.NewMatcherStore(inmem.Options{BlobDir: t.TempDir()})
+	require.NoError(t, err)
+	defer store.Close()
+
+	alpineDist := &claircore.Distribution{
+		ID: "d-alp", DID: "alpine", Name: "Alpine Linux", VersionID: "3.19", Version: "3.19",
+	}
+	debDist := &claircore.Distribution{
+		ID: "d-deb", DID: "debian", Name: "Debian GNU/Linux", VersionID: "12", Version: "12 (bookworm)",
+	}
+
+	seed := func(gen int) {
+		_, err := store.UpdateVulnerabilities(ctx, "alpine-3.19", driver.Fingerprint("a-"+time.Duration(gen).String()), []*claircore.Vulnerability{
+			{
+				Name: "CVE-ALP-1", Description: "alp desc", Links: "https://alp",
+				FixedInVersion: "2.0-r0",
+				Package:        &claircore.Package{Name: "openssl", Kind: types.SourcePackage},
+				Dist:           alpineDist,
+			},
+		})
+		require.NoError(t, err)
+		_, err = store.UpdateVulnerabilities(ctx, "debian-12", driver.Fingerprint("d-"+time.Duration(gen).String()), []*claircore.Vulnerability{
+			{
+				Name: "CVE-DEB-1", Description: "deb desc", Links: "https://deb",
+				FixedInVersion: "2.0",
+				Package:        &claircore.Package{Name: "curl", Kind: types.SourcePackage},
+				Dist:           debDist,
+			},
+		})
+		require.NoError(t, err)
+	}
+	seed(0)
+
+	lv, err := libvuln.New(ctx, &libvuln.Options{
+		Store:                    store,
+		Locker:                   inmem.NewLocker(),
+		MatcherNames:             []string{"alpine-matcher", "debian-matcher"},
+		DisableBackgroundUpdates: true,
+		Client:                   http.DefaultClient,
+	})
+	require.NoError(t, err)
+	defer func() {
+		assert.NoError(t, lv.Close(ctx))
+	}()
+
+	ir := &claircore.IndexReport{
+		State:   "IndexFinished",
+		Success: true,
+		Packages: map[string]*claircore.Package{
+			"p-alp": {
+				ID: "p-alp", Name: "openssl", Version: "1.0-r0", Kind: types.BinaryPackage,
+				Source: &claircore.Package{ID: "s-alp", Name: "openssl", Version: "1.0-r0", Kind: types.SourcePackage},
+			},
+			"p-deb": {
+				ID: "p-deb", Name: "curl", Version: "1.0", Kind: types.BinaryPackage,
+				Source: &claircore.Package{ID: "s-deb", Name: "curl", Version: "1.0", Kind: types.SourcePackage},
+			},
+		},
+		Distributions: map[string]*claircore.Distribution{
+			alpineDist.ID: alpineDist,
+			debDist.ID:    debDist,
+		},
+		Environments: map[string][]*claircore.Environment{
+			"p-alp": {{DistributionID: alpineDist.ID}},
+			"p-deb": {{DistributionID: debDist.ID}},
+		},
+	}
+
+	var stop atomic.Bool
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Go(func() {
+			for !stop.Load() {
+				vr, scanErr := lv.Scan(ctx, ir)
+				if !assert.NoError(t, scanErr) {
+					return
+				}
+				// Neither CVE may overwrite the other across concurrent liveSet swaps.
+				alpIDs := vr.PackageVulnerabilities["p-alp"]
+				debIDs := vr.PackageVulnerabilities["p-deb"]
+				if assert.Len(t, alpIDs, 1) && assert.Len(t, debIDs, 1) {
+					assert.NotEqual(t, alpIDs[0], debIDs[0], "v.ID collision between matchers across live swap")
+					assert.Equal(t, "CVE-ALP-1", vr.Vulnerabilities[alpIDs[0]].Name)
+					assert.Equal(t, "CVE-DEB-1", vr.Vulnerabilities[debIDs[0]].Name)
+				}
+			}
+		})
+	}
+
+	for gen := 1; gen <= 25; gen++ {
+		seed(gen)
+	}
+	stop.Store(true)
+	wg.Wait()
 }

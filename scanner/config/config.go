@@ -190,6 +190,10 @@ type MatcherConfig struct {
 	// (default, persisted) or "inmem" (in-memory column-native snapshot,
 	// rebuilt from the bundle on every boot).
 	Store MatcherStoreType `mapstructure:"store"`
+	// InMemBlobDir overrides the directory where the in-memory matcher stores
+	// off-heap mmap column and blob files. When empty, defaults to
+	// filepath.Join(os.TempDir(), "scanner-v4-inmem").
+	InMemBlobDir string `mapstructure:"inmem_blob_dir"`
 	// IndexerAddr forces the matcher to retrieve index reports from a remote indexer
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
@@ -296,6 +300,11 @@ func (c *MatcherConfig) validate() error {
 	case ReadinessDatabase, ReadinessVulnerability:
 	default:
 		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
+	}
+	// An in-memory store has no database connection; require vulnerability
+	// readiness so Ready() never reports healthy before the initial load finishes.
+	if c.Store == MatcherStoreInMem {
+		c.Readiness = ReadinessVulnerability
 	}
 
 	c.VulnBundleAllowlist = NormalizeStringList(c.VulnBundleAllowlist)

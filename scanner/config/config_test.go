@@ -119,6 +119,7 @@ matcher:
 			want: func() *Config {
 				cfg := defaultConfiguration
 				cfg.Matcher.Store = MatcherStoreInMem
+				cfg.Matcher.Readiness = ReadinessVulnerability
 				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
 				return &cfg
 			}(),
@@ -334,14 +335,15 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"https://example.com/v1/vuln.zip"}, c.VulnerabilitiesURLs)
 	})
-	t.Run("when store is inmem then empty database config is allowed", func(t *testing.T) {
+	t.Run("when store is inmem then empty database config is allowed and readiness becomes vulnerability", func(t *testing.T) {
 		c := MatcherConfig{
 			Enable:             true,
 			Store:              MatcherStoreInMem,
 			VulnerabilitiesURL: "https://example.com/vuln.zip",
-			Readiness:          ReadinessVulnerability,
+			Readiness:          ReadinessDatabase,
 		}
-		assert.NoError(t, c.validate())
+		require.NoError(t, c.validate())
+		assert.Equal(t, ReadinessVulnerability, c.Readiness)
 	})
 	t.Run("when store is invalid then error", func(t *testing.T) {
 		c := MatcherConfig{

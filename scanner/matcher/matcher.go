@@ -151,6 +151,8 @@ type matcherImpl struct {
 	readyWithVulns bool
 }
 
+const defaultInMemImportConcurrency = 2
+
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider indexer.ReportProvider) (Matcher, error) {
 	var success bool
 
@@ -164,7 +166,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 
 	switch cfg.Store {
 	case config.MatcherStoreInMem:
-		blobDir := filepath.Join(os.TempDir(), "scanner-v4-inmem")
+		blobDir := cfg.InMemBlobDir
+		if blobDir == "" {
+			blobDir = filepath.Join(os.TempDir(), "scanner-v4-inmem")
+		}
 		inmemStore, initErr := inmem.NewMatcherStore(inmem.Options{
 			BlobDir:      blobDir,
 			CleanBlobDir: true,
@@ -265,7 +270,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 	}
 	importConcurrency := 1
 	if cfg.Store == config.MatcherStoreInMem {
-		importConcurrency = 2
+		importConcurrency = defaultInMemImportConcurrency
 	}
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:               store,
@@ -318,7 +323,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		sbomDecoder:     sbomDecoder,
 		repo2CPEUpdater: repo2CPEUpdater,
 
-		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
+		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability || cfg.Store == config.MatcherStoreInMem,
 	}, nil
 }
 

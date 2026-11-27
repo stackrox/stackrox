@@ -18,7 +18,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -30,7 +29,9 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/toolkit/log"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -469,19 +470,23 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			resMu.Lock()
-			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
-			resMu.Unlock()
+			concurrency.WithLock(&resMu, func() {
+				bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
+			})
 			return
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
-		resMu.Lock()
-		succeeded++
-		resMu.Unlock()
+		concurrency.WithLock(&resMu, func() {
+			succeeded++
+		})
 	}
 
 	if u.importConcurrency <= 1 || len(bundles) <= 1 {
 		for _, bundleF := range bundles {
+			if err := ctx.Err(); err != nil {
+				bundleErrs = append(bundleErrs, err)
+				break
+			}
 			processBundle(bundleF)
 		}
 	} else {
@@ -503,11 +508,17 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 			go func() {
 				defer wg.Done()
 				for bundleF := range jobs {
+					if ctx.Err() != nil {
+						return
+					}
 					processBundle(bundleF)
 				}
 			}()
 		}
 		wg.Wait()
+		if err := ctx.Err(); err != nil {
+			bundleErrs = append(bundleErrs, err)
+		}
 	}
 
 	// Skip GC and distribution update only when every bundle that was
@@ -542,10 +553,16 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
 	if err := lCtx.Err(); err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
 		slog.InfoContext(ctx, "skipping: did not obtain lock", "reason", err)
 		return nil
 	}

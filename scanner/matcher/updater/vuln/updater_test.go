@@ -1149,6 +1149,8 @@ func TestRunMultiBundleUpdate_Concurrent(t *testing.T) {
 	store.EXPECT().Distributions(gomock.Any()).Return(nil, nil)
 	meta.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(modTime, nil)
 
+	started := make(chan struct{}, 2)
+	release := make(chan struct{})
 	var active, maxActive atomic.Int32
 	u := &Updater{
 		locker:            &testLocker{locker: updates.NewLocalLockSource()},
@@ -1170,13 +1172,80 @@ func TestRunMultiBundleUpdate_Concurrent(t *testing.T) {
 					break
 				}
 			}
-			time.Sleep(40 * time.Millisecond)
+			select {
+			case started <- struct{}{}:
+			default:
+			}
+			<-release
 			active.Add(-1)
 			return nil
 		},
 	}
 
-	err := u.Update(test.Logging(t))
-	require.NoError(t, err)
+	done := make(chan error, 1)
+	go func() {
+		done <- u.Update(test.Logging(t))
+	}()
+	// Wait deterministically until both workers have entered importFunc.
+	for range 2 {
+		select {
+		case <-started:
+		case <-time.After(5 * time.Second):
+			close(release)
+			t.Fatal("timed out waiting for 2 concurrent bundle imports")
+		}
+	}
+	close(release)
+
+	require.NoError(t, <-done)
 	assert.Equal(t, int32(2), maxActive.Load(), "should run up to ImportConcurrency=2 bundles in parallel")
+}
+
+func TestRunMultiBundleUpdate_CancelStopsWorkers(t *testing.T) {
+	modTime := time.Now().UTC().Truncate(time.Second)
+	srv, _ := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, name := range []string{"bundles/a.json.zst", "bundles/b.json.zst", "bundles/c.json.zst", "bundles/d.json.zst"} {
+			w, err := zw.CreateHeader(&zip.FileHeader{Name: name, Modified: modTime})
+			require.NoError(t, err)
+			enc, err := zstd.NewWriter(w)
+			require.NoError(t, err)
+			_, err = enc.Write([]byte("{}"))
+			require.NoError(t, err)
+			require.NoError(t, enc.Close())
+		}
+		require.NoError(t, zw.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	ctrl := gomock.NewController(t)
+	store := mocks.NewMockMatcherStore(ctrl)
+	meta := mocks.NewMockMatcherMetadataStore(ctrl)
+	meta.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(time.Time{}, nil)
+	meta.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), gomock.Any(), time.Time{}).Return(time.Time{}, nil).AnyTimes()
+
+	ctx, cancel := context.WithCancel(test.Logging(t))
+	u := &Updater{
+		locker:            &testLocker{locker: updates.NewLocalLockSource()},
+		store:             store,
+		metadataStore:     meta,
+		client:            srv.Client(),
+		urls:              []string{srv.URL},
+		root:              t.TempDir(),
+		skipGC:            true,
+		retryDelay:        time.Millisecond,
+		retryMax:          1,
+		importConcurrency: 2,
+		distManager:       newDistManager(store),
+		importFunc: func(importCtx context.Context, _ io.Reader) error {
+			cancel()
+			return importCtx.Err()
+		},
+	}
+
+	// Canceled bundles must return context.Canceled and never count as succeeded
+	// (which would trigger GCVulnerabilityUpdates / distManager.update).
+	err := u.Update(ctx)
+	require.ErrorIs(t, err, context.Canceled)
 }
