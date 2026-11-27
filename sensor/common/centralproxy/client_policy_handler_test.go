@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stretchr/testify/assert"
@@ -150,7 +151,7 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 			} {
 				t.Run(name, func(t *testing.T) {
 					entry := clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "test-user",
-						Access: defaultClientPolicy().Clients[0].Access}
+						Access: defaultClientPolicy().Clients[1].Access}
 					entry.Access[0].PermissionSetID = id
 					if id == "" {
 						entry.Access[0].PermissionSetName = accesscontrol.ConsoleProxy
@@ -203,9 +204,9 @@ func TestCustomMTLSRoutesAndConsoleClassification(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			entry := clientPolicyEntry{AuthType: clientAuthMTLS, Subject: "custom-client",
-				CARef: testClientCARef(t), Access: []clientPolicyAccess{{PermissionSetName: tc.selector}}}
+				CARef: defaultClientPolicy().Clients[0].CARef, Access: []clientPolicyAccess{{PermissionSetName: tc.selector}}}
 			if tc.selector == accesscontrol.ConsoleProxy {
-				entry.Access[0].HTTPScopes = defaultClientPolicy().Clients[0].Access[0].HTTPScopes
+				entry.Access[0].HTTPScopes = defaultClientPolicy().Clients[1].Access[0].HTTPScopes
 			}
 			policy := newStaticClientPolicy(t, clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{entry}}, clientCAConfigMap(ca))
 			fixture, client := policyHandlerFixture(t, nil, policy)
@@ -227,6 +228,50 @@ func TestCustomMTLSRoutesAndConsoleClassification(t *testing.T) {
 				assert.Equal(t, http.StatusForbidden, response.Code)
 			} else {
 				assert.Equal(t, http.StatusNotImplemented, response.Code, "mTLS clients never use legacy console fallback")
+			}
+		})
+	}
+}
+
+func TestDefaultMetricsClientStillMetricsOnly(t *testing.T) {
+	ca, key := testProxyCA(t)
+	cert := signedTestCertificate(t, ca, key, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
+	metricsID := accesscontrol.OpenShiftPrometheusMetricsReaderID
+	for selector, id := range map[string]string{
+		"name":         "",
+		"ID":           metricsID,
+		"uppercase ID": strings.ToUpper(metricsID),
+		"braced ID":    "{" + metricsID + "}",
+		"compact ID":   strings.ReplaceAll(metricsID, "-", ""),
+	} {
+		t.Run(selector, func(t *testing.T) {
+			doc := defaultClientPolicy()
+			if id != "" {
+				doc.Clients[0].Access[0].PermissionSetName = ""
+				doc.Clients[0].Access[0].PermissionSetID = id
+			}
+			policy := newStaticClientPolicy(t, doc, clientCAConfigMap(ca))
+			fixture, client := policyHandlerFixture(t, nil, policy)
+			for name, tc := range map[string]struct {
+				method, path string
+				want         int
+			}{
+				"metrics":     {http.MethodGet, "/metrics", http.StatusOK},
+				"POST":        {http.MethodPost, "/metrics", http.StatusForbidden},
+				"other route": {http.MethodGet, "/custom", http.StatusForbidden},
+			} {
+				t.Run(name, func(t *testing.T) {
+					request := httptest.NewRequest(tc.method, tc.path, nil)
+					request.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert.Leaf}}
+					response := httptest.NewRecorder()
+					fixture.handler.ServeHTTP(response, request)
+					assert.Equal(t, tc.want, response.Code)
+					if tc.want == http.StatusOK && id != "" {
+						require.NotNil(t, client.lastRequest)
+						require.Len(t, client.lastRequest.GetPermissionSets(), 1)
+						assert.Equal(t, metricsID, client.lastRequest.GetPermissionSets()[0].GetId())
+					}
+				})
 			}
 		})
 	}

@@ -136,18 +136,27 @@ func defaultClientPolicy() clientPolicyDocument {
 	// The built-in clients are OpenShift integrations; other clusters admit no client until configured.
 	clients := []clientPolicyEntry{}
 	if env.OpenshiftAPI.BooleanSetting() {
-		clients = append(clients, clientPolicyEntry{
-			AuthType: clientAuthKubernetesBearer, Subject: "*",
-			Access: []clientPolicyAccess{
-				{
-					PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-					HTTPScopes:      copyHTTPScopes(centralproxy.ConsoleDataHTTPScopes),
-				},
-				{
-					HTTPScopes: copyHTTPScopes(centralproxy.ConsoleAuthOnlyHTTPScopes),
-				},
-			},
+	if env.OpenshiftAPI.BooleanSetting() {
+		caRef, _ := json.Marshal(clientPolicyCARef{
+			Namespace: env.SecureMetricsClientCANamespace.Setting(),
+			ConfigMap: env.SecureMetricsClientCAConfigMap.Setting(),
+			Key:       env.SecureMetricsClientCAKey.Setting(),
 		})
+		clients = append(clients,
+			clientPolicyEntry{AuthType: clientAuthMTLS, Subject: env.SecureMetricsClientCertCN.Setting(), CARef: caRef,
+				Access: []clientPolicyAccess{{PermissionSetName: accesscontrol.OpenShiftPrometheusMetricsReader,
+					HTTPScopes: copyHTTPScopes(centralproxy.MetricsHTTPScopes)}}},
+			clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "*",
+				Access: []clientPolicyAccess{
+					{
+						PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+						HTTPScopes:      copyHTTPScopes(centralproxy.ConsoleDataHTTPScopes),
+					},
+					{
+						HTTPScopes: copyHTTPScopes(centralproxy.ConsoleAuthOnlyHTTPScopes),
+					},
+				}},
+		)
 	}
 	return clientPolicyDocument{Version: clientPolicyVersion, Clients: clients}
 }

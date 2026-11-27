@@ -35,6 +35,19 @@ policy is:
   "version": 1,
   "clients": [
     {
+      "authType": "mtls",
+      "subject": "system:serviceaccount:openshift-monitoring:prometheus-k8s",
+      "caRef": {
+        "namespace": "kube-system",
+        "configMap": "extension-apiserver-authentication",
+        "key": "client-ca-file"
+      },
+      "access": [{
+        "permissionSetName": "OpenShift Prometheus Metrics Reader",
+        "httpRequestScopes": {"/metrics": ["GET"]}
+      }]
+    },
+    {
       "authType": "kubernetesBearer",
       "subject": "*",
       "access": [
@@ -64,7 +77,8 @@ policy is:
 On other clusters the default policy has no clients: Sensor admits no client
 until one is configured.
 
-This policy shape uses a nonempty `access`
+The Prometheus identity and CA defaults come from `SecureMetricsClientCertCN`
+and `SecureMetricsClientCA*` settings. This policy shape uses a nonempty `access`
 array on each client. Each grant selects exactly one nonempty `permissionSetId`
 or `permissionSetName`, or selects neither to become an authentication-only
 grant whose tokens carry no resource permissions; authentication-only grants
@@ -88,7 +102,8 @@ Temporary watch failures retain the last observed snapshot. Policy and CA
 authorization uses watch snapshots without per-request ConfigMap API reads;
 bearer TokenReview and SubjectAccessReview retain their existing caching.
 
-The explicit HTTP maps define local route checks. The default console client
+The explicit HTTP maps define local route checks. The default metrics grant
+permits only exact `GET /metrics`; the default console client
 permits the routes and methods shown above: the data and permissions routes
 through the console grant and the remaining routes through an
 authentication-only grant.
@@ -140,6 +155,8 @@ route is side-effect-free.
 Enable `sensor.centralProxy.enabled` in Helm or `spec.sensor.centralProxyEnabled`
 in the Operator on native Kubernetes, where these set `ROX_CENTRAL_PROXY_ENABLED`
 and default off alongside the manually provisioned serving-certificate Secret.
-On OpenShift the proxy starts without any flag. Additional clients need
+On OpenShift the proxy starts without any flag. The secured-cluster monitoring
+setting installs the OpenShift monitoring objects (ServiceMonitor and network
+policy) but does not configure proxy clients. Additional clients need
 their own ingress and client setup. Policy and referenced CA ConfigMaps should be writable
 only by trusted administrators and Sensor's service account.

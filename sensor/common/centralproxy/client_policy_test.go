@@ -37,17 +37,6 @@ func policyConfigMap(t testing.TB, doc clientPolicyDocument) *corev1.ConfigMap {
 	}
 }
 
-// testClientPolicyDocument returns a valid document with a certificate client
-// and the console wildcard client, mirroring the default policy's entry shapes.
-func testClientPolicyDocument(t *testing.T) clientPolicyDocument {
-	t.Helper()
-	return clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{
-		{AuthType: clientAuthMTLS, Subject: "custom-client", CARef: testClientCARef(t), Access: []clientPolicyAccess{{PermissionSetName: "Custom Reader"}}},
-		{AuthType: clientAuthKubernetesBearer, Subject: "*",
-			Access: []clientPolicyAccess{{PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}},
-	}}
-}
-
 func updateClientPolicy(t testing.TB, client *fake.Clientset, doc clientPolicyDocument) {
 	t.Helper()
 	cm := policyConfigMap(t, doc)
@@ -84,9 +73,10 @@ func TestClientPolicyBootstrapUpdatesAndDeletion(t *testing.T) {
 	require.NoError(t, err)
 	var doc clientPolicyDocument
 	require.NoError(t, json.Unmarshal([]byte(cm.Data[ClientPolicyDataKey]), &doc))
-	require.Len(t, doc.Clients, 1)
-	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], doc.Clients[0].Access[0].PermissionSetID)
-	assert.Empty(t, doc.Clients[0].Access[1].PermissionSetID, "the second default grant is authentication-only")
+	require.Len(t, doc.Clients, 2)
+	assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, doc.Clients[0].Access[0].PermissionSetName)
+	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], doc.Clients[1].Access[0].PermissionSetID)
+	assert.Empty(t, doc.Clients[1].Access[1].PermissionSetID, "the second default grant is authentication-only")
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"access"`)
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"httpRequestScopes"`)
 	grant, err := policy.Authorize(t.Context(), request, user)
@@ -195,7 +185,7 @@ func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			doc := testClientPolicyDocument(t)
+			doc := defaultClientPolicy()
 			change(&doc)
 			_, err := parseClientPolicy(policyConfigMap(t, doc))
 			require.Error(t, err)
@@ -270,7 +260,7 @@ func TestClientPolicyCanonicalizesWildcardPermissionSetIDs(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			doc := defaultClientPolicy()
-			doc.Clients[0].Access[0].PermissionSetID = id
+			doc.Clients[1].Access[0].PermissionSetID = id
 			policy := newStaticClientPolicy(t, doc)
 			request := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 			request.Header.Set("Authorization", "Bearer reviewed")
@@ -304,7 +294,7 @@ func TestClientPolicyExactBearerOverridesWildcard(t *testing.T) {
 	for name, exactFirst := range map[string]bool{"exact first": true, "wildcard first": false} {
 		t.Run(name, func(t *testing.T) {
 			exact := clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "alice", Access: []clientPolicyAccess{{PermissionSetName: "Custom Reader"}}}
-			wildcard := defaultClientPolicy().Clients[0]
+			wildcard := defaultClientPolicy().Clients[1]
 			doc := clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{wildcard, exact}}
 			if exactFirst {
 				doc.Clients = []clientPolicyEntry{exact, wildcard}
@@ -402,16 +392,12 @@ func TestClientPolicyPerEntryCAAndNoRequestAPIReads(t *testing.T) {
 	secondCM := clientCAConfigMap(secondCA)
 	secondCM.Name = "second-client-ca"
 	doc := defaultClientPolicy()
-	firstRef := clientPolicyCARef{Namespace: firstCM.Namespace, ConfigMap: firstCM.Name, Key: env.SecureMetricsClientCAKey.Setting()}
-	firstRefJSON, err := json.Marshal(firstRef)
-	require.NoError(t, err)
 	ref := clientPolicyCARef{Namespace: secondCM.Namespace, ConfigMap: secondCM.Name, Key: env.SecureMetricsClientCAKey.Setting()}
 	refJSON, err := json.Marshal(ref)
 	require.NoError(t, err)
-	doc.Clients = append(doc.Clients,
-		clientPolicyEntry{AuthType: clientAuthMTLS, Subject: "first-client", CARef: firstRefJSON, Access: []clientPolicyAccess{{PermissionSetName: "Custom Reader"}}},
-		clientPolicyEntry{AuthType: clientAuthMTLS, Subject: "second-client", CARef: refJSON, Access: []clientPolicyAccess{{PermissionSetName: "Custom Reader"}}},
-	)
+	doc.Clients = append(doc.Clients, clientPolicyEntry{
+		AuthType: clientAuthMTLS, Subject: "second-client", CARef: refJSON, Access: []clientPolicyAccess{{PermissionSetName: "Custom Reader"}},
+	})
 	client := fake.NewClientset(firstCM, secondCM, policyConfigMap(t, defaultClientPolicy()))
 	policy := NewClientPolicy(client)
 	t.Cleanup(policy.Stop)
@@ -449,7 +435,7 @@ func TestClientPolicyPerEntryCAAndNoRequestAPIReads(t *testing.T) {
 		})
 	}
 	oldWatch := policy.policy.Load().caRoots[ref]
-	doc.Clients[2].CARef = doc.Clients[1].CARef
+	doc.Clients[2].CARef = doc.Clients[0].CARef
 	updateClientPolicy(t, client, doc)
 	waitForClientPolicy(t, policy, doc)
 	assert.NotContains(t, policy.policy.Load().caRoots, ref)
