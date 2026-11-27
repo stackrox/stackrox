@@ -44,9 +44,11 @@ config_custom() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    # roxie only ships x86/arm binaries, so power/s390x jobs cannot use deploy_stackrox()
-    # (which requires roxie). Deploy via the operator instead, which has no architecture
-    # dependency on the deploy host.
+    # roxie has no binary for ppc64le at all, and this repo is pinned to a roxie version
+    # (ROXIE_VERSION) that predates s390x support, so neither power nor s390x can use
+    # deploy_stackrox() here. Deploy via the operator instead, which has no architecture
+    # dependency on the deploy host. (roxie v0.4.18+ does ship an s390x binary now, so
+    # s390x could move back to deploy_stackrox() in the future if that's adopted here.)
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     deploy_stackrox_operator
     deploy_central "stackrox"
