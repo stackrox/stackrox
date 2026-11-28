@@ -10,6 +10,8 @@ import {
     getImageCVEListRoute,
     getImageCVEListRouteMatcher,
     metadataRoute,
+    myPermissionsRoute,
+    myPermissionsRouteMatcher,
     routeMatcherMapForBasePlugin,
 } from '../routes';
 
@@ -86,6 +88,7 @@ describe('Security vulnerabilities page', () => {
     it('should send the correct auth headers for namespace scoped requests on vuln dashboard', () => {
         interceptAndWatchRequests({
             ...routeMatcherMapForBasePlugin,
+            [myPermissionsRoute]: myPermissionsRouteMatcher,
             [getImageCVEListRoute]: getImageCVEListRouteMatcher,
         }).then(({ waitForRequests }) => {
             withOcpAuth();
@@ -97,6 +100,7 @@ describe('Security vulnerabilities page', () => {
                     metadataRequest,
                     featureFlagsRequest,
                     publicConfigRequest,
+                    myPermissionsRequest,
                     getImageCVEListRequest,
                 ]) => {
                     expect(metadataRequest.request.headers).not.to.have.property(
@@ -107,6 +111,15 @@ describe('Security vulnerabilities page', () => {
                     );
                     expect(publicConfigRequest.request.headers).not.to.have.property(
                         acsAuthNamespaceHeader
+                    );
+                    // The permissions response is served through the console permission set,
+                    // which requires a namespace scope, and reports the set's read access so
+                    // permission-gated views keep rendering.
+                    assert.exists(myPermissionsRequest.request.headers[acsAuthNamespaceHeader]);
+                    expect(myPermissionsRequest.response?.statusCode).to.equal(200);
+                    expect(myPermissionsRequest.response?.body.resourceToAccess).to.have.property(
+                        'Deployment',
+                        'READ_ACCESS'
                     );
                     expect(getImageCVEListRequest.request.headers[acsAuthNamespaceHeader]).to.equal(
                         '*'

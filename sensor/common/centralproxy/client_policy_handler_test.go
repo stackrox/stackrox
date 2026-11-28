@@ -136,14 +136,17 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 				wantSets        int
 				wantPermissions map[string]centralv1.Access
 			}{
-				"authentication-only route":               {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, want: http.StatusOK},
-				"authentication-only route method denied": {method: http.MethodPost, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
-				"unlisted route":                          {method: http.MethodGet, path: "/custom", consoleEnabled: true, want: http.StatusForbidden},
-				"data route requires namespace scope":     {method: http.MethodGet, path: "/v1/deployments", consoleEnabled: true, want: http.StatusForbidden},
-				"data route with scope":                   {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, want: http.StatusOK, wantSets: 1},
-				"console disabled":                        {method: http.MethodGet, path: "/v1/metadata", want: http.StatusForbidden},
-				"legacy authentication-only route":        {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, legacy: true, want: http.StatusOK},
-				"legacy data route":                       {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, legacy: true, want: http.StatusOK, wantPermissions: tokenPermissions},
+				"authentication-only route":                  {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, want: http.StatusOK},
+				"authentication-only route method denied":    {method: http.MethodPost, path: "/v1/metadata", consoleEnabled: true, want: http.StatusForbidden},
+				"unlisted route":                             {method: http.MethodGet, path: "/custom", consoleEnabled: true, want: http.StatusForbidden},
+				"data route requires namespace scope":        {method: http.MethodGet, path: "/v1/deployments", consoleEnabled: true, want: http.StatusForbidden},
+				"data route with scope":                      {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, want: http.StatusOK, wantSets: 1},
+				"permissions route requires namespace scope": {method: http.MethodGet, path: "/v1/mypermissions", consoleEnabled: true, want: http.StatusForbidden},
+				"permissions route with scope":               {method: http.MethodGet, path: "/v1/mypermissions", namespace: "prod", consoleEnabled: true, want: http.StatusOK, wantSets: 1},
+				"console disabled":                           {method: http.MethodGet, path: "/v1/metadata", want: http.StatusForbidden},
+				"legacy authentication-only route":           {method: http.MethodGet, path: "/v1/metadata", consoleEnabled: true, legacy: true, want: http.StatusOK},
+				"legacy data route":                          {method: http.MethodGet, path: "/v1/deployments", namespace: "prod", consoleEnabled: true, legacy: true, want: http.StatusOK, wantPermissions: tokenPermissions},
+				"legacy permissions route":                   {method: http.MethodGet, path: "/v1/mypermissions", namespace: "prod", consoleEnabled: true, legacy: true, want: http.StatusOK, wantPermissions: tokenPermissions},
 			} {
 				t.Run(name, func(t *testing.T) {
 					entry := clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "test-user",
@@ -155,7 +158,7 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 					policy := newStaticClientPolicy(t, clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{entry}})
 					fixture, client := policyHandlerFixture(t, newAllowingAuthorizer(t), policy)
 					t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", fmt.Sprint(tc.consoleEnabled))
-					allowedpaths.Set([]string{"/v1/metadata", "/v1/deployments"})
+					allowedpaths.Set([]string{"/v1/metadata", "/v1/deployments", "/v1/mypermissions"})
 					if tc.legacy {
 						centralcaps.Set([]centralsensor.CentralCapability{centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering})
 					}
