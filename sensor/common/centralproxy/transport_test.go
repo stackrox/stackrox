@@ -125,7 +125,7 @@ func TestTokenProviderPermissionSetFailureDoesNotFallBack(t *testing.T) {
 			return nil, nil
 		}),
 	}
-	response, err := transport.RoundTrip(httptest.NewRequest(http.MethodGet, "/v1/metadata", nil))
+	response, err := roundTripConsole(transport, httptest.NewRequest(http.MethodGet, "/v1/metadata", nil))
 	require.ErrorIs(t, err, lookupErr)
 	assert.Nil(t, response)
 	assert.EqualValues(t, 1, calls.Load())
@@ -212,7 +212,7 @@ func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 				req.Header.Set(stackroxNamespaceHeader, tt.namespaceScope)
 			}
 
-			resp, err := transport.RoundTrip(req)
+			resp, err := roundTripConsole(transport, req)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 
@@ -235,7 +235,7 @@ func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -262,7 +262,7 @@ func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 
 		assert.ErrorIs(t, err, baseErr)
 		assert.Nil(t, resp)
@@ -549,7 +549,7 @@ func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 		// Single RoundTrip should retry internally and return success
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
 		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens (original + retry)")
@@ -592,7 +592,7 @@ func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 		// Single RoundTrip should retry internally and return success
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
 		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens (original + retry)")
@@ -628,7 +628,7 @@ func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 		// Should retry once and then return the 401
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, "should return 401 after retry fails")
 		assert.Equal(t, 2, tokenCallCount, "should have requested exactly two tokens")
@@ -669,12 +669,12 @@ func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
 				req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 				// First request
-				_, err := transport.RoundTrip(req)
+				_, err := roundTripConsole(transport, req)
 				require.NoError(t, err)
 				assert.Equal(t, 1, callCount)
 
 				// Second request - should use cached token
-				_, err = transport.RoundTrip(req)
+				_, err = roundTripConsole(transport, req)
 				require.NoError(t, err)
 				assert.Equal(t, 1, callCount, "token should still be cached for status %d", statusCode)
 			})
@@ -704,12 +704,12 @@ func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 		// First request - transport error
-		_, err := transport.RoundTrip(req)
+		_, err := roundTripConsole(transport, req)
 		require.Error(t, err)
 		assert.Equal(t, 1, callCount)
 
 		// Second request - should use cached token (error didn't invalidate)
-		_, err = transport.RoundTrip(req)
+		_, err = roundTripConsole(transport, req)
 		require.Error(t, err)
 		assert.Equal(t, 1, callCount, "token should still be cached after transport error")
 	})
@@ -826,7 +826,7 @@ func TestScopedTokenTransport_RetryWithRequestBody(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/v1/alerts", strings.NewReader(bodyContent))
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
 		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens")
@@ -873,7 +873,7 @@ func TestScopedTokenTransport_RetryWithRequestBody(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
 		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
-		resp, err := transport.RoundTrip(req)
+		resp, err := roundTripConsole(transport, req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.True(t, firstBodyDrained, "first response body should be drained before retry")
@@ -917,7 +917,7 @@ func TestScopedTokenTransport_RequestBodySizeLimit(t *testing.T) {
 
 			body := strings.NewReader(strings.Repeat("x", tt.bodySize))
 			req := httptest.NewRequest(http.MethodPost, "/v1/alerts", body)
-			resp, err := transport.RoundTrip(req)
+			resp, err := roundTripConsole(transport, req)
 
 			if tt.wantError {
 				assert.Error(t, err)

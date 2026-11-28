@@ -7,6 +7,7 @@ export const acsAuthNamespaceHeader = 'acs-auth-namespace-scope';
 export const metadataRoute = 'metadata';
 export const featureFlagsRoute = 'featureFlags';
 export const publicConfigRoute = 'publicConfig';
+export const myPermissionsRoute = 'myPermissions';
 export const getImageCVEListRoute = 'getImageCVEList';
 
 export const deploymentsRoute = 'deployments';
@@ -17,6 +18,10 @@ export const featureFlagsRouteMatcher = { method: 'GET', url: '**/api-service/**
 export const publicConfigRouteMatcher = {
     method: 'GET',
     url: '**/api-service/**/v1/config/public',
+};
+export const myPermissionsRouteMatcher = {
+    method: 'GET',
+    url: '**/api-service/**/v1/mypermissions',
 };
 
 export const routeMatcherMapForBasePlugin = {

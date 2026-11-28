@@ -247,9 +247,10 @@ func (s *Sensor) Start() {
 		}
 	}
 
-	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
-	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
-	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.BooleanSetting() {
+	// The proxy serves wherever a serving certificate exists: the OpenShift
+	// service CA issues one by default, and the flag marks a manually
+	// provisioned certificate on native Kubernetes.
+	if env.CentralProxyEnabled.BooleanSetting() || env.OpenshiftAPI.BooleanSetting() {
 		handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, s.clusterID)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "creating central proxy handler"))

@@ -59,15 +59,15 @@ func TestValidateRequest(t *testing.T) {
 			name:             "PUT returns 405",
 			method:           http.MethodPut,
 			centralReachable: true,
-			wantStatusCode:   http.StatusMethodNotAllowed,
-			wantError:        "method PUT not allowed",
+			wantStatusCode:   http.StatusForbidden,
+			wantError:        "client policy does not allow request",
 		},
 		{
 			name:             "DELETE returns 405",
 			method:           http.MethodDelete,
 			centralReachable: true,
-			wantStatusCode:   http.StatusMethodNotAllowed,
-			wantError:        "method DELETE not allowed",
+			wantStatusCode:   http.StatusForbidden,
+			wantError:        "client policy does not allow request",
 		},
 		{
 			name:             "central not reachable returns 503",
@@ -80,13 +80,17 @@ func TestValidateRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{
-				clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-			}
+			setupCentralCapsForTest(t)
+			h := &Handler{}
 			h.centralReachable.Store(tt.centralReachable)
 
 			req := httptest.NewRequest(tt.method, "/v1/alerts", nil)
 			err := h.validateRequest(req)
+			if err == nil {
+				req.Header.Set("Authorization", "Bearer reviewed")
+				policy := newStaticClientPolicy(t, testConsolePolicyDoc())
+				_, err = policy.Authorize(t.Context(), req, &authenticationv1.UserInfo{Username: "test-user"})
+			}
 
 			if tt.wantStatusCode == 0 {
 				assert.NoError(t, err)
@@ -563,7 +567,7 @@ func TestServeHTTP_PathFiltering(t *testing.T) {
 		})
 		assert.False(t, f.proxyCalled, "proxy should not be called for disallowed path")
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "not allowed by the proxy allow-list")
+		assert.Contains(t, w.Body.String(), "client policy does not allow request")
 	})
 
 	t.Run("allowed path proceeds normally", func(t *testing.T) {
@@ -575,7 +579,7 @@ func TestServeHTTP_PathFiltering(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("no allow-list configured allows all paths", func(t *testing.T) {
+	t.Run("missing advertised allow-list cannot bypass local scopes", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
 		// Override: remove path filtering capability and clear allowed paths.
 		centralcaps.Set([]centralsensor.CentralCapability{
@@ -586,7 +590,7 @@ func TestServeHTTP_PathFiltering(t *testing.T) {
 		w := f.serveHTTP(t, http.MethodGet, "/admin/anything", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
-		assert.True(t, f.proxyCalled, "proxy should be called when no allow-list is configured")
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.False(t, f.proxyCalled)
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 }

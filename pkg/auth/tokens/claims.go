@@ -34,6 +34,16 @@ type RoxClaims struct {
 	Requester string `json:"req,omitempty"`
 }
 
+// HTTPRequestScopes maps allowed HTTP paths to the methods permitted on each path.
+type HTTPRequestScopes map[string][]string
+
+// HTTPRequestScope binds a token to an HTTP method and an exact path, or a
+// prefix when Path ends in a slash.
+type HTTPRequestScope struct {
+	Method string
+	Path   string
+}
+
 // Claims are the claims contained in a token.
 type Claims struct {
 	jwt.Claims

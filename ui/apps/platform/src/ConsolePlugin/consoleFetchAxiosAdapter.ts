@@ -18,10 +18,15 @@ export default function consoleFetchAxiosAdapter(
         updatedHeaders.Authorization = `Bearer ${process.env.ACS_CONSOLE_DEV_TOKEN}`;
     }
 
-    // Add scope headers to assist in authorization decisions
+    // Add scope headers to assist in authorization decisions.
+    // These routes are served by the proxy with the console permission set, whose grants
+    // require a namespace scope: the data routes and the permissions response, which
+    // must report that permission set so permission-gated views keep rendering.
     const scope = getScope();
     const isScopedDataRequest =
-        config.url?.includes('/api/graphql') || config.url?.includes('/v1/deployments');
+        config.url?.includes('/api/graphql') ||
+        config.url?.includes('/v1/deployments') ||
+        config.url?.includes('/v1/mypermissions');
     if (scope.namespace && isScopedDataRequest) {
         // A value of "all namespaces" is used by cluster admins to request data from all namespace
         // which we represent as a wildcard in the API.

@@ -44,6 +44,24 @@ describe('consoleFetchAxiosAdapter', () => {
             );
         });
 
+        it('should add namespace scope header when namespace is set for mypermissions requests', async () => {
+            const myPermissionsConfig = {
+                url: '/v1/mypermissions',
+                headers: {},
+            } as InternalAxiosRequestConfig;
+            await consoleFetchAxiosAdapter(baseUrl, myPermissionsConfig, () => ({
+                namespace: 'test-namespace',
+            }));
+            expect(mockConsoleFetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'ACS-AUTH-NAMESPACE-SCOPE': 'test-namespace',
+                    }),
+                })
+            );
+        });
+
         it('should add wildcard scope header when namespace is set to all namespaces for graphql requests', async () => {
             await consoleFetchAxiosAdapter(baseUrl, graphqlConfig, () => ({
                 namespace: ALL_NAMESPACES_KEY,

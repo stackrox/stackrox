@@ -1,6 +1,7 @@
 package centralproxy
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,8 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
-	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -46,8 +48,8 @@ func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
 	centralReachable atomic.Bool
-	clusterIDGetter  clusterIDGetter
 	authorizer       *k8sAuthorizer
+	policy           *ClientPolicy
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
 }
@@ -89,12 +91,16 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	if err != nil {
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
+	policy := NewClientPolicy(k8sClient)
+	if err := policy.EnsureDefaults(context.Background()); err != nil {
+		return nil, errors.Wrap(err, "initializing proxy client policy")
+	}
 
 	return &Handler{
-		clusterIDGetter: clusterIDGetter,
-		authorizer:      newK8sAuthorizer(k8sClient),
-		transport:       transport,
-		proxy:           proxy,
+		authorizer: newK8sAuthorizer(k8sClient),
+		policy:     policy,
+		transport:  transport,
+		proxy:      proxy,
 	}, nil
 }
 
@@ -117,31 +123,16 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 
 // validateRequest validates the incoming request and returns an error if validation fails.
 func (h *Handler) validateRequest(request *http.Request) error {
-	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD.
-	switch request.Method {
-	case http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodHead:
-		// allowed
-	default:
-		return pkghttputil.Errorf(http.StatusMethodNotAllowed, "method %s not allowed", request.Method)
-	}
-
 	if !h.centralReachable.Load() {
 		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
 	}
+	return nil
+}
 
-	// Only enforce path filtering when Central advertises the capability.
-	// Otherwise allow the request for backwards compatibility.
-	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
-		normalizedPath := request.URL.EscapedPath()
-		if normalizedPath == "" {
-			normalizedPath = "/"
-		}
-		if !allowedpaths.IsAllowed(normalizedPath) {
-			return pkghttputil.Errorf(http.StatusForbidden,
-				"path %q is not allowed by the proxy allow-list", request.URL.Path)
-		}
+func validateClientRequest(grant *ClientPolicyGrant, request *http.Request) error {
+	if grant.hasConsolePermissionSet() && !features.OCPConsoleIntegration.Enabled() {
+		return pkghttputil.NewError(http.StatusForbidden, "console proxy is disabled")
 	}
-
 	return nil
 }
 
@@ -175,25 +166,67 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if h.authorizer == nil {
+	if h.policy == nil {
 		result = requestResultConfigError
-		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
-		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
+		http.Error(writer, "proxy policy not configured", http.StatusInternalServerError)
 		return
 	}
-
-	userInfo, err := h.authorizer.authenticate(request.Context(), request)
+	var userInfo *authenticationv1.UserInfo
+	grant, err := h.policy.authorizeRequest(request.Context(), request, func() (*authenticationv1.UserInfo, error) {
+		if h.authorizer == nil {
+			result = requestResultConfigError
+			return nil, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured")
+		}
+		var err error
+		userInfo, err = h.authorizer.authenticate(request.Context(), request)
+		if err != nil {
+			result = requestResultAuthnError
+		}
+		return userInfo, err
+	})
 	if err != nil {
-		result = requestResultAuthnError
+		if result == requestResultSuccess {
+			result = requestResultAuthzError
+			if pkghttputil.StatusFromError(err) == http.StatusUnauthorized {
+				result = requestResultAuthnError
+			}
+		}
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
-
-	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		result = requestResultAuthzError
+	if err := validateClientRequest(grant, request); err != nil {
+		result = requestResultValidationError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
+	permissionSetSupported := centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens)
+	legacy := grant.legacyEligible()
+	if !permissionSetSupported && !legacy {
+		result = requestResultNotImplemented
+		http.Error(writer, "Central does not support this proxy client", http.StatusNotImplemented)
+		return
+	}
+	profile := &proxyTokenProfile{
+		identity:       grant.AuthType + ":" + grant.Subject,
+		permissionSets: grant.AllowedPermissionSets,
+		legacy:         !permissionSetSupported && legacy,
+	}
+	if userInfo == nil {
+		profile.clusterScope = FullClusterAccessScope
+	} else {
+		profile.clusterScope = request.Header.Get(stackroxNamespaceHeader)
+		if profile.clusterScope == "" && len(grant.AllowedPermissionSets) > 0 {
+			result = requestResultAuthzError
+			http.Error(writer, "namespace scope is required for requests with permission grants", http.StatusForbidden)
+			return
+		}
+		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+			result = requestResultAuthzError
+			http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+			return
+		}
+	}
+	request = request.WithContext(withProxyTokenProfile(request.Context(), profile))
 
 	tracker := pkghttputil.NewStatusTrackingWriter(writer)
 	h.proxy.ServeHTTP(tracker, request)
