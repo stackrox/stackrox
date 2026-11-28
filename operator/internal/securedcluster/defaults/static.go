@@ -51,9 +51,12 @@ var staticDefaults = platform.SecuredClusterSpec{
 			},
 		},
 	},
-	Monitoring: &platform.GlobalMonitoring{
-		OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+	Monitoring: &platform.SecuredClusterMonitoring{
+		OpenShiftMonitoring: &platform.SecuredClusterOpenShiftMonitoring{
 			Enabled: new(true),
+			Custom: &platform.OpenShiftCustomMonitoring{
+				Enabled: new(false),
+			},
 		},
 	},
 	Network: &platform.GlobalNetworkSpec{

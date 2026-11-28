@@ -1222,6 +1222,18 @@ spec:
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
           - description: |-
+              Enables scraping Central custom metrics through this secured cluster's Sensor proxy.
+              Independent of openshift.enabled, including on the cluster hosting Central.
+            displayName: Custom
+            path: monitoring.openshift.custom
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: 'The default is: false.'
+            displayName: Enabled
+            path: monitoring.openshift.custom.enabled
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          - description: |-
               To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
               The default is: Enabled.
             displayName: Network Policies

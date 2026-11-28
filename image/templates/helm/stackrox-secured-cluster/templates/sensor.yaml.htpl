@@ -425,6 +425,7 @@ metadata:
   namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
+    stackrox.io/sensor-proxy: "true"
   annotations:
     {{- $annotations := dict -}}
     {{- if eq ._rox.env.openshift 4 -}}
