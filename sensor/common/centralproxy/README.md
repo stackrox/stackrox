@@ -42,7 +42,8 @@ policy is:
           "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff2",
           "httpRequestScopes": {
             "/api/graphql": ["POST"],
-            "/v1/deployments": ["GET"]
+            "/v1/deployments": ["GET"],
+            "/v1/mypermissions": ["GET"]
           }
         },
         {
@@ -51,7 +52,6 @@ policy is:
             "/v1/config/public": ["GET"],
             "/v1/featureflags": ["GET"],
             "/v1/metadata": ["GET"],
-            "/v1/mypermissions": ["GET"],
             "/v1/telemetry/": ["GET"]
           }
         }
@@ -89,8 +89,9 @@ authorization uses watch snapshots without per-request ConfigMap API reads;
 bearer TokenReview and SubjectAccessReview retain their existing caching.
 
 The explicit HTTP maps define local route checks. The default console client
-permits the routes and methods shown above: data routes through the console
-grant and the remaining routes through an authentication-only grant.
+permits the routes and methods shown above: the data and permissions routes
+through the console grant and the remaining routes through an
+authentication-only grant.
 Administrators can configure different maps for any permission set. The console
 feature flag applies to clients whose grants include the console permission
 set, selected by the fixed ID or the name

@@ -6,11 +6,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
-// ConsoleDataHTTPScopes contains the console plugin's routes that read
-// cluster data and therefore require the console permission set.
+// ConsoleDataHTTPScopes contains the console plugin's routes whose responses
+// depend on the console permission set: the data routes and the permissions
+// response, which reports the token's permission set to the plugin.
 var ConsoleDataHTTPScopes = tokens.HTTPRequestScopes{
-	"/api/graphql":    {"POST"},
-	"/v1/deployments": {"GET"},
+	"/api/graphql":      {"POST"},
+	"/v1/deployments":   {"GET"},
+	"/v1/mypermissions": {"GET"},
 }
 
 // ConsoleAuthOnlyHTTPScopes contains the console plugin's routes that carry
@@ -20,7 +22,6 @@ var ConsoleAuthOnlyHTTPScopes = tokens.HTTPRequestScopes{
 	"/v1/config/public":   {"GET"},
 	"/v1/featureflags":    {"GET"},
 	"/v1/metadata":        {"GET"},
-	"/v1/mypermissions":   {"GET"},
 	"/v1/telemetry/":      {"GET"},
 }
 
