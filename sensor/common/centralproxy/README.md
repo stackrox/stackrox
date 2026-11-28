@@ -97,12 +97,15 @@ feature flag applies to clients whose grants include the console permission
 set, selected by the fixed ID or the name
 `OpenShift Secured Cluster Console Proxy`.
 
-Bearer requests whose matched grants all carry permission sets, and every
-certificate client, require a namespace header and successful namespace
-SubjectAccessReview; `*` requires cluster-wide review. Requests matched only
-by authentication-only grants may omit the header: SubjectAccessReview is
-skipped and the minted token carries no permissions and no scope. Every grant
-in a client receives the same cluster/namespace scope.
+Bearer requests whose matched grants all carry permission sets require a
+namespace header and successful namespace SubjectAccessReview; `*` requires
+cluster-wide review. Requests matched only by authentication-only grants may
+omit the header: SubjectAccessReview is skipped and the minted token carries
+no permissions and no scope. Certificate clients are not Kubernetes subjects
+and perform no TokenReview or SubjectAccessReview: the certificate authorizes
+the client, every request receives cluster-wide scope, and the namespace
+header does not narrow it. Every grant in a client receives the same
+cluster/namespace scope.
 
 `httpRequestScopes` maps canonical paths to uppercase HTTP methods. A trailing
 slash matches descendants; other paths match exactly. An empty or null method
