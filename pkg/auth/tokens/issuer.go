@@ -33,6 +33,12 @@ func (i *issuerForSource) Issue(ctx context.Context, roxClaims RoxClaims, option
 	for _, opt := range i.factory.options {
 		opt.apply(claims)
 	}
+	if err := ValidateHTTPRequestScopes(claims.HTTPRequestScopes); err != nil {
+		return nil, errors.Wrap(err, "invalid HTTP request scopes")
+	}
+	if _, err := ValidatePerAccessHTTPScopes(&claims.RoxClaims); err != nil {
+		return nil, errors.Wrap(err, "invalid per-access HTTP scopes")
+	}
 	// Sanity check: the source should accept the token.
 	if err := i.source.Validate(ctx, claims); err != nil {
 		return nil, errors.Wrap(err, "issued token was rejected by source")

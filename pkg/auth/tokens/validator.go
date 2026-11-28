@@ -31,6 +31,12 @@ func (v *validator) Validate(ctx context.Context, token string) (*TokenInfo, err
 	if err := v.validator.Validate(token, &claims.Claims, &claims.RoxClaims, &claims.Extra); err != nil {
 		return nil, err
 	}
+	if _, err := ValidatePerAccessHTTPScopes(&claims.RoxClaims); err != nil {
+		return nil, errors.Wrap(err, "invalid per-access HTTP scopes")
+	}
+	if err := ValidateHTTPRequestScopes(claims.HTTPRequestScopes); err != nil {
+		return nil, errors.Wrap(err, "invalid HTTP request scopes")
+	}
 	srcs, err := v.sources.GetAll(claims.Audience...)
 	if err != nil {
 		return nil, err

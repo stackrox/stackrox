@@ -19,6 +19,8 @@ type TokenAuthProvider interface {
 
 // NewTokenAuthProvider provides a token validator to support the creation of
 // token issuer for token-based identities (API tokens, M2M, OCP plugin).
+// Its default validation policy rejects HTTP-scoped claims. Use WithValidationLayer
+// to supply a different policy, such as NewHTTPScopedValidationLayer.
 //
 // The output should be used for token issuer source management through
 // the API exposed by tokens.IssuerFactory, and could as such be restricted
@@ -35,6 +37,7 @@ func NewTokenAuthProvider(
 		id:              id,
 		name:            name,
 		revocationLayer: &noopRevocationLayer{},
+		validationLayer: &httpScopePolicyLayer{sourceID: id},
 		sourceType:      sourceType,
 	}
 	for _, option := range options {

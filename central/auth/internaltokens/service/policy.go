@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -128,8 +129,8 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 const maxPermissionSetsPerRequest = 32
 
 // validatePermissionSets checks that permission sets are not combined with
-// legacy permissions, that their number stays bounded, and that every
-// selector is well-formed.
+// legacy permissions, that their number stays bounded, that every selector
+// is well-formed, and that the requested HTTP scopes are valid.
 func validatePermissionSets(req *v1.GenerateTokenForPermissionsAndScopeRequest) error {
 	if len(req.GetPermissions()) != 0 {
 		return errox.InvalidArgs.New("permission grant forms are mutually exclusive")
@@ -137,10 +138,19 @@ func validatePermissionSets(req *v1.GenerateTokenForPermissionsAndScopeRequest) 
 	if len(req.GetPermissionSets()) > maxPermissionSetsPerRequest {
 		return errox.InvalidArgs.New("too many permission sets")
 	}
+	claims := tokens.RoxClaims{}
 	for _, selected := range req.GetPermissionSets() {
 		if err := validatePermissionSetSelector(selected); err != nil {
 			return err
 		}
+		scopes, err := tokens.HTTPRequestScopesFromProto(selected.GetHttpRequestScopes())
+		if err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+		claims.InternalRoles = append(claims.InternalRoles, &tokens.InternalRole{HTTPRequestScopes: scopes})
+	}
+	if _, err := tokens.ValidatePerAccessHTTPScopes(&claims); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
 	}
 	return nil
 }

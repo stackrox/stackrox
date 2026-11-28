@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stretchr/testify/assert"
 )
@@ -79,6 +80,41 @@ func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 			}))
 		})
 	}
+}
+
+func TestHTTPRequestScopesFromProto(t *testing.T) {
+	for name, requested := range map[string][]*v1.HTTPRequestScope{
+		"duplicate path":   {{Path: "/metrics", Methods: []string{"GET"}}, {Path: "/metrics", Methods: []string{"POST"}}},
+		"duplicate method": {{Path: "/metrics", Methods: []string{"GET", "GET"}}},
+		"invalid path":     {{Path: "/%6detrics", Methods: []string{"GET"}}},
+		"invalid method":   {{Path: "/metrics", Methods: []string{"Get"}}},
+		"empty method":     {{Path: "/metrics", Methods: []string{""}}},
+		"nil entry":        {nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := HTTPRequestScopesFromProto(requested)
+			assert.Error(t, err)
+		})
+	}
+	scopes, err := HTTPRequestScopesFromProto([]*v1.HTTPRequestScope{
+		{Path: "/v1/metadata", Methods: []string{"GET", "HEAD"}},
+		{Path: "/v1/blocked/"},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, HTTPRequestScopes{
+		"/v1/metadata": {"GET", "HEAD"},
+		"/v1/blocked/": {},
+	}, scopes)
+	root, err := HTTPRequestScopesFromProto([]*v1.HTTPRequestScope{{Path: "/", Methods: []string{"GET"}}})
+	assert.NoError(t, err)
+	assert.Equal(t, HTTPRequestScopes{"/": {"GET"}}, root)
+	assert.NotNil(t, scopes["/v1/blocked/"])
+	assert.False(t, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
+		HTTPRequest: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/blocked/item"}},
+	}))
+	scopes, err = HTTPRequestScopesFromProto(nil)
+	assert.NoError(t, err)
+	assert.Nil(t, scopes)
 }
 
 func TestValidHTTPRequestScope(t *testing.T) {

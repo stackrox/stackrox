@@ -155,6 +155,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
 	capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
 	capabilities = append(capabilities, centralsensor.CentralProxyPermissionSetTokens.String())
+	capabilities = append(capabilities, centralsensor.CentralProxyPerAccessTokens.String())
 
 	preferences := s.manager.GetConnectionPreference(clusterID)
 

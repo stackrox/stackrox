@@ -11,10 +11,11 @@ type proxyTokenProfileKey struct{}
 // proxyTokenProfile is assigned after client authentication and local route checks.
 // identity is an audit attribute, not proof of possession of the original credential.
 type proxyTokenProfile struct {
-	identity       string
-	permissionSets []*centralv1.SelectedPermissionSet
-	clusterScope   string
-	legacy         bool
+	identity            string
+	permissionSets      []*centralv1.SelectedPermissionSet
+	singlePermissionSet bool
+	clusterScope        string
+	legacy              bool
 }
 
 func withProxyTokenProfile(ctx context.Context, profile *proxyTokenProfile) context.Context {

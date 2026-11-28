@@ -25,7 +25,7 @@ func policyHandlerFixture(t *testing.T, authorizer *k8sAuthorizer, policy *Clien
 	t.Helper()
 	fixture := newProxyTestFixture(t, authorizer)
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering, centralsensor.CentralProxyPermissionSetTokens,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering, centralsensor.CentralProxyPermissionSetTokens, centralsensor.CentralProxyPerAccessTokens,
 	})
 	fixture.handler.policy = policy
 	client := &fakeTokenServiceClient{response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "central-token"}}
@@ -64,7 +64,7 @@ func TestCustomBearerRoutesScopeAndCapabilities(t *testing.T) {
 			t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
 			allowedpaths.Set([]string{"/v1/metadata"})
 			if !tc.capable {
-				centralcaps.Set([]centralsensor.CentralCapability{centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering})
+				centralcaps.Set([]centralsensor.CentralCapability{centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering, centralsensor.CentralProxyPermissionSetTokens})
 			}
 			response := fixture.serveHTTP(t, tc.method, "/custom/route", map[string]string{
 				"Authorization": "Bearer kube-token", stackroxNamespaceHeader: tc.namespace,

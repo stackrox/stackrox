@@ -88,6 +88,10 @@ const (
 	// read-only, cluster/namespace-constrained permission set for Sensor tokens.
 	CentralProxyPermissionSetTokens CentralCapability = "CentralProxyPermissionSetTokens"
 
+	// CentralProxyPerAccessTokens identifies Centrals that issue separate constrained
+	// permission-set roles and enforce each role's optional signed HTTP scopes.
+	CentralProxyPerAccessTokens CentralCapability = "CentralProxyPerAccessTokens"
+
 	// ComplianceV2TailoredProfiles identifies the capability of Central to handle
 	// tailored profile tracking and scan configurations referencing tailored profiles.
 	ComplianceV2TailoredProfiles = "ComplianceV2TailoredProfiles"

@@ -8,8 +8,33 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
+
+// HTTPRequestScopesFromProto converts and validates optional request scopes.
+func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) (HTTPRequestScopes, error) {
+	if len(requested) == 0 {
+		return nil, nil
+	}
+	if len(requested) > 32 {
+		return nil, fmt.Errorf("too many HTTP request scopes: %d", len(requested))
+	}
+	scopes := make(HTTPRequestScopes, len(requested))
+	for _, scope := range requested {
+		if scope == nil {
+			return nil, errors.New("nil HTTP request scope")
+		}
+		if _, found := scopes[scope.GetPath()]; found {
+			return nil, fmt.Errorf("duplicate HTTP request path %q", scope.GetPath())
+		}
+		scopes[scope.GetPath()] = append([]string{}, scope.GetMethods()...)
+	}
+	if err := ValidateHTTPRequestScopes(scopes); err != nil {
+		return nil, err
+	}
+	return scopes, nil
+}
 
 // ValidateHTTPRequestScopes checks optional path-to-method restrictions.
 // Callers must validate scopes before signing them into a token.

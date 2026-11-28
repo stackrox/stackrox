@@ -102,15 +102,16 @@ Temporary watch failures retain the last observed snapshot. Policy and CA
 authorization uses watch snapshots without per-request ConfigMap API reads;
 bearer TokenReview and SubjectAccessReview retain their existing caching.
 
-The explicit HTTP maps define local route checks. The default metrics grant
-permits only exact `GET /metrics`; the default console client
-permits the routes and methods shown above: the data and permissions routes
-through the console grant and the remaining routes through an
-authentication-only grant.
-Administrators can configure different maps for any permission set. The console
-feature flag applies to clients whose grants include the console permission
-set, selected by the fixed ID or the name
-`OpenShift Secured Cluster Console Proxy`.
+The explicit HTTP maps define local route checks and the restrictions signed
+into each role. The default metrics grant permits only exact `GET /metrics`;
+the default console client permits the routes and methods shown above: the
+data and permissions routes through the console grant and the remaining
+routes through an authentication-only grant. Administrators can configure
+different maps for any permission set. The console feature flag applies to
+clients whose grants select only the console permission set, identified by
+the fixed ID or the name `OpenShift Secured Cluster Console Proxy`; adding
+any other permission set turns the client into a custom client the flag does
+not gate.
 
 Bearer requests whose matched grants all carry permission sets require a
 namespace header and successful namespace SubjectAccessReview; `*` requires
@@ -132,25 +133,41 @@ restriction on that grant. An explicitly empty map is invalid. Unrestricted
 grants remain available on every route, including routes denied by scoped grants.
 Canonical-path checks reject ambiguous/encoded paths for scoped grants.
 
-Grants carrying permission sets require `CentralProxyPermissionSetTokens`.
-Older Centrals serve the two original grant forms of bearer clients instead:
-authentication-only grants request no permissions and console grants request
-the legacy Deployment/Image read permissions. Issuance errors never trigger a
+Grants carrying permission sets require `CentralProxyPerAccessTokens`, even
+when they omit HTTP restrictions. Older Centrals serve the two original grant
+forms of bearer clients instead: authentication-only grants request no
+permissions, and console grants with explicit scopes contained in the default
+console routes/methods use the single-selector API when
+`CentralProxyPermissionSetTokens` is available and the legacy Deployment/Image
+token flow otherwise. Advertised legacy console paths are also checked. These
+older Centrals cannot enforce HTTP claims. Issuance errors never trigger a
 fallback.
 
 Central resolves each permission set separately, requires read-only and
 cluster/namespace constraints and matching grants, and limits requested scopes
-to the authenticated Sensor's cluster. Sensor replaces the incoming Authorization
+to the authenticated Sensor's cluster. It signs a separate internal role for each
+grant. The token uses audience
+`https://stackrox.io/jwt-sources#internal-rox-tokens-http-scoped` when any role has
+HTTP scopes; older Centrals reject this unknown audience. Tokens whose roles all
+omit HTTP restrictions retain the ordinary internal-token audience. On each
+HTTP request Central exposes only unrestricted roles and roles allowed for the
+most specific matching path and method. Direct gRPC may use only unrestricted
+roles. Any token-wide HTTP restriction also applies independently to all roles.
+
+The internal token API retains legacy resource permissions and the single
+selector fields for older Sensors. New requests use repeated `permission_sets`
+at field 7; mixing these forms is rejected.
+
+Sensor replaces the incoming Authorization
 header and removes the namespace header before forwarding. Each token request
 carries only the grants whose HTTP scope allows the current request, so grants
 scoped to other routes never widen a forwarded request. Tokens are cached by
-identity, the allowed grants, cluster/namespace scope, cluster, and legacy mode
-for 55 minutes, with a one-hour lifetime. Permission reductions can take up to one hour
-to affect issued tokens. The signed requester is an audit attribute, not proof
-of possession. Tokens carry resource permissions and cluster/namespace scopes,
-not HTTP restrictions; local route checks do not constrain direct replay of a
-stolen token. A read-only permission set does not establish that every HTTP
-route is side-effect-free.
+identity, the allowed grants and their HTTP scopes, cluster/namespace scope,
+cluster, and fallback mode for 55 minutes, with a one-hour
+lifetime. Permission reductions can take up to one hour to affect issued tokens.
+The signed requester is an audit attribute, not proof of possession. A stolen
+token can be replayed until expiry within its signed restrictions. A read-only
+permission set does not establish that every HTTP route is side-effect-free.
 
 Enable `sensor.centralProxy.enabled` in Helm or `spec.sensor.centralProxyEnabled`
 in the Operator on native Kubernetes, where these set `ROX_CENTRAL_PROXY_ENABLED`
