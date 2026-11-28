@@ -118,7 +118,7 @@ func TestMultiGrantClientsRequestOnlyAllowedGrants(t *testing.T) {
 }
 
 func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
-	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]
 	for selector, id := range map[string]string{
 		"name":         "",
 		"ID":           consoleID,
@@ -154,7 +154,7 @@ func TestConsoleSelectedClientsRetainRestrictions(t *testing.T) {
 						Access: defaultClientPolicy().Clients[1].Access}
 					entry.Access[0].PermissionSetID = id
 					if id == "" {
-						entry.Access[0].PermissionSetName = accesscontrol.ConsoleProxy
+						entry.Access[0].PermissionSetName = accesscontrol.K8sCentralProxyUser
 					}
 					policy := newStaticClientPolicy(t, clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{entry}})
 					fixture, client := policyHandlerFixture(t, newAllowingAuthorizer(t), policy)
@@ -199,13 +199,13 @@ func TestCustomMTLSRoutesAndConsoleClassification(t *testing.T) {
 		want     int
 	}{
 		"custom route": {selector: "Custom Reader", path: "/custom", want: http.StatusOK},
-		"console selector cannot use custom route": {selector: accesscontrol.ConsoleProxy, path: "/custom", want: http.StatusForbidden},
-		"console selector allowed route":           {selector: accesscontrol.ConsoleProxy, path: "/v1/deployments", want: http.StatusOK},
+		"console selector cannot use custom route": {selector: accesscontrol.K8sCentralProxyUser, path: "/custom", want: http.StatusForbidden},
+		"console selector allowed route":           {selector: accesscontrol.K8sCentralProxyUser, path: "/v1/deployments", want: http.StatusOK},
 	} {
 		t.Run(name, func(t *testing.T) {
 			entry := clientPolicyEntry{AuthType: clientAuthMTLS, Subject: "custom-client",
 				CARef: defaultClientPolicy().Clients[0].CARef, Access: []clientPolicyAccess{{PermissionSetName: tc.selector}}}
-			if tc.selector == accesscontrol.ConsoleProxy {
+			if tc.selector == accesscontrol.K8sCentralProxyUser {
 				entry.Access[0].HTTPScopes = defaultClientPolicy().Clients[1].Access[0].HTTPScopes
 			}
 			policy := newStaticClientPolicy(t, clientPolicyDocument{Version: 1, Clients: []clientPolicyEntry{entry}}, clientCAConfigMap(ca))

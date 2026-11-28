@@ -18,7 +18,7 @@ const (
 	networkGraphViewerPermissionSetID = "ffffffff-ffff-fff4-f5ff-fffffffffff5"
 	vulnMgmtAdminPermissionSetID      = "ffffffff-ffff-fff4-f5ff-fffffffffff4"
 	configControllerPermissionSetID   = "ffffffff-ffff-fff4-f5ff-fffffffffff3"
-	consoleProxyPermissionSetID       = "ffffffff-ffff-fff4-f5ff-fffffffffff2"
+	k8sCentralProxyPermissionSetID    = "ffffffff-ffff-fff4-f5ff-fffffffffff2"
 )
 
 const (
@@ -38,8 +38,9 @@ const (
 	// - view and create vulnerability report configurations.
 	VulnerabilityManagementAdmin = "Vulnerability Management Admin"
 
-	// ConsoleProxy provides read access to deployments and images through the secured-cluster console proxy.
-	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
+	// K8sCentralProxyUser provides read access to deployments and images for Kubernetes-authenticated
+	// users accessing Central through the Sensor proxy, including via the OpenShift Console plugin.
+	K8sCentralProxyUser = "Kubernetes Secured Cluster User"
 )
 
 var (
@@ -48,7 +49,7 @@ var (
 		Admin:                           adminPermissionSetID,
 		Analyst:                         analystPermissionSetID,
 		ConfigController:                configControllerPermissionSetID,
-		ConsoleProxy:                    consoleProxyPermissionSetID,
+		K8sCentralProxyUser:             k8sCentralProxyPermissionSetID,
 		ContinuousIntegration:           continuousIntegrationPermissionSetID,
 		NetworkGraphViewer:              networkGraphViewerPermissionSetID,
 		None:                            nonePermissionSetID,

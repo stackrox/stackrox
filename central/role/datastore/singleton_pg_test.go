@@ -20,9 +20,9 @@ import (
 
 func TestSeedProxyPermissionSetNameCollision(t *testing.T) {
 	for name, seed := range map[string]func(context.Context, permissionSetPGStore.Store) error{
-		accesscontrol.ConsoleProxy: func(ctx context.Context, store permissionSetPGStore.Store) error {
+		accesscontrol.K8sCentralProxyUser: func(ctx context.Context, store permissionSetPGStore.Store) error {
 			return seedDefaultPermissionSets(ctx, store,
-				[]*storage.PermissionSet{getDefaultPermissionSet(accesscontrol.ConsoleProxy)})
+				[]*storage.PermissionSet{getDefaultPermissionSet(accesscontrol.K8sCentralProxyUser)})
 		},
 		accesscontrol.OpenShiftPrometheusMetricsReader: func(ctx context.Context, store permissionSetPGStore.Store) error {
 			seedMetricsPermissionSet(ctx, store)

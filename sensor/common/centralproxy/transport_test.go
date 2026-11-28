@@ -88,7 +88,7 @@ func TestTokenProviderPermissionSetCapability(t *testing.T) {
 					if capable {
 						assert.Empty(t, req.GetPermissions())
 						require.Len(t, req.GetPermissionSets(), 1)
-						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSets()[0].GetId())
+						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
 					} else {
 						assert.Empty(t, req.GetPermissionSets())
 						assert.Equal(t, map[string]centralv1.Access{

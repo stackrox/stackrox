@@ -36,7 +36,7 @@ func TestSeedDefaultPermissionSets(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctx := t.Context()
 			store := storeMocks.NewMockPermissionSetStore(gomock.NewController(t))
-			console := getDefaultPermissionSet(accesscontrol.ConsoleProxy)
+			console := getDefaultPermissionSet(accesscontrol.K8sCentralProxyUser)
 			other := getDefaultPermissionSet(accesscontrol.Admin)
 			store.EXPECT().UpsertMany(ctx, []*storage.PermissionSet{other}).Return(tc.otherErr)
 			if tc.otherErr == nil {

@@ -45,11 +45,11 @@ func Singleton() DataStore {
 
 func seedDefaultPermissionSets(ctx context.Context, permissionSetStorage store.PermissionSetStore,
 	defaults []*storage.PermissionSet) error {
-	var consoleProxy *storage.PermissionSet
+	var k8sCentralProxyUser *storage.PermissionSet
 	others := make([]*storage.PermissionSet, 0, len(defaults))
 	for _, permissionSet := range defaults {
-		if permissionSet.GetName() == accesscontrol.ConsoleProxy {
-			consoleProxy = permissionSet
+		if permissionSet.GetName() == accesscontrol.K8sCentralProxyUser {
+			k8sCentralProxyUser = permissionSet
 		} else {
 			others = append(others, permissionSet)
 		}
@@ -59,10 +59,10 @@ func seedDefaultPermissionSets(ctx context.Context, permissionSetStorage store.P
 			return err
 		}
 	}
-	if consoleProxy != nil {
-		if err := permissionSetStorage.Upsert(ctx, consoleProxy); err != nil {
-			log.Errorf("Failed to seed Console Proxy permission set %q (ID %s); resolve any name conflict: %v",
-				consoleProxy.GetName(), consoleProxy.GetId(), err)
+	if k8sCentralProxyUser != nil {
+		if err := permissionSetStorage.Upsert(ctx, k8sCentralProxyUser); err != nil {
+			log.Errorf("Failed to seed default permission set %q (ID %s); resolve any name conflict: %v",
+				k8sCentralProxyUser.GetName(), k8sCentralProxyUser.GetId(), err)
 		}
 	}
 	return nil

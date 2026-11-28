@@ -20,7 +20,7 @@ func TestDefaultPermissionSetConstraints(t *testing.T) {
 		accesscontrol.Admin:                 {},
 		accesscontrol.Analyst:               {access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ},
 		accesscontrol.ContinuousIntegration: {},
-		accesscontrol.ConsoleProxy: {
+		accesscontrol.K8sCentralProxyUser: {
 			access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			scope:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		},
@@ -71,16 +71,16 @@ func TestDefaultRoles(t *testing.T) {
 		assert.Equal(t, storage.Traits_DEFAULT, defaultRole.GetTraits().GetOrigin())
 		assert.Error(t, verifyNotDefaultRole(defaultRole))
 		assert.False(t, declarativeconfig.CanModifyResource(t.Context(), defaultRole))
-		assert.NotEqual(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], defaultRole.GetPermissionSetId())
+		assert.NotEqual(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], defaultRole.GetPermissionSetId())
 		assert.NotEqual(t, accesscontrol.OpenShiftPrometheusMetricsReaderID, defaultRole.GetPermissionSetId())
 	}
 }
 
-func TestConsoleProxyPermissionSet(t *testing.T) {
-	ps := getDefaultPermissionSet(accesscontrol.ConsoleProxy)
+func TestK8sCentralProxyUserPermissionSet(t *testing.T) {
+	ps := getDefaultPermissionSet(accesscontrol.K8sCentralProxyUser)
 	require.NotNil(t, ps)
 	assert.Equal(t, "ffffffff-ffff-fff4-f5ff-fffffffffff2", ps.GetId())
-	assert.Equal(t, "OpenShift Secured Cluster Console Proxy", ps.GetName())
+	assert.Equal(t, "Kubernetes Secured Cluster User", ps.GetName())
 	assert.Equal(t, map[string]storage.Access{
 		"Deployment": storage.Access_READ_ACCESS,
 		"Image":      storage.Access_READ_ACCESS,

@@ -68,7 +68,7 @@ func isConsolePermissionSet(grant *centralv1.SelectedPermissionSet) bool {
 }
 
 func isConsoleSelector(id, name string) bool {
-	return name == accesscontrol.ConsoleProxy || id == accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	return name == accesscontrol.K8sCentralProxyUser || id == accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]
 }
 
 func clientPolicyScopesToProto(scopes tokens.HTTPRequestScopes) []*apiV1.HTTPRequestScope {

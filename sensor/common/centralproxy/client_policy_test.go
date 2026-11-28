@@ -75,7 +75,7 @@ func TestClientPolicyBootstrapUpdatesAndDeletion(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(cm.Data[ClientPolicyDataKey]), &doc))
 	require.Len(t, doc.Clients, 2)
 	assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, doc.Clients[0].Access[0].PermissionSetName)
-	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], doc.Clients[1].Access[0].PermissionSetID)
+	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], doc.Clients[1].Access[0].PermissionSetID)
 	assert.Empty(t, doc.Clients[1].Access[1].PermissionSetID, "the second default grant is authentication-only")
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"access"`)
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"httpRequestScopes"`)
@@ -161,19 +161,21 @@ func TestClientPolicyPreservesExistingConfig(t *testing.T) {
 func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 	for name, change := range map[string]func(*clientPolicyDocument){
 		"auth-only without scopes": func(p *clientPolicyDocument) { p.Clients[1].Access[1].HTTPScopes = nil },
-		"both selectors":           func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetName = accesscontrol.ConsoleProxy },
-		"invalid ID":               func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetID = "invalid" },
-		"whitespace name":          func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = " Reader " },
-		"unsupported version":      func(p *clientPolicyDocument) { p.Version++ },
-		"duplicate identity":       func(p *clientPolicyDocument) { p.Clients = append(p.Clients, p.Clients[0]) },
-		"unknown auth":             func(p *clientPolicyDocument) { p.Clients[0].AuthType = "other" },
-		"missing CA":               func(p *clientPolicyDocument) { p.Clients[0].CARef = nil },
-		"null CA":                  func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`null`) },
-		"incomplete CA":            func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`{"namespace":"ns"}`) },
-		"bearer CA":                func(p *clientPolicyDocument) { p.Clients[1].CARef = p.Clients[0].CARef },
-		"empty subject":            func(p *clientPolicyDocument) { p.Clients[0].Subject = "" },
-		"subject whitespace":       func(p *clientPolicyDocument) { p.Clients[0].Subject = " alice " },
-		"wildcard certificate":     func(p *clientPolicyDocument) { p.Clients[0].Subject = "*" },
+		"both selectors": func(p *clientPolicyDocument) {
+			p.Clients[1].Access[0].PermissionSetName = accesscontrol.K8sCentralProxyUser
+		},
+		"invalid ID":           func(p *clientPolicyDocument) { p.Clients[1].Access[0].PermissionSetID = "invalid" },
+		"whitespace name":      func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = " Reader " },
+		"unsupported version":  func(p *clientPolicyDocument) { p.Version++ },
+		"duplicate identity":   func(p *clientPolicyDocument) { p.Clients = append(p.Clients, p.Clients[0]) },
+		"unknown auth":         func(p *clientPolicyDocument) { p.Clients[0].AuthType = "other" },
+		"missing CA":           func(p *clientPolicyDocument) { p.Clients[0].CARef = nil },
+		"null CA":              func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`null`) },
+		"incomplete CA":        func(p *clientPolicyDocument) { p.Clients[0].CARef = json.RawMessage(`{"namespace":"ns"}`) },
+		"bearer CA":            func(p *clientPolicyDocument) { p.Clients[1].CARef = p.Clients[0].CARef },
+		"empty subject":        func(p *clientPolicyDocument) { p.Clients[0].Subject = "" },
+		"subject whitespace":   func(p *clientPolicyDocument) { p.Clients[0].Subject = " alice " },
+		"wildcard certificate": func(p *clientPolicyDocument) { p.Clients[0].Subject = "*" },
 		"wildcard custom set": func(p *clientPolicyDocument) {
 			p.Clients[1].Access[0].PermissionSetID = accesscontrol.OpenShiftPrometheusMetricsReaderID
 		},
@@ -213,7 +215,7 @@ func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 }
 
 func TestClientPolicyAcceptsAuthOnlyGrants(t *testing.T) {
-	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]
 	t.Run("wildcard bearer client", func(t *testing.T) {
 		policy := newStaticClientPolicy(t, clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{{
 			AuthType: clientAuthKubernetesBearer, Subject: "*",
@@ -252,7 +254,7 @@ func TestClientPolicyAcceptsAuthOnlyGrants(t *testing.T) {
 }
 
 func TestClientPolicyCanonicalizesWildcardPermissionSetIDs(t *testing.T) {
-	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]
 	for name, id := range map[string]string{
 		"uppercase": strings.ToUpper(consoleID),
 		"braced":    "{" + consoleID + "}",
@@ -273,7 +275,7 @@ func TestClientPolicyCanonicalizesWildcardPermissionSetIDs(t *testing.T) {
 }
 
 func TestClientPolicyRejectsEquivalentPermissionSetIDs(t *testing.T) {
-	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+	consoleID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]
 	for name, id := range map[string]string{
 		"uppercase": strings.ToUpper(consoleID),
 		"braced":    "{" + consoleID + "}",
@@ -346,11 +348,11 @@ func TestClientPolicyAuthorizeSplitsConfiguredAndAllowedGrants(t *testing.T) {
 		},
 		"console grant is matched by its route alone": {
 			access: []clientPolicyAccess{
-				{PermissionSetName: accesscontrol.ConsoleProxy, HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
+				{PermissionSetName: accesscontrol.K8sCentralProxyUser, HTTPScopes: tokens.HTTPRequestScopes{"/v1/metadata": {http.MethodGet}}},
 				{PermissionSetName: "Image Reader", HTTPScopes: tokens.HTTPRequestScopes{"/v1/images": {http.MethodGet}}},
 			},
 			method: http.MethodGet, path: "/v1/metadata",
-			wantAllowed: []string{accesscontrol.ConsoleProxy},
+			wantAllowed: []string{accesscontrol.K8sCentralProxyUser},
 		},
 		"authentication-only grant carries no permission set": {
 			access: []clientPolicyAccess{
