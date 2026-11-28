@@ -73,23 +73,30 @@ func seedDefaultPermissionSets(ctx context.Context, permissionSetStorage store.P
 // Existing administrator-managed grants and constraints are preserved. Before using
 // an existing set for scoped tokens, administrators must explicitly configure READ
 // and CLUSTER_NAMESPACE constraints and remove any incompatible grants.
+// Only the original seeded name is updated; administrator-chosen names are preserved.
 func seedMetricsPermissionSet(ctx context.Context, permissionSetStorage store.PermissionSetStore) {
-	if exists, err := permissionSetStorage.Exists(ctx, accesscontrol.OpenShiftPrometheusMetricsReaderID); err != nil {
-		log.Warnf("Failed to check metrics permission set: %v", err)
-		return
-	} else if exists {
+	permissionSet, exists, err := permissionSetStorage.Get(ctx, accesscontrol.OpenShiftPrometheusID)
+	if err != nil {
+		log.Warnf("Failed to get metrics permission set: %v", err)
 		return
 	}
-
-	permissionSet := &storage.PermissionSet{
-		Id:               accesscontrol.OpenShiftPrometheusMetricsReaderID,
-		Name:             accesscontrol.OpenShiftPrometheusMetricsReader,
-		Description:      "For OpenShift Prometheus: use it to grant read-only access to scoped resources used by custom metrics",
-		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
-		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
-		// Grant no permissions until an administrator chooses which metrics to expose.
-		ResourceToAccess: map[string]storage.Access{},
-		Traits:           &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+	if exists {
+		if permissionSet.GetName() != "OpenShift Prometheus Metrics Reader" {
+			return
+		}
+		permissionSet = permissionSet.CloneVT()
+		permissionSet.Name = accesscontrol.OpenShiftPrometheus
+	} else {
+		permissionSet = &storage.PermissionSet{
+			Id:               accesscontrol.OpenShiftPrometheusID,
+			Name:             accesscontrol.OpenShiftPrometheus,
+			Description:      "For OpenShift Prometheus: use it to grant read-only access to scoped resources used by custom metrics",
+			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			// Grant no permissions until an administrator chooses which metrics to expose.
+			ResourceToAccess: map[string]storage.Access{},
+			Traits:           &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+		}
 	}
 	if err := permissionSetStorage.Upsert(ctx, permissionSet); err != nil {
 		log.Warnf("Failed to seed metrics permission set %q (ID %s); resolve any name conflict: %v",

@@ -132,7 +132,7 @@ func TestMetricsPolicyCertificateAuthentication(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, grant.PermissionSets[0].GetName())
+			assert.Equal(t, accesscontrol.OpenShiftPrometheus, grant.PermissionSets[0].GetName())
 			assert.Empty(t, grant.PermissionSets[0].GetId())
 			assert.Equal(t, clientAuthMTLS, grant.AuthType)
 			assert.Equal(t, cn, grant.Subject)
@@ -278,7 +278,7 @@ func TestMetricsHandlerProfileAndDenials(t *testing.T) {
 					forwarded = true
 					profile := proxyTokenProfileFromContext(r.Context())
 					require.NotNil(t, profile)
-					assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, profile.permissionSets[0].GetName())
+					assert.Equal(t, accesscontrol.OpenShiftPrometheus, profile.permissionSets[0].GetName())
 					assert.Equal(t, clientAuthMTLS+":"+cert.Leaf.Subject.CommonName, profile.identity)
 					assert.Equal(t, FullClusterAccessScope, profile.clusterScope)
 					assert.False(t, profile.legacy)

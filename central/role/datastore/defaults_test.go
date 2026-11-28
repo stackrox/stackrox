@@ -72,7 +72,7 @@ func TestDefaultRoles(t *testing.T) {
 		assert.Error(t, verifyNotDefaultRole(defaultRole))
 		assert.False(t, declarativeconfig.CanModifyResource(t.Context(), defaultRole))
 		assert.NotEqual(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], defaultRole.GetPermissionSetId())
-		assert.NotEqual(t, accesscontrol.OpenShiftPrometheusMetricsReaderID, defaultRole.GetPermissionSetId())
+		assert.NotEqual(t, accesscontrol.OpenShiftPrometheusID, defaultRole.GetPermissionSetId())
 	}
 }
 
