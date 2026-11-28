@@ -199,7 +199,7 @@ func setupCentralCapsForTest(t *testing.T) {
 func consoleTestProfile(scope string) *proxyTokenProfile {
 	return &proxyTokenProfile{
 		identity:       clientAuthKubernetesBearer + ":test-user",
-		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[0].Access),
+		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access),
 		clusterScope:   scope,
 		legacy:         !centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens),
 	}
@@ -233,8 +233,8 @@ func testConsolePolicyDoc() clientPolicyDocument {
 	doc := defaultClientPolicy()
 	// The handler plumbing tests send headerless requests, so their broad
 	// routes are granted to an authentication-only client.
-	doc.Clients[0].Access[0].PermissionSetID = ""
-	doc.Clients[0].Access[0].HTTPScopes = tokens.HTTPRequestScopes{
+	doc.Clients[1].Access[0].PermissionSetID = ""
+	doc.Clients[1].Access[0].HTTPScopes = tokens.HTTPRequestScopes{
 		"/v1/": {"GET", "POST", "HEAD", "OPTIONS"}, "/v2/": {"GET"},
 		"/api/graphql": {"GET", "POST"}, "/api/v1/": {"GET"},
 	}
@@ -260,18 +260,6 @@ func newStaticClientPolicy(t testing.TB, doc clientPolicyDocument, caMaps ...*co
 	policy.policy.Store(&clientPolicySnapshot{document: parsed, caRoots: caRoots})
 	policy.ready.Store(true)
 	return policy
-}
-
-// testClientCARef returns the CA reference matching clientCAConfigMap's location.
-func testClientCARef(t *testing.T) json.RawMessage {
-	t.Helper()
-	ref, err := json.Marshal(clientPolicyCARef{
-		Namespace: env.SecureMetricsClientCANamespace.Setting(),
-		ConfigMap: env.SecureMetricsClientCAConfigMap.Setting(),
-		Key:       env.SecureMetricsClientCAKey.Setting(),
-	})
-	require.NoError(t, err)
-	return ref
 }
 
 // proxyTestFixture bundles the boilerplate shared by the majority of handler
